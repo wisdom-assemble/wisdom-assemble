@@ -49,18 +49,13 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <>
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900">
-                ログイン
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="px-3 py-1.5 rounded text-white text-sm font-medium"
-                style={{ backgroundColor: 'var(--color-primary)' }}
-              >
-                新規登録
-              </Link>
-            </>
+            <Link
+              href="/auth/login"
+              className="px-3 py-1.5 rounded text-white text-sm font-medium"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              ログイン
+            </Link>
           )}
         </nav>
       </div>

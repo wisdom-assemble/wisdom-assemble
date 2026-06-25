@@ -29,10 +29,12 @@ export default function SignupPage() {
     })
 
     if (error) {
-      setError(error.message)
+      console.error('signup error:', error)
+      setError(error.message || '登録に失敗しました。もう一度お試しください。')
       setLoading(false)
     } else {
-      setDone(true)
+      // 確認メール不要の場合はそのままトップへ
+      window.location.href = '/'
     }
   }
 
