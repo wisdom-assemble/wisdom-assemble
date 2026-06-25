@@ -32,6 +32,10 @@ export default function QuestionForm() {
       const { slug } = await res.json()
       router.push(`/questions/${slug}`)
     } catch (err: any) {
+      if (err.message === 'ログインが必要です') {
+        router.push('/auth/login')
+        return
+      }
       setError(err.message)
     } finally {
       setSubmitting(false)
