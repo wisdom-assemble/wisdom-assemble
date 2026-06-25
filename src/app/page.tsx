@@ -1,65 +1,90 @@
-import Image from "next/image";
+import Link from 'next/link'
+import Header from '@/components/Header'
+import { getTenantId } from '@/lib/tenant'
+import { createClient } from '@/lib/supabase/server'
 
-export default function Home() {
+export default async function HomePage() {
+  const tenantId = await getTenantId()
+  const supabase = await createClient()
+
+  const [{ data: questions }, { data: tenant }] = await Promise.all([
+    supabase
+      .from('questions')
+      .select('id, title, slug, status, created_at, view_count, profiles(username, display_name)')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase
+      .from('tenants')
+      .select('name, description')
+      .eq('id', tenantId)
+      .single(),
+  ])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <Header />
+      <main className="max-w-3xl mx-auto px-4 py-8 w-full">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-1">{tenant?.name ?? 'Wisdom Assemble'}</h1>
+          <p className="text-gray-500 text-sm">{tenant?.description}</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div className="mb-6">
+          <Link
+            href="/questions/new"
+            className="inline-block px-4 py-2 rounded font-medium text-white"
+            style={{ backgroundColor: 'var(--color-primary)' }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            + 質問する
+          </Link>
         </div>
+
+        {questions && questions.length > 0 ? (
+          <ul className="divide-y divide-gray-100">
+            {questions.map((q) => (
+              <li key={q.id}>
+                <Link
+                  href={`/questions/${q.slug}`}
+                  className="block py-4 hover:bg-gray-50 -mx-2 px-2 rounded"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{q.title}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {(q.profiles as any)?.display_name ?? (q.profiles as any)?.username} ·{' '}
+                        {new Date(q.created_at).toLocaleDateString('ja-JP')}
+                      </p>
+                    </div>
+                    <StatusBadge status={q.status} />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-center py-16 text-gray-400">
+            <p>まだ質問がありません</p>
+            <p className="text-sm mt-1">最初の質問を投稿してみましょう</p>
+          </div>
+        )}
       </main>
-    </div>
-  );
+    </>
+  )
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; className: string }> = {
+    open:        { label: '受付中',      className: 'bg-blue-50 text-blue-700' },
+    ai_answered: { label: 'AI回答済',    className: 'bg-purple-50 text-purple-700' },
+    matched:     { label: 'マッチング中', className: 'bg-yellow-50 text-yellow-700' },
+    solved:      { label: '解決済み',    className: 'bg-green-50 text-green-700' },
+    hard:        { label: '高難易度',    className: 'bg-red-50 text-red-700' },
+  }
+  const { label, className } = map[status] ?? map.open
+  return (
+    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${className}`}>
+      {label}
+    </span>
+  )
 }
