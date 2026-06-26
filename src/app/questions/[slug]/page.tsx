@@ -32,13 +32,14 @@ export default async function QuestionPage({ params }: Props) {
   const tenantId = await getTenantId()
   const supabase = await createClient()
 
-  const { data: question } = await supabase
+  const { data: question, error: qErr } = await supabase
     .from('questions')
-    .select('*, profiles(username, display_name, active_title_id)')
+    .select('*, profiles!questions_user_id_fkey(username, display_name, active_title_id)')
     .eq('tenant_id', tenantId)
     .eq('slug', slug)
-    .single()
+    .maybeSingle()
 
+  if (qErr) console.error('question fetch error:', JSON.stringify(qErr))
   if (!question) notFound()
 
   const { data: answers } = await supabase
@@ -94,7 +95,7 @@ export default async function QuestionPage({ params }: Props) {
                   >
                     <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
                       {a.is_ai ? (
-                        <span className="font-medium text-purple-700">AI (Gemini)</span>
+                        <span className="font-medium text-purple-700">AI (Groq)</span>
                       ) : (
                         <span className="font-medium text-gray-700">
                           {responder?.display_name ?? responder?.username}
@@ -116,11 +117,9 @@ export default async function QuestionPage({ params }: Props) {
         {/* ステータス表示 */}
         {question.status === 'solved' ? (
           <p className="text-center text-sm text-green-600 py-4">この質問は解決済みです</p>
-        ) : (
-          <p className="text-center text-sm text-gray-400 py-4">
-            AIが回答を生成中です...（Supabase接続後に動作します）
-          </p>
-        )}
+        ) : question.status === 'open' ? (
+          <p className="text-center text-sm text-gray-400 py-4">まだ回答がありません</p>
+        ) : null}
       </main>
     </>
   )

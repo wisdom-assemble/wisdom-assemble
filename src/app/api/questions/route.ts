@@ -60,10 +60,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '投稿に失敗しました' }, { status: 500 })
   }
 
-  // Gemini Flash で自動回答
+  // Groq で自動回答
   try {
     const aiBody = await askGemini(tenantId, `${title}\n\n${body}`)
-    const canAnswer = !aiBody.includes('わかりません')
+    const isOutOfScope = aiBody.includes('このサービスでは')
+    const canAnswer = !aiBody.includes('わかりません') && !isOutOfScope
+
+    if (isOutOfScope) {
+      // ジャンル外の質問は削除してエラーを返す
+      await supabase.from('questions').delete().eq('id', question.id)
+      return NextResponse.json(
+        { error: 'このサービスでは対象外のジャンルの質問は受け付けていません。' },
+        { status: 422 }
+      )
+    }
 
     await supabase.from('answers').insert({
       question_id: question.id,
@@ -78,7 +88,7 @@ export async function POST(request: NextRequest) {
       .eq('id', question.id)
   } catch (e) {
     // AI回答失敗しても質問投稿は成功扱い
-    console.error('Gemini error:', e)
+    console.error('Groq error:', e)
   }
 
   return NextResponse.json({ slug: question.slug })

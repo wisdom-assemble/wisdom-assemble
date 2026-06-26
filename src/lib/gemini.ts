@@ -1,6 +1,6 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY!
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GROQ_API_KEY = process.env.GROQ_API_KEY!
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const MODEL = 'llama-3.3-70b-versatile'
 
 export async function askGemini(
   tenantId: string,
@@ -8,25 +8,29 @@ export async function askGemini(
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(tenantId)
 
-  const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+  const res = await fetch(GROQ_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${GROQ_API_KEY}`,
+    },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: 'user', parts: [{ text: question }] }],
-      generationConfig: { maxOutputTokens: 1024 },
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question },
+      ],
+      max_tokens: 1024,
     }),
   })
 
   if (!res.ok) {
-    throw new Error(`Gemini API error: ${res.status}`)
+    const err = await res.text()
+    throw new Error(`Groq API error: ${res.status} ${err}`)
   }
 
   const json = await res.json()
-  const text: string =
-    json.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-
-  return text.trim()
+  return (json.choices?.[0]?.message?.content ?? '').trim()
 }
 
 function buildSystemPrompt(tenantId: string): string {

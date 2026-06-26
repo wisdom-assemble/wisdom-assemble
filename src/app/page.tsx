@@ -10,7 +10,7 @@ export default async function HomePage() {
   const [{ data: questions }, { data: tenant }] = await Promise.all([
     supabase
       .from('questions')
-      .select('id, title, slug, status, created_at, view_count, profiles(username, display_name)')
+      .select('id, title, slug, status, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .limit(50),
