@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
+import { askGemini } from '@/lib/gemini'
 
 function toSlug(text: string): string {
   return text
@@ -51,11 +52,33 @@ export async function POST(request: NextRequest) {
       slug,
       ip_address: ip,
     })
-    .select('slug')
+    .select('id, slug')
     .single()
 
   if (error) {
+    console.error('Question insert error:', error)
     return NextResponse.json({ error: '投稿に失敗しました' }, { status: 500 })
+  }
+
+  // Gemini Flash で自動回答
+  try {
+    const aiBody = await askGemini(tenantId, `${title}\n\n${body}`)
+    const canAnswer = !aiBody.includes('わかりません')
+
+    await supabase.from('answers').insert({
+      question_id: question.id,
+      tenant_id: tenantId,
+      body: aiBody,
+      is_ai: true,
+    })
+
+    await supabase
+      .from('questions')
+      .update({ status: canAnswer ? 'ai_answered' : 'open' })
+      .eq('id', question.id)
+  } catch (e) {
+    // AI回答失敗しても質問投稿は成功扱い
+    console.error('Gemini error:', e)
   }
 
   return NextResponse.json({ slug: question.slug })

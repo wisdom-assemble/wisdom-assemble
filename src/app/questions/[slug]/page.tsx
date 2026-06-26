@@ -7,7 +7,8 @@ import type { Metadata } from 'next'
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
+  const { slug: rawSlug } = await params
+  const slug = decodeURIComponent(rawSlug)
   const tenantId = await getTenantId()
   const supabase = await createClient()
 
@@ -26,7 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function QuestionPage({ params }: Props) {
-  const { slug } = await params
+  const { slug: rawSlug } = await params
+  const slug = decodeURIComponent(rawSlug)
   const tenantId = await getTenantId()
   const supabase = await createClient()
 
@@ -92,7 +94,7 @@ export default async function QuestionPage({ params }: Props) {
                   >
                     <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
                       {a.is_ai ? (
-                        <span className="font-medium text-purple-700">AI (Claude)</span>
+                        <span className="font-medium text-purple-700">AI (Gemini)</span>
                       ) : (
                         <span className="font-medium text-gray-700">
                           {responder?.display_name ?? responder?.username}
