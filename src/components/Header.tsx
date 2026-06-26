@@ -34,13 +34,7 @@ export default function Header() {
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <Link
-                href="/questions/new"
-                className="px-3 py-1.5 rounded text-white text-sm font-medium"
-                style={{ backgroundColor: 'var(--color-primary)' }}
-              >
-                質問する
-              </Link>
+              <span className="text-sm text-gray-500">{user.email}</span>
               <button
                 onClick={handleLogout}
                 className="text-gray-500 hover:text-gray-800 text-sm"
