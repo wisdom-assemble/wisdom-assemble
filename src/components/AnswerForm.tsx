@@ -26,7 +26,10 @@ export default function AnswerForm({ questionId }: Props) {
     try {
       const res = await fetch('/api/answers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': window.location.hostname.split('.')[0] === 'localhost' ? 'debug' : window.location.hostname.split('.')[0],
+        },
         body: JSON.stringify({ questionId, body }),
       })
 

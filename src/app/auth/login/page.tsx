@@ -1,29 +1,40 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTenant } from '@/components/TenantProvider'
 
 export default function LoginPage() {
   const tenant = useTenant()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   async function handleGoogleLogin() {
     setLoading(true)
     setError('')
-
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
+    if (error) { setError('Googleログインに失敗しました'); setLoading(false) }
+  }
 
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('Googleログインに失敗しました')
+      setError('メールアドレスまたはパスワードが間違っています')
       setLoading(false)
+    } else {
+      router.push('/')
     }
   }
 
@@ -53,6 +64,39 @@ export default function LoginPage() {
           </svg>
           {loading ? '処理中...' : 'Googleでログイン'}
         </button>
+
+        <div className="flex items-center gap-3 my-5">
+          <hr className="flex-1 border-gray-200" />
+          <span className="text-xs text-gray-400">または</span>
+          <hr className="flex-1 border-gray-200" />
+        </div>
+
+        {/* テスト用メール/パスワードログイン */}
+        <form onSubmit={handleEmailLogin} className="space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="メールアドレス"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="パスワード"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
+          >
+            {loading ? '処理中...' : 'メールでログイン'}
+          </button>
+        </form>
 
         <p className="text-xs text-center text-gray-400 mt-6">
           ログインすることで利用規約に同意したものとみなされます

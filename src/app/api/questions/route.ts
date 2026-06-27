@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { askWithScore, checkInScope } from '@/lib/gemini'
+import { findMatch, calcDeadline } from '@/lib/matching'
 
 function toSlug(text: string): string {
   return text
@@ -97,12 +98,19 @@ export async function POST(request: NextRequest) {
         .update({ status: 'ai_answered', ai_score: result.score })
         .eq('id', question.id)
     } else {
-      // スコアが閾値未満 → 人間へルーティング（AI回答は保存しない）
+      // スコアが閾値未満 → 人間Bにマッチング
       console.log(`[Routing] score=${result.score} → human (tenant=${tenantId})`)
+      const matchedB = await findMatch(tenantId, question.id, [user.id])
       await supabase
         .from('questions')
-        .update({ status: 'open', ai_score: result.score })
+        .update({
+          status: 'open',
+          ai_score: result.score,
+          matched_b_id: matchedB ?? null,
+          matched_b_deadline: matchedB ? calcDeadline(24) : null,
+        })
         .eq('id', question.id)
+      console.log(`[Matching] B=${matchedB ?? 'none'}`)
     }
   } catch (e) {
     console.error('Groq error:', e)

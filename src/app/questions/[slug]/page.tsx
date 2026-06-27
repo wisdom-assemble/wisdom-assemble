@@ -35,7 +35,7 @@ export default async function QuestionPage({ params }: Props) {
 
   const { data: question, error: qErr } = await supabase
     .from('questions')
-    .select('*, profiles!questions_user_id_fkey(username, display_name)')
+    .select('*, profiles!questions_user_id_fkey(username, display_name), matched_b_id, matched_b_deadline, matched_c_id, matched_c_deadline')
     .eq('tenant_id', tenantId)
     .eq('slug', slug)
     .maybeSingle()
@@ -59,8 +59,16 @@ export default async function QuestionPage({ params }: Props) {
   const isOpen = question.status === 'open'
   const isMatchedC = question.status === 'matched_c'
 
-  // 回答フォームを表示すべきか（openまたはmatched_cで未解決）
-  const showAnswerForm = (isOpen || isMatchedC) && !isSolved && user && !isOwner
+  // 期限切れチェック
+  const bExpired = question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
+  const cExpired = question.matched_c_deadline && new Date(question.matched_c_deadline) < new Date()
+
+  // マッチングされた本人かどうか
+  const isMatchedB = user?.id === question.matched_b_id && isOpen && !bExpired
+  const isMatchedCUser = user?.id === question.matched_c_id && isMatchedC && !cExpired
+
+  // 回答フォームを表示すべきか（マッチングされた本人のみ）
+  const showAnswerForm = (isMatchedB || isMatchedCUser) && !isSolved
 
   return (
     <>
@@ -139,7 +147,14 @@ export default async function QuestionPage({ params }: Props) {
           </section>
         )}
 
-        {/* 回答フォーム */}
+        {/* マッチング待ち（自分はBでもCでもない場合） */}
+        {(isOpen || isMatchedC) && !isSolved && user && !isOwner && !showAnswerForm && (
+          <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
+            現在、専門家にマッチング中です。しばらくお待ちください。
+          </div>
+        )}
+
+        {/* 回答フォーム（マッチングされた本人のみ） */}
         {showAnswerForm && (
           <section className="border-t pt-6">
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
