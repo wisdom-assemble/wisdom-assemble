@@ -32,9 +32,14 @@ export default function Header() {
           {tenant?.name ?? 'Wisdom Assemble'}
         </Link>
         <nav className="flex items-center gap-4 text-sm">
+          <Link href="/hard" className="text-gray-500 hover:text-gray-800 text-sm">
+            🔥 高難度
+          </Link>
           {user ? (
             <>
-              <span className="text-sm text-gray-500">{user.email}</span>
+              <Link href="/profile" className="text-gray-500 hover:text-gray-800 text-sm">
+                プロフィール
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-gray-500 hover:text-gray-800 text-sm"

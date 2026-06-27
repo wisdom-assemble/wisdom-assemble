@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
+import AnswerForm from '@/components/AnswerForm'
+import { AcceptButton, GiveUpButton } from '@/components/QuestionActions'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -20,10 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .single()
 
   if (!q) return {}
-  return {
-    title: q.title,
-    description: q.body.slice(0, 160),
-  }
+  return { title: q.title, description: q.body.slice(0, 160) }
 }
 
 export default async function QuestionPage({ params }: Props) {
@@ -32,9 +31,11 @@ export default async function QuestionPage({ params }: Props) {
   const tenantId = await getTenantId()
   const supabase = await createClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: question, error: qErr } = await supabase
     .from('questions')
-    .select('*, profiles!questions_user_id_fkey(username, display_name, active_title_id)')
+    .select('*, profiles!questions_user_id_fkey(username, display_name)')
     .eq('tenant_id', tenantId)
     .eq('slug', slug)
     .maybeSingle()
@@ -44,24 +45,33 @@ export default async function QuestionPage({ params }: Props) {
 
   const { data: answers } = await supabase
     .from('answers')
-    .select('*, profiles(username, display_name, active_title_id)')
+    .select('*, profiles(username, display_name)')
     .eq('question_id', question.id)
     .order('created_at', { ascending: true })
 
   // ビュー数インクリメント（fire and forget）
-  supabase
-    .from('questions')
-    .update({ view_count: question.view_count + 1 })
-    .eq('id', question.id)
+  supabase.from('questions').update({ view_count: question.view_count + 1 }).eq('id', question.id)
 
   const poster = question.profiles as any
+  const isOwner = user?.id === question.user_id
+  const isSolved = question.status === 'solved'
+  const isHard = question.status === 'hard'
+  const isOpen = question.status === 'open'
+  const isMatchedC = question.status === 'matched_c'
+
+  // 回答フォームを表示すべきか（openまたはmatched_cで未解決）
+  const showAnswerForm = (isOpen || isMatchedC) && !isSolved && user && !isOwner
 
   return (
     <>
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
+
         {/* 質問 */}
         <article className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <StatusBadge status={question.status} />
+          </div>
           <h1 className="text-xl font-bold mb-2">{question.title}</h1>
           <p className="text-xs text-gray-400 mb-4">
             {poster?.display_name ?? poster?.username} ·{' '}
@@ -72,6 +82,16 @@ export default async function QuestionPage({ params }: Props) {
             {question.body}
           </div>
         </article>
+
+        {/* 高難度クエストバナー */}
+        {isHard && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-medium text-red-800">🔥 高難度クエスト</p>
+            <p className="text-xs text-red-700 mt-1">
+              AIも人間2人も解決できなかった質問です。あなたの知識・経験で助けてください。
+            </p>
+          </div>
+        )}
 
         {/* 回答一覧 */}
         {answers && answers.length > 0 && (
@@ -107,6 +127,11 @@ export default async function QuestionPage({ params }: Props) {
                       <span>{new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
                     </div>
                     <div className="text-sm text-gray-700 whitespace-pre-wrap">{a.body}</div>
+
+                    {/* 質問者：ベストアンサーボタン */}
+                    {isOwner && !isSolved && !a.is_accepted && (
+                      <AcceptButton questionId={question.id} answerId={a.id} />
+                    )}
                   </li>
                 )
               })}
@@ -114,13 +139,52 @@ export default async function QuestionPage({ params }: Props) {
           </section>
         )}
 
-        {/* ステータス表示 */}
-        {question.status === 'solved' ? (
-          <p className="text-center text-sm text-green-600 py-4">この質問は解決済みです</p>
-        ) : question.status === 'open' ? (
-          <p className="text-center text-sm text-gray-400 py-4">まだ回答がありません</p>
-        ) : null}
+        {/* 回答フォーム */}
+        {showAnswerForm && (
+          <section className="border-t pt-6">
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+              AIが自信を持って答えられませんでした。あなたの知識・経験で助けてください。
+            </div>
+            <AnswerForm questionId={question.id} />
+            <GiveUpButton questionId={question.id} />
+          </section>
+        )}
+
+        {/* 高難度クエストの回答フォーム（全員オープン） */}
+        {isHard && user && !isOwner && (
+          <section className="border-t pt-6">
+            <AnswerForm questionId={question.id} />
+          </section>
+        )}
+
+        {isSolved && (
+          <p className="text-center text-sm text-green-600 py-4">✓ この質問は解決済みです</p>
+        )}
+
+        {/* ログインしていない場合 */}
+        {!user && (isOpen || isMatchedC || isHard) && (
+          <div className="border-t pt-6 text-center text-sm text-gray-500">
+            回答するには <a href="/auth/login" className="underline">ログイン</a> が必要です
+          </div>
+        )}
       </main>
     </>
+  )
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; className: string }> = {
+    open:        { label: '受付中',        className: 'bg-blue-50 text-blue-700' },
+    ai_answered: { label: 'AI回答済み',    className: 'bg-purple-50 text-purple-700' },
+    matched:     { label: 'マッチング中',  className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:   { label: 'C対応中',       className: 'bg-orange-50 text-orange-700' },
+    solved:      { label: '解決済み',      className: 'bg-green-50 text-green-700' },
+    hard:        { label: '🔥 高難度',     className: 'bg-red-50 text-red-700' },
+  }
+  const { label, className } = map[status] ?? map.open
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${className}`}>
+      {label}
+    </span>
   )
 }
