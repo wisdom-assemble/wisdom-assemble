@@ -13,7 +13,7 @@ export default function QuestionForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !body.trim()) return
-    if (title.trim().length < 10) { setError('タイトルは10文字以上入力してください'); return }
+    if (title.trim().length < 5) { setError('タイトルは5文字以上入力してください'); return }
     if (body.trim().length < 30) { setError('詳細は30文字以上入力してください'); return }
 
     setSubmitting(true)

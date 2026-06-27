@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
   if (!title?.trim() || !body?.trim()) {
     return NextResponse.json({ error: 'タイトルと詳細は必須です' }, { status: 400 })
   }
-  if (title.trim().length < 10) {
-    return NextResponse.json({ error: 'タイトルは10文字以上入力してください' }, { status: 400 })
+  if (title.trim().length < 5) {
+    return NextResponse.json({ error: 'タイトルは5文字以上入力してください' }, { status: 400 })
   }
   if (body.trim().length < 30) {
     return NextResponse.json({ error: '詳細は30文字以上入力してください' }, { status: 400 })
