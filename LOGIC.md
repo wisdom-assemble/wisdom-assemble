@@ -1,311 +1,286 @@
-# Wisdom Assemble - ロジック・テスト引き継ぎドキュメント
+# Wisdom Assemble - 引き継ぎドキュメント
+
+> 次のClaudeセッションはこのファイルを最初に読むこと。
+> プロジェクトの全体像・実装状況・ロードマップが全てここに集約されている。
+
+最終更新：2026/06/27
 
 ---
 
-## プロジェクト全体戦略
+## プロジェクト概要
 
-### コンセプト
-AIが答えられない・不確かな質問を、人間のエキスパートにルーティングするQ&Aサービス。
-「AI時代だからこそ必要な、AIではできないセカンドオピニオンサービス。」
-AIが普及するほどニーズが増える逆張り戦略。
+AIが答えられない・不確かな質問を、人間のエキスパートにルーティングするC2C Q&Aサービス。
 
-### ビジョン・収益ゴール
+> 「AI時代だからこそ必要な、AIではできないセカンドオピニオンサービス。AIが普及するほどニーズが増える逆張り戦略。」
+
+### 収益ゴール
 
 | 指標 | 目標 |
 |---|---|
 | サイト数 | 20サイト |
 | 1サイト月収 | 約¥10,000（ドネーション＋広告） |
 | 月収合計 | 約¥200,000 |
-| ランニングコスト | 実質¥0（ドメイン代¥133/月のみ） |
-| 純利益 | **約¥200,000/月** |
-
-### ドメイン構成（サブドメイン戦略）
-
-```
-wisdomassemble.com（メインドメイン・表に出さない）
-  ├ bug.wisdomassemble.com（バグ・デバッグ）
-  ├ legal.wisdomassemble.com（法律）
-  ├ medical.wisdomassemble.com（医療）
-  ├ tax.wisdomassemble.com（確定申告）
-  ├ ryugaku.wisdomassemble.com（留学・ワーホリ）
-  └ ...（ジャンルごとに展開）
-```
-
-### ステルスブランディング
-- Wisdom Assembleブランドは表に出さない
-- 各サブドメインを独立したサービスとして見せる
-- 各ジャンルのコミュニティ（Hacker News等）に個別投稿
-- 裏では全サイト同じエンジン・同じインフラ
-
-### 技術スタック
-
-| 役割 | 採用 | 理由 |
-|---|---|---|
-| フロント | Next.js | 既定 |
-| ホスティング | Cloudflare Pages | 商用OK・無料・サブドメイン無制限 |
-| DB・認証 | Supabase | Google認証実装済み・無料枠 |
-| AI | Groq（llama-3.3-70b） | 本番運用中 |
-| ドメイン | wisdomassemble.com | 年¥1,600 |
-
-### デザイン方針
-- Craigslist・Hacker News風（シンプル・装飾ゼロ）
-- 共通テンプレートをジャンルごとにカラー＋カテゴリだけ変えて量産
+| ランニングコスト | 実質¥0（ドメイン代のみ） |
 
 ---
 
-最終更新：2026/06/27
-このドキュメントはAIルーティングロジック・信頼度スコア・テスト手法の引き継ぎ資料。
-新ジャンル展開・担当者交代時の必読。Notionにも同内容を保管。
+## 技術スタック
+
+| 役割 | 採用 |
+|---|---|
+| フロント | Next.js 14 App Router + TypeScript |
+| DB・認証 | Supabase (PostgreSQL + RLS + Auth) |
+| AI | Groq API (llama-3.3-70b-versatile) |
+| スタイル | Tailwind CSS |
+| ホスティング | Cloudflare Pages（予定） |
+| バージョン管理 | GitHub (wisdom-assemble) |
 
 ---
 
-## サービスの核
+## マルチテナント量産戦略
 
-> 「AIが答えられないことを、善意と興味で繋がった人間に届けるサービス」
-> ランキング・ポイント制なし。クレイグリスト・2ch的なゆるさで。競争ではなくコミュニティ。
+1コードベースでサブドメインごとにジャンルを切り替える。
+**新ジャンル追加 = `src/lib/gemini.ts` の `GENRE_CONFIG` に1エントリ追加するだけ。**
 
-### UXフロー（確定仕様）
+```
+wisdomassemble.com（メイン・表に出さない）
+  ├ debug.wisdomassemble.com   → プログラミング・デバッグ（閾値87）
+  ├ tax.wisdomassemble.com     → 確定申告・税務（閾値87）
+  ├ medical.wisdomassemble.com → 医療・健康（閾値90）
+  └ ...最大20サイトまで横展開
+```
+
+ステルスブランディング：各サブドメインを独立サービスに見せる（ロゴ・カラーのみ変える）
+
+---
+
+## 質問フロー（確定仕様・UX図解準拠）
 
 ```
 質問投稿
   ↓
-① ジャンル判定（YES/NO）← AIが判定・保存前に実行
-  → NO：投稿を弾く・DBに保存しない・固定エラーメッセージ返す
+① ジャンル判定（YES/NO） ← AIが保存前に実行
+  → NO：投稿を弾く・DBに保存しない
   → YES：②へ
 
 ② AI回答生成 + 信頼度スコア（0〜100）
-  → スコア >= 閾値：AI回答を表示 → status: ai_answered
-  → スコア < 閾値：AI回答を破棄 → status: open（人間Bへルーティング）
+  → スコア >= 閾値87：AI回答を表示 → status: ai_answered
+  → スコア < 閾値87：人間Bへルーティング → status: open
 
-③ 人間Bにマッチング（スキルタグ×実績ベース）
-  → 質問者が時間制限を設定（1h / 6h / 24h）BもCも同じ制限
-  → B が回答 → 質問者が確認 → solved（アーカイブ）
-  → B がギブアップ or タイムアウト → Cへ
+③ 人間Bにマッチング（クローズド・24h制限）
+  → matched_b_id / matched_b_deadline をDBに記録
+  → B が回答 → 質問者がベストアンサー選択 → status: solved
+  → B がギブアップ or タイムアウト → Cへエスカレーション
 
-④ 人間Cにマッチング（同じ時間制限）
-  → C が回答 → 質問者が確認 → solved
+④ 人間Cにマッチング（クローズド・24h制限）
+  → matched_c_id / matched_c_deadline をDBに記録
+  → C が回答 → solved
   → C がギブアップ or タイムアウト → 高難度クエスト昇格
 
-⑤ 高難度クエストボード（時間制限なし・全員オープン）
-  → 誰でも自由に回答できる掲示板（2ch的）
-  → 解決 → solved
+⑤ 高難度クエストボード（status: hard・全員オープン・時間制限なし）
+  → 誰でも回答可。質問者がベストアンサーを選択 → solved
 ```
 
 ---
 
-## AIルーティングロジック
+## AIルーティングロジック（src/lib/gemini.ts）
 
-### ファイル
-`src/lib/gemini.ts`
-
-### 主要関数
-
-| 関数 | 役割 |
-|---|---|
-| `checkInScope(tenantId, question)` | 保存前のジャンル判定（YES/NOのみ） |
-| `askWithScore(tenantId, question)` | スコア付き回答生成 |
-| `getScoreThreshold(tenantId)` | テナント別閾値を返す |
-| `adjustScore(score, answer)` | ハルシネーション補正 |
-
-### JSONレスポンス形式（Groqから）
-
-```json
-{"score": 85, "answer": "回答本文"}
-```
-
-パース失敗時はスコア0（人間へルーティング）。
-
-### ハルシネーション補正ロジック
+### GENRE_CONFIG パターン
 
 ```typescript
-function adjustScore(score: number, answer: string): number {
-  let adjusted = score
-  if (/かもしれません|と思われます|可能性があります/.test(answer)) adjusted -= 20
+const GENRE_CONFIG = {
+  debug:   { label: 'プログラミング・デバッグ', threshold: 87, inScope: '...', outScope: '...' },
+  tax:     { label: '確定申告・税務',           threshold: 87, ... },
+  medical: { label: '医療・健康',               threshold: 90, ... },
+  // 新ジャンル追加はここに1行
+}
+function getConfig(tenantId: string) { return GENRE_CONFIG[tenantId] ?? { threshold: 87, ... } }
+```
+
+### 確定閾値（テスト③ 2026/06/27）
+
+| カテゴリ | 閾値 | 備考 |
+|---|---|---|
+| 全般 | **87** | テスト③で確定 |
+| 医療 | **90** | 命に関わる |
+| セキュリティ | **AI完全無効** | スコア問わず即人間へ |
+
+### ハルシネーション補正
+
+```typescript
+function adjustScore(score, answer) {
+  if (/かもしれません|と思われます|可能性があります/.test(answer)) score -= 20
   if (/最新の情報|私の知識.*まで|確認.*ください/.test(answer)) return 0
-  if (answer.length > 500) adjusted -= 10
-  return Math.max(0, adjusted)
+  if (answer.length > 500) score -= 10
+  return Math.max(0, score)
 }
 ```
 
+追加ルール：
+- 「本番〜」「突然〜」「インシデント」を含む質問 → adjustScore -20
+- セキュリティカテゴリ → AI完全無効（dangerKeywords で検知）
+
 ---
 
-## 閾値（テスト③で決定予定）
+## マッチングロジック（src/lib/matching.ts）
 
-### 現在の暫定値
+```typescript
+findMatch(tenantId, questionId, excludeUserIds[])
+  → 質問本文にスキルタグが含まれる数 × 20
+  → + answer_count × 0.1
+  → スコア上位者を選出（is_available=true・除外リスト適用）
 
-| ジャンル | tenantId | 現在の閾値 | テスト③推奨 | 理由 |
-|---|---|---|---|---|
-| プログラミング・デバッグ | debug | 70 | **85** | 70は危険（嘘が通る） |
-| 確定申告（税務） | tax | 85 | 90 | 間違いが直接損害 |
-| 医療 | medical | 90 | 90 | 命に関わる |
-| ワーホリ・留学 | workingholiday | 65 | 65 | 人間の経験談が価値高い |
-| 移住情報 | migration | 65 | 65 | 最新情報は人間が正確 |
-| DTM・音楽制作 | dtm | 75 | 80 | 技術×クリエイティブ混在 |
+calcDeadline(hours)
+  → 現在時刻 + hours をISO文字列で返す
+```
 
-**✅ 閾値87で運用開始（2026/06/27 テスト③結果を受けて確定）**
+---
 
-### カテゴリ別確定閾値（テスト③結果：2026/06/27）
+## DBスキーマ（主要テーブル）
 
-| カテゴリ | 確定閾値 | 根拠 |
+### questions
+```
+id, tenant_id, user_id, title, body, slug
+status: open | ai_answered | matched_c | hard | solved
+ai_score, view_count, solved_at, solved_by
+matched_b_id, matched_b_deadline   ← 20260627000002で追加
+matched_c_id, matched_c_deadline   ← 同上
+time_limit_hours
+```
+
+### answers
+```
+id, question_id, tenant_id, user_id
+body, is_ai, ai_score, is_accepted
+created_at
+```
+
+### profiles
+```
+id (= auth.users.id)
+username, display_name, bio, avatar_url
+skill_tags[]    ← 20260627000001で追加
+is_available    ← 同上
+answer_count    ← 同上（increment_answer_count()で更新）
+```
+
+### マイグレーション適用済み
+- `20260627000001_phase_a.sql` ← skill_tags, is_available, answer_count
+- `20260627000002_matching.sql` ← matched_b/c_id, deadline, RLS更新
+
+---
+
+## 実装状況（2026/06/27 現在）
+
+### ✅ 完了
+
+**Phase 0（基盤）**
+- ジャンル判定・AI回答生成・信頼度スコア
+- 質問投稿・一覧・詳細ページ
+- Google認証 + メール/パスワード認証（テスト用）
+- AnswerForm（x-tenant-idヘッダー付き）
+
+**Phase A（マッチング）**
+- ベストアンサーボタン（`/api/answers/accept`）
+- B→C→高難度クエストのクローズドマッチング（`/api/questions/[id]/escalate`）
+- プロフィールページ（スキルタグ・稼働状態）（`/profile`）
+- 高難度クエストボード（`/hard`）
+- タイトル最低文字数：5文字（英語対応）
+
+### ❌ 未実装（フェーズB・C）
+
+**フェーズB（公開前に必須）**
+- チュートリアルページ（ヘッダーに追加・仕組みの説明）
+- お問い合わせフォーム + プライバシーポリシー
+- 管理者ダッシュボード（`/admin`・質問削除・ユーザーBAN）
+- 自分の質問一覧（マイページ or プロフィールに統合）
+- キーワード検索（title/body の LIKE 検索）
+- 質問一覧ページネーション（現在50件固定）
+
+**フェーズC（公開後）**
+- 回答フィードバックボタン（役に立った/立たなかった）
+- 重複質問チェック（pgvector + Embedding）
+- 称号システム
+- 通知システム（メール/プッシュ）
+- 多言語対応
+- Cloudflare Pages デプロイ
+
+---
+
+## テスト履歴
+
+| テスト | スクリプト | 結果 | Notion |
+|---|---|---|---|
+| ③ 閾値決定（100問×3回） | `scripts/threshold-test-100.ts` | 閾値87確定 | `38bf5fa8-bcb9-80f1-bede-f2876b7ef115` |
+| ④ AIユーザーRPG（100問） | `scripts/rpg-simulation-v4.ts` | B→C→hard フロー検証 | `38bf5fa8-bcb9-80e6-85d7-dd26c7b40883` |
+| ⑤ ローカル実サイトRPG（100問） | `scripts/local-rpg-test.ts` | 実DB書き込み検証 | `38cf5fa8-bcb9-817a-a247-d57f828700d5` |
+
+### テスト⑤ 結果サマリー（2026/06/27）
+
+| 解決経路 | 件数 | 割合 |
 |---|---|---|
-| React / Next.js | **85** | 安定。easy=90+ / hard=70以下に自然分離 |
-| TypeScript | **85** | 安定。Q20(decorators)のみ不安定(avg13) |
-| SQL / DB設計 | **85** | easy/mediumは高スコア安定。本番障害系は別処理 |
-| Docker / インフラ | **85** | 全体的に安定 |
-| AWS / クラウド | **88** | CORS±23不安定あり。Lambda本番障害は除外 |
-| Supabase | **85** | Q61(RLS本番)が極不安定(avg42,±30) → 本番系は除外 |
-| CSS / UI | **83** | 全体的に中スコア帯 |
-| Python / AI | **85** | asyncio安定。本番segfault/PyTorchは除外 |
-| **セキュリティ** | **AI完全無効** | Q83(インシデント)がスコア98.7で通過。スコア問わず即人間へ |
+| AI解決 | 46問 | 46% |
+| 人間B解決 | 25問 | 25% |
+| 人間C解決 | 8問 | 8% |
+| 高難度クエスト | 21問 | 21% |
 
-### テスト③で発見した追加ルール
+カテゴリ別高難度率：Git 88% / Node.js 75% / Supabase 33% / セキュリティ 33%
+※Git/Node.jsはnotifyCount上限（5回）に達したため候補なしが多発。次回テストは上限を緩和する。
+
+---
+
+## 主要ファイル構成
 
 ```
-⛔ セキュリティカテゴリ → AI回答を完全無効化（スコア問わず即人間へ）
-⛔ 「本番〜」「突然〜」「インシデント」を含む質問 → adjustScore -20 追加
-⛔ stddev > 15 の問題 → スコアが閾値を超えても人間へルーティング
+src/
+  app/
+    api/
+      questions/route.ts              # 質問投稿・AI判定・マッチングB選出
+      questions/[id]/escalate/route.ts # ギブアップ→C→hard エスカレーション
+      answers/route.ts                # 回答投稿
+      answers/accept/route.ts         # ベストアンサー選択
+    questions/[slug]/page.tsx         # 質問詳細（マッチング制御）
+    hard/page.tsx                     # 高難度クエスト一覧
+    profile/page.tsx                  # プロフィール（スキルタグ・稼働設定）
+    auth/login/page.tsx               # メール/パスワードログイン
+  lib/
+    gemini.ts                         # GENRE_CONFIG・askWithScore
+    matching.ts                       # findMatch・calcDeadline
+    tenant.ts                         # テナントID取得
+  components/
+    QuestionActions.tsx               # AcceptButton・GiveUpButton
+    AnswerForm.tsx                    # 回答フォーム
+    Header.tsx                        # ヘッダー
+supabase/migrations/
+  20260627000001_phase_a.sql
+  20260627000002_matching.sql
+scripts/
+  create-test-users.ts               # 12ペルソナ作成（password: test1234）
+  local-rpg-test.ts                  # テスト⑤（実DB版RPGテスト）
+  rpg-simulation-v4.ts               # テスト④（純シミュレーション版）
+  fix-profiles.ts                    # profilesレコード手動作成
 ```
 
-### 危険だった6件（閾値85時点）
+---
 
-| 問題 | avg | 理由 |
+## テストユーザー（12ペルソナ）
+
+全員パスワード: `test1234`
+
+| email | 名前 | スキルタグ |
 |---|---|---|
-| Q28 PostgreSQLデッドロック | 89.0 | 本番障害。人間専門家必要 |
-| Q32 外部キー制約エラー大量発生 | 95.7 | 本番DB停止レベル |
-| Q38 KubernetesのPodがRestart | 88.3 | 本番インフラ障害 |
-| Q48 RDS Too many connections | 86.7 | 本番DB接続障害 |
-| Q52 SQSメッセージ重複処理 | 90.0 | 本番データ整合性問題 |
-| **Q83 不審アクセス検知** | **98.7** | **最危険。セキュリティインシデントにAIが自信満々回答** |
-
----
-
-## テスト③：閾値決定テスト（100問×3回）
-
-### 目的
-AIスコアのブレを3回平均で吸収し、カテゴリ別の推奨閾値をデータで決定する。
-
-### スクリプト
-`scripts/threshold-test-100.ts`
-
-```bash
-npx tsx scripts/threshold-test-100.ts
-# 所要時間：約10〜12分（間隔1.5秒×100問×3回）
-```
-
-### 質問構成（100問）
-
-| カテゴリ | easy（正解明確） | medium（環境依存） | hard（情報不足） | 計 |
-|---|---|---|---|---|
-| React / Next.js | 5 | 5 | 5 | 15 |
-| TypeScript | 3 | 3 | 2 | 8 |
-| SQL / DB設計 | 3 | 4 | 3 | 10 |
-| Docker / インフラ | 3 | 4 | 3 | 10 |
-| AWS / クラウド | 2 | 3 | 5 | 10 |
-| Supabase / 認証 | 2 | 3 | 3 | 8 |
-| CSS / UI | 3 | 4 | 2 | 9 |
-| Python / AI | 3 | 3 | 2 | 8 |
-| セキュリティ | 2 | 2 | 6 | 10 |
-| Git / CI/CD | 3 | 3 | 2 | 8 |
-| Node.js | 2 | 2 | 0 | 4 |
-
-### 出力先
-Notion：`38bf5fa8-bcb9-80f1-bede-f2876b7ef115`（ロジック・テスト③ 閾値決めのテスト）
-
-### JSONパース問題とその対策
-Groqがレート制限に達するとJSONではなく空文字や別形式で返す。
-→ 対策：再試行1回 + リクエスト間隔1.5秒 + スコア0をスキップせず記録
-
-### 判定基準
-
-| 期待値 | 意味 |
-|---|---|
-| correct | 正解が明確。AIが高スコアで答えるべき |
-| partial | 環境依存・部分回答。中スコアが適切 |
-| needs_human | 情報不足・本番インシデント。低スコアで人間へ |
-
----
-
-## テスト④：AIユーザーRPG（100問）
-
-### 目的
-12人のAIペルソナが質問者・回答者として入り乱れ、マッチングシステムが現実に近い動きをするかを検証する。
-
-### スクリプト
-`scripts/rpg-simulation-v4.ts`（作成予定）
-
-### フロー
-```
-① ペルソナがテスト③と同じ100問から質問（ランダム割り当て）
-② AIが回答を試みる（askWithScore, 閾値はテスト③の結果を使用）
-   → AI解決 → アーカイブ
-   → 人間へ → ③
-③ スキルマッチングでBを選ぶ（質問者は除外）
-   → 時間制限（ペルソナ別：1h/6h/24h）
-   → 回答 or ギブアップ → ④
-④ Cへ（同じ時間制限）
-   → 回答 or ギブアップ / タイムアウト → 高難度クエスト
-⑤ 高難度クエストボード（全員オープン）
-```
-
-### 12ペルソナ
-
-| ID | 名前 | クラス | 得意 | 時間制限 |
-|---|---|---|---|---|
-| takeshi | Takeshi | 古参魔法使い | C/Linux/低レイヤー | 24h |
-| yuki | Yuki | フロント妖精 | React/CSS/TypeScript | 6h |
-| ryo | Ryo | DB番人 | SQL/PostgreSQL | 24h |
-| mia | Mia | クラウド騎士 | AWS/Docker/DevOps | 6h |
-| shin | Shin | 見習い修行者 | Python基礎のみ | 24h |
-| hana | Hana | セキュリティ巫女 | 認証/JWT/OAuth | 6h |
-| ken | Ken | モバイル侍 | Swift/iOS/ReactNative | 6h |
-| aoi | Aoi | AI錬金術師 | Python/ML/LLM | 24h |
-| taro | Taro | 何でも屋（浅い） | 広く浅く | 1h |
-| noa | Noa | タイムトラベラー | PHP/jQuery/古いJS | 24h |
-| john | John | 野心家ハッカー | 全般（自称） | 1h（途中参加） |
-| anthony | Anthony | ソーシャルエンジニア | コミュ/説明力 | 6h（途中参加） |
-
-### 出力先
-Notion：`38bf5fa8-bcb9-80e6-85d7-dd26c7b40883`（ロジックテスト④ AIユーザーRPG）
-
----
-
-## 仕様の調整弁（確定）
-
-| 調整弁 | ユーザー/システム | 内容 |
-|---|---|---|
-| スキルタグ | 任意・ユーザー | 入れると呼ばれやすくなる。善意の自己表明 |
-| 回答ステータス | 任意・ユーザー | 今日は答えられます / 休憩中 |
-| 時間制限 | 任意・質問者 | 1h/6h/24h。BもCも同じ制限 |
-| 通知上限 | システム | 1日最大5通知。集中させない |
-| ギブアップ自由 | 設計思想 | ペナルティなし |
-| 称号のみ・スコア非表示 | 設計思想 | 競争させない |
-| 高難度クエストボード | 全員オープン | 2ch的・誰でも回答可 |
-
----
-
-## 実装状況（2026/06/27）
-
-### 完了
-- ✅ ジャンル判定（YES/NO）
-- ✅ Groqで回答生成（llama-3.3-70b-versatile）
-- ✅ 信頼度スコア（0〜100）
-- ✅ ハルシネーション補正（adjustScore）
-- ✅ 最低文字数バリデーション（タイトル10文字・本文30文字）
-- ✅ 人間回答フォーム（AnswerForm）
-- ✅ 人間回答API（/api/answers）
-- ✅ ジャンル外質問をDB保存しない
-- ✅ シミュレーションv3（スキルマッチング＋時間制限）
-
-### 未実装（優先順）
-- ✅ 閾値87に変更（2026/06/27確定）
-- ✅ 質問者が解決確認するUI（ベストアンサーボタン）`/api/answers/accept`
-- ✅ B→C→高難度クエストの本番実装 `/api/questions/[id]/escalate`
-- ✅ プロフィールページ（ニックネーム・スキルタグ・回答ステータス）`/profile`
-- ✅ 高難度クエストボードUI `/hard`
-- ❌ 称号システム
-- ❌ 通知システム
-- ❌ 検索機能
-- ❌ マイグレーション本番適用（`20260627000001_phase_a.sql`）
+| takeshi@test.com | Takeshi | Linux, セキュリティ |
+| yuki@test.com | Yuki | React, CSS, TypeScript |
+| ryo@test.com | Ryo | SQL, PostgreSQL |
+| mia@test.com | Mia | AWS, Docker |
+| shin@test.com | Shin | Python |
+| hana@test.com | Hana | セキュリティ, Supabase |
+| ken@test.com | Ken | React, JavaScript |
+| aoi@test.com | Aoi | Python, AWS |
+| taro@test.com | Taro | JavaScript, React, Python, SQL |
+| noa@test.com | Noa | JavaScript |
+| john@test.com | John | React, Node.js, TypeScript, AWS, Docker, SQL |
+| anthony@test.com | Anthony | React, TypeScript, Node.js |
 
 ---
 
@@ -313,25 +288,26 @@ Notion：`38bf5fa8-bcb9-80e6-85d7-dd26c7b40883`（ロジックテスト④ AIユ
 
 | ページ名 | page_id |
 |---|---|
-| ロジック・テスト各種 | `38bf5fa8-bcb9-80cb-a315-c0dc194c6fdc` |
-| **ロジック・テスト③ 閾値決めのテスト** | `38bf5fa8-bcb9-80f1-bede-f2876b7ef115` |
-| **ロジックテスト④ AIユーザーRPG** | `38bf5fa8-bcb9-80e6-85d7-dd26c7b40883` |
-| UX図解 | `38bf5fa8-bcb9-8051-930d-cbb36ef40855` |
-| プロジェクト仕様書（第一校） | `38af5fa8-bcb9-8065-9ccb-c55550c8d4ed` |
+| 開発まとめ（親） | `38bf5fa8-bcb9-80cb-a315-c0dc194c6fdc` |
+| 開発仕様書（現行） | `38cf5fa8-bcb9-8160-9701-d619e8c5841b` |
+| プロジェクト仕様書（初期コンセプト） | `38af5fa8-bcb9-8065-9ccb-c55550c8d4ed` |
 | バグトラック | `38af5fa8-bcb9-802c-862b-dd515be9f586` |
 | 開発ログ | `38af5fa8-bcb9-80d1-ac24-d3b3478d0fde` |
+| テスト③ 閾値決定 | `38bf5fa8-bcb9-80f1-bede-f2876b7ef115` |
+| テスト④ AIユーザーRPG | `38bf5fa8-bcb9-80e6-85d7-dd26c7b40883` |
+| テスト⑤ ローカル実サイトRPG | `38cf5fa8-bcb9-817a-a247-d57f828700d5` |
+| UX図解 | `38bf5fa8-bcb9-8051-930d-cbb36ef40855` |
 
 ---
 
-## スクリプト一覧
+## Supabase
 
-| ファイル | 役割 |
-|---|---|
-| `scripts/threshold-test-100.ts` | テスト③：100問×3回で閾値決定 |
-| `scripts/rpg-simulation.ts` | テスト①②（旧版） |
-| `scripts/ai-accuracy-test.ts` | テスト③の前身（10問版） |
-| `scripts/rpg-simulation-v4.ts` | テスト④：AIユーザーRPG（作成予定） |
-| `src/lib/gemini.ts` | AIルーティングのコアロジック |
-| `src/app/api/questions/route.ts` | 質問投稿API（スコア判定含む） |
-| `src/app/api/answers/route.ts` | 人間回答投稿API |
-| `src/components/AnswerForm.tsx` | 人間回答フォームUI |
+- URL: `https://scnkpmxvtwtsxzbhfdnf.supabase.co`
+- service_role権限付与済み: questions / answers / profiles（SELECT, INSERT, UPDATE）
+- RLSポリシー: questions/answers は `using (true)` で全員読み取り可
+
+## 次のセッションでやること
+
+1. バグトラック・開発ログをNotionに記載
+2. フェーズB実装開始（チュートリアル → 管理ダッシュボード → 検索）
+3. テスト⑤ 再実行（notifyCount上限を10に緩和してから）

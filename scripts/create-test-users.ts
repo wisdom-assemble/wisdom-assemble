@@ -8,9 +8,18 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 })
 
 const TEST_USERS = [
-  { email: 'ryo@test.com',  password: 'test1234', display_name: 'Ryo',  skill_tags: ['SQL', 'PostgreSQL'] },
-  { email: 'yuki@test.com', password: 'test1234', display_name: 'Yuki', skill_tags: ['React', 'CSS', 'TypeScript'] },
-  { email: 'mia@test.com',  password: 'test1234', display_name: 'Mia',  skill_tags: ['AWS', 'Docker'] },
+  { email: 'takeshi@test.com', password: 'test1234', display_name: 'Takeshi', skill_tags: ['Linux', 'セキュリティ'] },
+  { email: 'ryo@test.com',     password: 'test1234', display_name: 'Ryo',     skill_tags: ['SQL', 'PostgreSQL'] },
+  { email: 'mia@test.com',     password: 'test1234', display_name: 'Mia',     skill_tags: ['AWS', 'Docker'] },
+  { email: 'shin@test.com',    password: 'test1234', display_name: 'Shin',    skill_tags: ['Python'] },
+  { email: 'hana@test.com',    password: 'test1234', display_name: 'Hana',    skill_tags: ['セキュリティ', 'Supabase'] },
+  { email: 'ken@test.com',     password: 'test1234', display_name: 'Ken',     skill_tags: ['React', 'JavaScript'] },
+  { email: 'aoi@test.com',     password: 'test1234', display_name: 'Aoi',     skill_tags: ['Python', 'AWS'] },
+  { email: 'taro@test.com',    password: 'test1234', display_name: 'Taro',    skill_tags: ['JavaScript', 'React', 'Python', 'SQL'] },
+  { email: 'noa@test.com',     password: 'test1234', display_name: 'Noa',     skill_tags: ['JavaScript'] },
+  { email: 'john@test.com',    password: 'test1234', display_name: 'John',    skill_tags: ['React', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'SQL'] },
+  { email: 'anthony@test.com', password: 'test1234', display_name: 'Anthony', skill_tags: ['React', 'TypeScript', 'Node.js'] },
+  { email: 'yuki@test.com',    password: 'test1234', display_name: 'Yuki',    skill_tags: ['React', 'CSS', 'TypeScript'] },
 ]
 
 async function main() {
