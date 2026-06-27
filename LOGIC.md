@@ -168,9 +168,16 @@ answer_count    ← 同上（increment_answer_count()で更新）
 - `20260627000001_phase_a.sql` ← skill_tags, is_available, answer_count
 - `20260627000002_matching.sql` ← matched_b/c_id, deadline, RLS更新
 
+### service_role権限（付与済み）
+```sql
+grant select, insert, update, delete on public.questions to service_role;
+grant select, insert, update, delete on public.answers to service_role;
+grant select, insert, update on public.profiles to service_role;
+```
+
 ---
 
-## 実装状況（2026/06/27 現在）
+## 実装状況（2026/06/28 現在）
 
 ### ✅ 完了
 
@@ -186,24 +193,51 @@ answer_count    ← 同上（increment_answer_count()で更新）
 - プロフィールページ（スキルタグ・稼働状態）（`/profile`）
 - 高難度クエストボード（`/hard`）
 - タイトル最低文字数：5文字（英語対応）
+- 質問一覧の表示上限：200件に変更（元50件）
 
-### ❌ 未実装（フェーズB・C）
+**Phase B（公開前必須）**
+- チュートリアルページ（`/how-it-works`・ヘッダーに「使い方」追加）
+- お問い合わせフォーム（`/contact`・mailto方式）
+- プライバシーポリシー（`/privacy`）
+- 管理者ダッシュボード（`/admin`・質問削除・ユーザーBAN・wisdomassemble@gmail.comのみ）
+  - `20260628000001_phase_b.sql`：`profiles.is_banned` カラム追加
+- マイページに「投稿した質問」タブ追加（`/profile`）
+- キーワード検索（title/body の ILIKE 検索）
+- 質問一覧ページネーション（20件/ページ・URLパラメータ `?q=&page=`）
+- バグ修正：マッチング候補なし時に `open` で止まる問題 → B候補なし→C探索→Cもなし→即`hard`昇格
 
-**フェーズB（公開前に必須）**
-- チュートリアルページ（ヘッダーに追加・仕組みの説明）
-- お問い合わせフォーム + プライバシーポリシー
-- 管理者ダッシュボード（`/admin`・質問削除・ユーザーBAN）
-- 自分の質問一覧（マイページ or プロフィールに統合）
-- キーワード検索（title/body の LIKE 検索）
-- 質問一覧ページネーション（現在50件固定）
+### ❌ 未実装（フェーズC）
 
 **フェーズC（公開後）**
 - 回答フィードバックボタン（役に立った/立たなかった）
+- 人間回答の最低文字数バリデーション（No.17：空回答防止）
+- `time_limit_hours` カラム・UIの削除（24h固定化）
 - 重複質問チェック（pgvector + Embedding）
 - 称号システム
 - 通知システム（メール/プッシュ）
 - 多言語対応
 - Cloudflare Pages デプロイ
+
+---
+
+## 仕様確定事項（2026/06/27）
+
+### 時間制限
+- 質問者が時間を選ぶ機能は**廃止**
+- システム固定24h（確定）で自動エスカレーション（テスト⑥で決定）
+- `time_limit_hours`カラム・UIは次セッション以降で削除予定（フェーズC）
+
+### マッチングの思想（絶対に変えない）
+- マッチングで「繋がり」を作るのがこのサービスの核心
+- 高難度クエストはあくまで最後の手段
+- いきなり全公開にする抜け道は作らない（普通の掲示板と差別化できなくなる）
+
+### notifyCount（通知上限）
+- **本番サービス：5**（1日5回まで・それ以上はユーザーが離脱する）
+- **テスト用：10〜20**（シミュレーションで候補なし多発を防ぐため）
+
+### ユーザー属性検索
+- 回答者をスキルで検索する機能は**不要**（マッチングシステムが代替するため）
 
 ---
 
@@ -214,6 +248,7 @@ answer_count    ← 同上（increment_answer_count()で更新）
 | ③ 閾値決定（100問×3回） | `scripts/threshold-test-100.ts` | 閾値87確定 | `38bf5fa8-bcb9-80f1-bede-f2876b7ef115` |
 | ④ AIユーザーRPG（100問） | `scripts/rpg-simulation-v4.ts` | B→C→hard フロー検証 | `38bf5fa8-bcb9-80e6-85d7-dd26c7b40883` |
 | ⑤ ローカル実サイトRPG（100問） | `scripts/local-rpg-test.ts` | 実DB書き込み検証 | `38cf5fa8-bcb9-817a-a247-d57f828700d5` |
+| ⑥ AIペルソナ意見収集＋RPG（50問） | `scripts/test6-rpg.ts` | → 下記参照 | `38cf5fa8-bcb9-8193-9028-cde3ebdd98e6` |
 
 ### テスト⑤ 結果サマリー（2026/06/27）
 
@@ -225,7 +260,22 @@ answer_count    ← 同上（increment_answer_count()で更新）
 | 高難度クエスト | 21問 | 21% |
 
 カテゴリ別高難度率：Git 88% / Node.js 75% / Supabase 33% / セキュリティ 33%
-※Git/Node.jsはnotifyCount上限（5回）に達したため候補なしが多発。次回テストは上限を緩和する。
+※Git/Node.jsはnotifyCount上限（5回）に達したため候補なしが多発。
+
+### テスト⑥ 結果サマリー（2026/06/28）
+
+テスト条件：パートA（12ペルソナ時間制限意見収集） + パートB（47問・notifyCount=10・AI閾値87）
+
+| 解決経路 | 件数 | 割合 |
+|---|---|---|
+| AI解決 | 4問 | 9% |
+| 人間B解決 | 25問 | 53% |
+| 人間C解決 | 8問 | 17% |
+| 高難度クエスト | 10問 | 21% |
+
+※AI解決率9%はGroq rate limitでスコアが0になった影響。実際はテスト⑤の46%に近い数値になるはず。
+※notifyCount=10にしたことでGit/Node.jsの「候補なし」は大幅に解消。
+※パートA時間制限意見収集：平均理想時間11h、分布は1h×1人・2h×3人・6h×4人・24h×4人。
 
 ---
 
@@ -256,9 +306,11 @@ supabase/migrations/
   20260627000002_matching.sql
 scripts/
   create-test-users.ts               # 12ペルソナ作成（password: test1234）
-  local-rpg-test.ts                  # テスト⑤（実DB版RPGテスト）
+  fix-profiles.ts                    # profilesレコード手動作成（初回セットアップ用）
+  local-rpg-test.ts                  # テスト⑤（実DB版RPGテスト・100問）
+  test6-rpg.ts                       # テスト⑥（パートA意見収集＋パートBRPG・50問）
   rpg-simulation-v4.ts               # テスト④（純シミュレーション版）
-  fix-profiles.ts                    # profilesレコード手動作成
+  count-hard.ts                      # 高難度クエスト件数確認ユーティリティ
 ```
 
 ---
@@ -304,44 +356,17 @@ scripts/
 ## Supabase
 
 - URL: `https://scnkpmxvtwtsxzbhfdnf.supabase.co`
-- service_role権限付与済み: questions / answers / profiles（SELECT, INSERT, UPDATE）
+- service_role権限付与済み: questions / answers / profiles（SELECT, INSERT, UPDATE, DELETE）
 - RLSポリシー: questions/answers は `using (true)` で全員読み取り可
-
-## 仕様確定事項（2026/06/27）
-
-### 時間制限
-- 質問者が時間を選ぶ機能は**廃止**
-- システム固定24h（仮）で自動エスカレーション
-- 「急ぎだから高難度へ」ボタンも不要（マッチングの輪を壊すため）
-- **24hが適切かはテスト⑥でAIペルソナから意見収集して決定する**
-- `time_limit_hours`カラム・投稿時の時間選択UIは次セッションで削除
-
-### マッチングの思想（絶対に変えない）
-- マッチングで「繋がり」を作るのがこのサービスの核心
-- 高難度クエストはあくまで最後の手段
-- いきなり全公開にする抜け道は作らない（普通の掲示板と差別化できなくなる）
-
----
-
-## テスト⑥ 計画
-
-### 目的
-- AIペルソナ12人に「何時間待てるか・何時間以内に答えられるか」を質問者・回答者それぞれの立場で聞く
-- 時間制限の最適値をデータで決定する
-- notifyCount上限を5→20に緩和して、Git/Node.jsの候補なし多発を解消
-
-### Notionページ
-`38cf5fa8-bcb9-8193-9028-cde3ebdd98e6`
-
-### テスト前に実装すべきこと
-- [ ] notifyCount上限を5→20に変更（scripts/local-rpg-test.ts）
-- [ ] 質問投稿時の時間選択UIを削除
-- [ ] time_limit_hoursをシステム固定に変更
 
 ---
 
 ## 次のセッションでやること
 
-1. バグトラック・開発ログをNotionに記載
-2. テスト⑥用Notionページ作成・実装・実行
-3. フェーズB実装開始（チュートリアル → 管理ダッシュボード → 検索）
+1. **フェーズCの優先度高いものから着手**
+   - 人間回答の最低文字数バリデーション（AnswerForm.tsx + `/api/answers/route.ts`・20文字以上）
+   - `time_limit_hours` カラム・UIの削除（24h固定化・マイグレーション作成）
+2. **Cloudflare Pages デプロイ準備**（本番公開に向けた環境設定）
+3. **Notion更新**（開発ログ・バグトラックに本セッション分を追記）
+   - バグトラック: `38af5fa8-bcb9-802c-862b-dd515be9f586`
+   - 開発ログ: `38af5fa8-bcb9-80d1-ac24-d3b3478d0fde`

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
 
@@ -11,10 +12,22 @@ const SKILL_OPTIONS = [
   'AWS', 'Supabase', 'Git', 'Linux', 'セキュリティ',
 ]
 
+const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  open:        { label: '受付中',      className: 'bg-blue-50 text-blue-700' },
+  ai_answered: { label: 'AI回答済',    className: 'bg-purple-50 text-purple-700' },
+  matched:     { label: 'マッチング中', className: 'bg-yellow-50 text-yellow-700' },
+  matched_c:   { label: 'C対応中',     className: 'bg-orange-50 text-orange-700' },
+  solved:      { label: '解決済み',    className: 'bg-green-50 text-green-700' },
+  hard:        { label: '🔥高難度',    className: 'bg-red-50 text-red-700' },
+}
+
+type Tab = 'profile' | 'myquestions'
+
 export default function ProfilePage() {
   const supabase = createClient()
   const router = useRouter()
 
+  const [tab, setTab] = useState<Tab>('profile')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [displayName, setDisplayName] = useState('')
@@ -22,17 +35,26 @@ export default function ProfilePage() {
   const [isAvailable, setIsAvailable] = useState(true)
   const [stats, setStats] = useState({ answerCount: 0, hardQuestCount: 0 })
   const [message, setMessage] = useState('')
+  const [myQuestions, setMyQuestions] = useState<any[]>([])
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth/login'); return }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name, skill_tags, is_available, answer_count, hard_quest_count')
-        .eq('id', user.id)
-        .maybeSingle()
+      const [{ data: profile }, { data: questions }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count')
+          .eq('id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('questions')
+          .select('id, title, slug, status, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(100),
+      ])
 
       if (profile) {
         setDisplayName(profile.display_name ?? '')
@@ -40,6 +62,7 @@ export default function ProfilePage() {
         setIsAvailable(profile.is_available ?? true)
         setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
       }
+      setMyQuestions(questions ?? [])
       setLoading(false)
     }
     load()
@@ -72,10 +95,10 @@ export default function ProfilePage() {
     <>
       <Header />
       <main className="max-w-xl mx-auto px-4 py-8 w-full">
-        <h1 className="text-xl font-bold mb-6">プロフィール</h1>
+        <h1 className="text-xl font-bold mb-4">マイページ</h1>
 
         {/* 実績 */}
-        <div className="flex gap-6 mb-8 p-4 bg-gray-50 rounded-lg">
+        <div className="flex gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-800">{stats.answerCount}</p>
             <p className="text-xs text-gray-500 mt-1">解決した質問</p>
@@ -84,77 +107,142 @@ export default function ProfilePage() {
             <p className="text-2xl font-bold text-gray-800">{stats.hardQuestCount}</p>
             <p className="text-xs text-gray-500 mt-1">高難度クエスト</p>
           </div>
-        </div>
-
-        {/* 表示名 */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={e => setDisplayName(e.target.value)}
-            placeholder="例：田中太郎"
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
-          />
-        </div>
-
-        {/* 回答ステータス */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">回答ステータス</label>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsAvailable(true)}
-              className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${
-                isAvailable ? 'bg-green-50 border-green-400 text-green-700' : 'bg-white border-gray-300 text-gray-500'
-              }`}
-            >
-              ✓ 今日は答えられます
-            </button>
-            <button
-              onClick={() => setIsAvailable(false)}
-              className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${
-                !isAvailable ? 'bg-gray-100 border-gray-400 text-gray-700' : 'bg-white border-gray-300 text-gray-500'
-              }`}
-            >
-              休憩中
-            </button>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-gray-800">{myQuestions.length}</p>
+            <p className="text-xs text-gray-500 mt-1">投稿した質問</p>
           </div>
         </div>
 
-        {/* スキルタグ */}
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            得意なこと <span className="text-gray-400 font-normal">（選ぶと質問が届きやすくなります）</span>
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {SKILL_OPTIONS.map(skill => (
-              <button
-                key={skill}
-                onClick={() => toggleSkill(skill)}
-                className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                  skills.includes(skill)
-                    ? 'bg-gray-800 border-gray-800 text-white'
-                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
-                }`}
-              >
-                {skill}
-              </button>
-            ))}
-          </div>
+        {/* タブ */}
+        <div className="flex gap-4 border-b mb-6">
+          <button
+            onClick={() => setTab('profile')}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'profile' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            プロフィール設定
+          </button>
+          <button
+            onClick={() => setTab('myquestions')}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'myquestions' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            投稿した質問 ({myQuestions.length})
+          </button>
         </div>
 
-        <button
-          onClick={save}
-          disabled={saving}
-          className="w-full py-2 rounded font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
-        >
-          {saving ? '保存中...' : '保存する'}
-        </button>
+        {tab === 'profile' && (
+          <div className="space-y-6">
+            {/* 表示名 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="例：田中太郎"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+              />
+            </div>
 
-        {message && (
-          <p className={`mt-3 text-sm text-center ${message.includes('失敗') ? 'text-red-500' : 'text-green-600'}`}>
-            {message}
-          </p>
+            {/* 回答ステータス */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">回答ステータス</label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsAvailable(true)}
+                  className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${
+                    isAvailable ? 'bg-green-50 border-green-400 text-green-700' : 'bg-white border-gray-300 text-gray-500'
+                  }`}
+                >
+                  ✓ 今日は答えられます
+                </button>
+                <button
+                  onClick={() => setIsAvailable(false)}
+                  className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${
+                    !isAvailable ? 'bg-gray-100 border-gray-400 text-gray-700' : 'bg-white border-gray-300 text-gray-500'
+                  }`}
+                >
+                  休憩中
+                </button>
+              </div>
+            </div>
+
+            {/* スキルタグ */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                得意なこと <span className="text-gray-400 font-normal">（選ぶと質問が届きやすくなります）</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {SKILL_OPTIONS.map(skill => (
+                  <button
+                    key={skill}
+                    onClick={() => toggleSkill(skill)}
+                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                      skills.includes(skill)
+                        ? 'bg-gray-800 border-gray-800 text-white'
+                        : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
+                    }`}
+                  >
+                    {skill}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={save}
+              disabled={saving}
+              className="w-full py-2 rounded font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? '保存中...' : '保存する'}
+            </button>
+
+            {message && (
+              <p className={`text-sm text-center ${message.includes('失敗') ? 'text-red-500' : 'text-green-600'}`}>
+                {message}
+              </p>
+            )}
+          </div>
+        )}
+
+        {tab === 'myquestions' && (
+          <div>
+            {myQuestions.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <p>まだ質問を投稿していません</p>
+                <Link href="/questions/new" className="text-sm underline mt-2 inline-block hover:text-gray-600">
+                  最初の質問を投稿する
+                </Link>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {myQuestions.map(q => {
+                  const s = STATUS_MAP[q.status] ?? STATUS_MAP.open
+                  return (
+                    <li key={q.id}>
+                      <Link
+                        href={`/questions/${q.slug}`}
+                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm font-medium text-gray-900 truncate flex-1">{q.title}</p>
+                          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>
+                            {s.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {new Date(q.created_at).toLocaleDateString('ja-JP')}
+                        </p>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
         )}
       </main>
     </>

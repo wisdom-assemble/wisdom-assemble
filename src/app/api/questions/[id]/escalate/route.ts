@@ -30,12 +30,18 @@ export async function POST(
     // BがギブアップまたはタイムアウトしてCへ
     const excludeIds = [question.user_id, question.matched_b_id].filter(Boolean) as string[]
     const matchedC = await findMatch(tenantId, questionId, excludeIds)
-    await supabase.from('questions').update({
-      status: 'matched_c',
-      matched_c_id: matchedC ?? null,
-      matched_c_deadline: matchedC ? calcDeadline(24) : null,
-    }).eq('id', questionId)
-    return NextResponse.json({ ok: true, nextStatus: 'matched_c', matchedC })
+    if (matchedC) {
+      await supabase.from('questions').update({
+        status: 'matched_c',
+        matched_c_id: matchedC,
+        matched_c_deadline: calcDeadline(24),
+      }).eq('id', questionId)
+      return NextResponse.json({ ok: true, nextStatus: 'matched_c', matchedC })
+    } else {
+      // C候補なし → 即hard昇格
+      await supabase.from('questions').update({ status: 'hard' }).eq('id', questionId)
+      return NextResponse.json({ ok: true, nextStatus: 'hard' })
+    }
 
   } else if (question.status === 'matched_c') {
     // Cがギブアップ → 高難度クエスト

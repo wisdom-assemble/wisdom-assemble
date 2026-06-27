@@ -148,10 +148,29 @@ export default async function QuestionPage({ params }: Props) {
         )}
 
         {/* マッチング待ち（自分はBでもCでもない場合） */}
-        {(isOpen || isMatchedC) && !isSolved && user && !isOwner && !showAnswerForm && (
+        {isOpen && question.matched_b_id && !isSolved && user && !isOwner && !showAnswerForm && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
             現在、専門家にマッチング中です。しばらくお待ちください。
           </div>
+        )}
+        {isMatchedC && question.matched_c_id && !isSolved && user && !isOwner && !showAnswerForm && (
+          <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
+            現在、専門家にマッチング中です。しばらくお待ちください。
+          </div>
+        )}
+        {/* matched_b_id/c_id がnull = 候補者なしで止まっている → hardと同じ扱いで全員に開放 */}
+        {((isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && !isSolved && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-medium text-red-800">🔥 専門家を募集中</p>
+            <p className="text-xs text-red-700 mt-1">
+              現在マッチングできる専門家がいません。あなたの知識・経験で助けてください。
+            </p>
+          </div>
+        )}
+        {((isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && user && !isOwner && !isSolved && (
+          <section className="border-t pt-6">
+            <AnswerForm questionId={question.id} />
+          </section>
         )}
 
         {/* 回答フォーム（マッチングされた本人のみ） */}

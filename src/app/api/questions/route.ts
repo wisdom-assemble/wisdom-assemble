@@ -101,16 +101,36 @@ export async function POST(request: NextRequest) {
       // スコアが閾値未満 → 人間Bにマッチング
       console.log(`[Routing] score=${result.score} → human (tenant=${tenantId})`)
       const matchedB = await findMatch(tenantId, question.id, [user.id])
-      await supabase
-        .from('questions')
-        .update({
+
+      if (matchedB) {
+        // B確定
+        await supabase.from('questions').update({
           status: 'open',
           ai_score: result.score,
-          matched_b_id: matchedB ?? null,
-          matched_b_deadline: matchedB ? calcDeadline(24) : null,
-        })
-        .eq('id', question.id)
-      console.log(`[Matching] B=${matchedB ?? 'none'}`)
+          matched_b_id: matchedB,
+          matched_b_deadline: calcDeadline(24),
+        }).eq('id', question.id)
+        console.log(`[Matching] B=${matchedB}`)
+      } else {
+        // B候補なし → Cを探す
+        const matchedC = await findMatch(tenantId, question.id, [user.id])
+        if (matchedC) {
+          await supabase.from('questions').update({
+            status: 'matched_c',
+            ai_score: result.score,
+            matched_c_id: matchedC,
+            matched_c_deadline: calcDeadline(24),
+          }).eq('id', question.id)
+          console.log(`[Matching] B=none → C=${matchedC}`)
+        } else {
+          // BC両方候補なし → 即hard昇格
+          await supabase.from('questions').update({
+            status: 'hard',
+            ai_score: result.score,
+          }).eq('id', question.id)
+          console.log(`[Matching] B=none, C=none → hard`)
+        }
+      }
     }
   } catch (e) {
     console.error('Groq error:', e)
