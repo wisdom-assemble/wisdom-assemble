@@ -229,9 +229,20 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 質問者向けアクション（回答が届いているが未解決の場合） */}
         {isOwner && hasAnswers && !isSolved && (
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-sm font-medium text-amber-800 mb-3">回答が届いています。解決しましたか？</p>
-            {canRematch && <RematchButton questionId={question.id} />}
-            {canEscalateHard && <EscalateHardButton questionId={question.id} />}
+            {canRematch ? (
+              <>
+                <p className="text-sm font-medium text-amber-800 mb-1">回答が届いています。解決しましたか？</p>
+                <p className="text-xs text-amber-600 mb-3">解決しない場合は別のメンバーに依頼できます（残り1回）。</p>
+                <RematchButton questionId={question.id} />
+                <EscalateHardButton questionId={question.id} />
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-amber-800 mb-1">2人のメンバーが対応しましたが解決しませんでした。</p>
+                <p className="text-xs text-amber-600 mb-3">高難度クエストに移行すると全メンバーに公開されます。</p>
+                <EscalateHardButton questionId={question.id} />
+              </>
+            )}
           </div>
         )}
 
