@@ -6,7 +6,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
-type Props = { params: Promise<{ slug: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result?: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: rawSlug } = await params
@@ -25,8 +25,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: q.title, description: q.body.slice(0, 160) }
 }
 
-export default async function QuestionPage({ params }: Props) {
+export default async function QuestionPage({ params, searchParams }: Props) {
   const { slug: rawSlug } = await params
+  const { result: resultParam } = await searchParams
   const slug = decodeURIComponent(rawSlug)
   const tenantId = await getTenantId()
   const supabase = await createClient()
@@ -74,6 +75,35 @@ export default async function QuestionPage({ params }: Props) {
     <>
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
+
+        {/* 投稿直後バナー */}
+        {resultParam === 'ai' && (
+          <div className="mb-5 p-4 bg-purple-50 border border-purple-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+            <span className="text-2xl">✨</span>
+            <div>
+              <p className="text-sm font-semibold text-purple-800">AIが回答しました！</p>
+              <p className="text-xs text-purple-600 mt-0.5">下の回答をご確認ください。解決したら「ベストアンサー」を押してください。</p>
+            </div>
+          </div>
+        )}
+        {resultParam === 'matched' && (
+          <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+            <span className="text-2xl">🙌</span>
+            <div>
+              <p className="text-sm font-semibold text-green-800">メンバーにマッチングしました！</p>
+              <p className="text-xs text-green-600 mt-0.5">回答が届くまでしばらくお待ちください（通常24時間以内）。</p>
+            </div>
+          </div>
+        )}
+        {resultParam === 'pending' && (
+          <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+            <span className="text-2xl">⏳</span>
+            <div>
+              <p className="text-sm font-semibold text-blue-800">質問を受け付けました</p>
+              <p className="text-xs text-blue-600 mt-0.5">しばらくお待ちください。このページをリロードすると状況を確認できます。</p>
+            </div>
+          </div>
+        )}
 
         {/* 質問 */}
         <article className="mb-8">

@@ -81,11 +81,11 @@ export async function POST(request: NextRequest) {
   }
 
   // ② ジャンル内確定なのでスコア付き回答を生成
+  let resultType: 'ai' | 'matched' | 'pending' = 'pending'
   try {
     const result = await askWithScore(tenantId, `${title}\n\n${body}`)
 
     if (result.routed === 'ai') {
-      // スコアが閾値以上 → AI回答を表示
       await supabase.from('answers').insert({
         question_id: question.id,
         tenant_id: tenantId,
@@ -97,13 +97,12 @@ export async function POST(request: NextRequest) {
         .from('questions')
         .update({ status: 'ai_answered', ai_score: result.score })
         .eq('id', question.id)
+      resultType = 'ai'
     } else {
-      // スコアが閾値未満 → 人間Bにマッチング
       console.log(`[Routing] score=${result.score} → human (tenant=${tenantId})`)
       const matchedB = await findMatch(tenantId, question.id, [user.id])
 
       if (matchedB) {
-        // B確定
         await supabase.from('questions').update({
           status: 'open',
           ai_score: result.score,
@@ -111,8 +110,8 @@ export async function POST(request: NextRequest) {
           matched_b_deadline: calcDeadline(24),
         }).eq('id', question.id)
         console.log(`[Matching] B=${matchedB}`)
+        resultType = 'matched'
       } else {
-        // B候補なし → Cを探す
         const matchedC = await findMatch(tenantId, question.id, [user.id])
         if (matchedC) {
           await supabase.from('questions').update({
@@ -122,8 +121,8 @@ export async function POST(request: NextRequest) {
             matched_c_deadline: calcDeadline(24),
           }).eq('id', question.id)
           console.log(`[Matching] B=none → C=${matchedC}`)
+          resultType = 'matched'
         } else {
-          // BC両方候補なし → 即hard昇格
           await supabase.from('questions').update({
             status: 'hard',
             ai_score: result.score,
@@ -136,5 +135,5 @@ export async function POST(request: NextRequest) {
     console.error('Groq error:', e)
   }
 
-  return NextResponse.json({ slug: question.slug })
+  return NextResponse.json({ slug: question.slug, result: resultType })
 }
