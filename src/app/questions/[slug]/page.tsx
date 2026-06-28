@@ -198,7 +198,7 @@ export default async function QuestionPage({ params }: Props) {
         {/* ログインしていない場合 */}
         {!user && (isOpen || isMatchedC || isHard) && (
           <div className="border-t pt-6 text-center text-sm text-gray-500">
-            回答するには <a href="/auth/login" className="underline">ログイン</a> が必要です
+            回答するには <a href={`/auth/login?next=/questions/${slug}`} className="underline">ログイン</a> が必要です
           </div>
         )}
       </main>
