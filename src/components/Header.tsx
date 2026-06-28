@@ -33,14 +33,18 @@ export default function Header() {
         const pending = [...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredIds.includes(q.id))
         setTaskCount(pending.length)
 
-        // 質問者側：自分の質問に回答が届いていて未解決のもの
+        // 質問者側：未既読の回答がある質問
         const { data: myQuestions } = await supabase
           .from('questions')
-          .select('id, answers(id)')
+          .select('id, owner_reviewed_at, answers(id, created_at)')
           .eq('user_id', data.user.id)
           .not('status', 'in', '("solved","hard")')
-        const withAnswers = (myQuestions ?? []).filter((q: any) => q.answers?.length > 0)
-        setReviewCount(withAnswers.length)
+        const unreviewed = (myQuestions ?? []).filter((q: any) => {
+          if (!q.answers?.length) return false
+          if (!q.owner_reviewed_at) return true
+          return q.answers.some((a: any) => new Date(a.created_at) > new Date(q.owner_reviewed_at))
+        })
+        setReviewCount(unreviewed.length)
       }
     })
 
