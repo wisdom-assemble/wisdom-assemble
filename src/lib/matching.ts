@@ -22,7 +22,7 @@ export async function findMatch(
     .from('profiles')
     .select('id, skill_tags, answer_count')
     .eq('is_available', true)
-    .not('id', 'in', `(${excludeUserIds.map(id => `"${id}"`).join(',')})`)
+    .not('id', 'in', `(${excludeUserIds.join(',')})`)
 
   if (!candidates || candidates.length === 0) return null
 
