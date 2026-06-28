@@ -17,13 +17,20 @@ export default function Header() {
     supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user)
       if (data.user) {
-        const { count: bCount } = await supabase.from('questions')
-          .select('id', { count: 'exact', head: true })
-          .eq('matched_b_id', data.user.id).eq('status', 'open')
-        const { count: cCount } = await supabase.from('questions')
-          .select('id', { count: 'exact', head: true })
-          .eq('matched_c_id', data.user.id).eq('status', 'matched_c')
-        setTaskCount((bCount ?? 0) + (cCount ?? 0))
+        // 自分が回答済みの質問IDを取得
+        const { data: answered } = await supabase
+          .from('answers')
+          .select('question_id')
+          .eq('user_id', data.user.id)
+          .eq('is_ai', false)
+        const answeredIds = (answered ?? []).map((a: any) => a.question_id)
+
+        const [{ data: bTasks }, { data: cTasks }] = await Promise.all([
+          supabase.from('questions').select('id').eq('matched_b_id', data.user.id).eq('status', 'open'),
+          supabase.from('questions').select('id').eq('matched_c_id', data.user.id).eq('status', 'matched_c'),
+        ])
+        const pending = [...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredIds.includes(q.id))
+        setTaskCount(pending.length)
       }
     })
 

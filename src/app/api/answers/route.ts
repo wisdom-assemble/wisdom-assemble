@@ -34,6 +34,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '質問が見つかりません' }, { status: 404 })
   }
 
+  // 同一ユーザーの重複回答チェック
+  const { data: existing } = await supabase
+    .from('answers')
+    .select('id')
+    .eq('question_id', questionId)
+    .eq('user_id', user.id)
+    .eq('is_ai', false)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json({ error: 'すでにこの質問に回答しています' }, { status: 409 })
+  }
+
   const { error } = await supabase.from('answers').insert({
     question_id: questionId,
     tenant_id: tenantId,
