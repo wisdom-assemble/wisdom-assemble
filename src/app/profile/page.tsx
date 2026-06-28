@@ -84,8 +84,16 @@ export default function ProfilePage() {
         setEmailNotify(profile.email_notify ?? true)
         setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
       }
+      // 自分が回答済みの質問IDを取得してタスクから除外
+      const { data: myAnswers } = await supabase
+        .from('answers')
+        .select('question_id')
+        .eq('user_id', user.id)
+        .eq('is_ai', false)
+      const answeredQIds = new Set((myAnswers ?? []).map((a: any) => a.question_id))
+
       setMyQuestions(questions ?? [])
-      setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])])
+      setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredQIds.has(q.id)))
       setReviewItems((reviewQuestions ?? []).filter((q: any) => q.answers?.length > 0))
       setLoading(false)
     }
