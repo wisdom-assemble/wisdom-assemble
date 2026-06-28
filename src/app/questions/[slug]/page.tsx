@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
 import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
+import OwnerReviewTracker from '@/components/OwnerReviewTracker'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -85,6 +86,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
     <>
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
+
+        {/* オーナーが訪問したら既読マーク */}
+        {isOwner && hasAnswers && <OwnerReviewTracker questionId={question.id} />}
 
         {/* 投稿直後バナー */}
         {resultParam === 'ai' && (

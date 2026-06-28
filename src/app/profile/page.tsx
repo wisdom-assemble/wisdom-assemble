@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [tab, setTab] = useState<Tab>('profile')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [skills, setSkills] = useState<string[]>([])
   const [isAvailable, setIsAvailable] = useState(true)
@@ -44,6 +45,7 @@ export default function ProfilePage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth/login?next=/profile'); return }
+      setUserEmail(user.email ?? '')
 
       const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }] = await Promise.all([
         supabase
@@ -71,7 +73,7 @@ export default function ProfilePage() {
           .order('created_at', { ascending: false }),
         supabase
           .from('questions')
-          .select('id, title, slug, status, created_at, answers(id)')
+          .select('id, title, slug, status, created_at, owner_reviewed_at, answers(id, created_at)')
           .eq('user_id', user.id)
           .not('status', 'in', '("solved","hard")')
           .order('created_at', { ascending: false }),
@@ -94,7 +96,12 @@ export default function ProfilePage() {
 
       setMyQuestions(questions ?? [])
       setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredQIds.has(q.id)))
-      setReviewItems((reviewQuestions ?? []).filter((q: any) => q.answers?.length > 0))
+      setReviewItems((reviewQuestions ?? []).filter((q: any) => {
+        if (!q.answers?.length) return false
+        if (!q.owner_reviewed_at) return true
+        // 既読後に新しい回答があれば再表示
+        return q.answers.some((a: any) => new Date(a.created_at) > new Date(q.owner_reviewed_at))
+      }))
       setLoading(false)
     }
     load()
@@ -127,7 +134,10 @@ export default function ProfilePage() {
     <>
       <Header />
       <main className="max-w-xl mx-auto px-4 py-8 w-full">
-        <h1 className="text-xl font-bold mb-4">マイページ</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold">マイページ</h1>
+          <p className="text-xs text-gray-400">{userEmail}</p>
+        </div>
 
         {/* 実績 */}
         <div className="flex gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
