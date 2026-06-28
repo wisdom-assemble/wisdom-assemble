@@ -40,7 +40,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/auth/login'); return }
+      if (!user) { router.push('/auth/login?next=/profile'); return }
 
       const [{ data: profile }, { data: questions }] = await Promise.all([
         supabase
