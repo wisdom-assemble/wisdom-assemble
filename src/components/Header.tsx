@@ -11,6 +11,7 @@ export default function Header() {
   const tenant = useTenant()
   const [user, setUser] = useState<any>(null)
   const [taskCount, setTaskCount] = useState(0)
+  const [reviewCount, setReviewCount] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -31,6 +32,15 @@ export default function Header() {
         ])
         const pending = [...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredIds.includes(q.id))
         setTaskCount(pending.length)
+
+        // 質問者側：自分の質問に回答が届いていて未解決のもの
+        const { data: myQuestions } = await supabase
+          .from('questions')
+          .select('id, answers(id)')
+          .eq('user_id', data.user.id)
+          .not('status', 'in', '("solved","hard")')
+        const withAnswers = (myQuestions ?? []).filter((q: any) => q.answers?.length > 0)
+        setReviewCount(withAnswers.length)
       }
     })
 
@@ -68,9 +78,9 @@ export default function Header() {
               )}
               <Link href="/profile" className="relative text-gray-500 hover:text-gray-800 text-sm">
                 マイページ
-                {taskCount > 0 && (
+                {(taskCount + reviewCount) > 0 && (
                   <span className="absolute -top-1.5 -right-3 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                    {taskCount}
+                    {taskCount + reviewCount}
                   </span>
                 )}
               </Link>

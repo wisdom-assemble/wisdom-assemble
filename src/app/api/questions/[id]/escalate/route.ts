@@ -26,6 +26,21 @@ export async function POST(
 
   if (!question) return NextResponse.json({ error: '質問が見つかりません' }, { status: 404 })
 
+  // 呼び出し可能: 質問者本人 OR マッチングされた回答者
+  const isOwner = question.user_id === user.id
+  const isMatchedAnswerer =
+    question.matched_b_id === user.id || question.matched_c_id === user.id
+  if (!isOwner && !isMatchedAnswerer) {
+    return NextResponse.json({ error: '権限がありません' }, { status: 403 })
+  }
+
+  // 質問者が直接 hard に移行したい場合
+  const body = await request.json().catch(() => ({}))
+  if (isOwner && body.forceHard) {
+    await supabase.from('questions').update({ status: 'hard' }).eq('id', questionId)
+    return NextResponse.json({ ok: true, nextStatus: 'hard' })
+  }
+
   if (question.status === 'open') {
     // BがギブアップまたはタイムアウトしてCへ
     const excludeIds = [question.user_id, question.matched_b_id].filter(Boolean) as string[]

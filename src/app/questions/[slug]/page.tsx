@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
-import { AcceptButton, GiveUpButton } from '@/components/QuestionActions'
+import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -59,6 +59,11 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const isHard = question.status === 'hard'
   const isOpen = question.status === 'open'
   const isMatchedC = question.status === 'matched_c'
+  const hasAnswers = (answers?.length ?? 0) > 0
+  // Bが回答済み（B匹配＋回答あり）→ 別メンバーに依頼できる
+  const canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && hasAnswers
+  // C回答済み or hard移行可能
+  const canEscalateHard = isOwner && !isSolved && !isHard
 
   // 期限切れチェック
   const bExpired = question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
@@ -219,6 +224,21 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           <section className="border-t pt-6">
             <AnswerForm questionId={question.id} />
           </section>
+        )}
+
+        {/* 質問者向けアクション（回答が届いているが未解決の場合） */}
+        {isOwner && hasAnswers && !isSolved && (
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm font-medium text-amber-800 mb-3">回答が届いています。解決しましたか？</p>
+            {canRematch && <RematchButton questionId={question.id} />}
+            {canEscalateHard && <EscalateHardButton questionId={question.id} />}
+          </div>
+        )}
+        {/* 質問者が回答なしでも高難度へ移行できる */}
+        {isOwner && !hasAnswers && !isSolved && !isHard && (isOpen || isMatchedC) && (
+          <div className="mt-6">
+            <EscalateHardButton questionId={question.id} />
+          </div>
         )}
 
         {isSolved && (

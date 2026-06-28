@@ -21,7 +21,7 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   hard:        { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
 }
 
-type Tab = 'profile' | 'myquestions' | 'tasks'
+type Tab = 'profile' | 'myquestions' | 'tasks' | 'review'
 
 export default function ProfilePage() {
   const supabase = createClient()
@@ -38,13 +38,14 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('')
   const [myQuestions, setMyQuestions] = useState<any[]>([])
   const [myTasks, setMyTasks] = useState<any[]>([])
+  const [reviewItems, setReviewItems] = useState<any[]>([])
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth/login?next=/profile'); return }
 
-      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }] = await Promise.all([
+      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }] = await Promise.all([
         supabase
           .from('profiles')
           .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify')
@@ -68,6 +69,12 @@ export default function ProfilePage() {
           .eq('matched_c_id', user.id)
           .eq('status', 'matched_c')
           .order('created_at', { ascending: false }),
+        supabase
+          .from('questions')
+          .select('id, title, slug, status, created_at, answers(id)')
+          .eq('user_id', user.id)
+          .not('status', 'in', '("solved","hard")')
+          .order('created_at', { ascending: false }),
       ])
 
       if (profile) {
@@ -79,6 +86,7 @@ export default function ProfilePage() {
       }
       setMyQuestions(questions ?? [])
       setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])])
+      setReviewItems((reviewQuestions ?? []).filter((q: any) => q.answers?.length > 0))
       setLoading(false)
     }
     load()
@@ -149,6 +157,19 @@ export default function ProfilePage() {
             {myTasks.length > 0 && (
               <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                 {myTasks.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setTab('review')}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors relative ${
+              tab === 'review' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            回答が届いた質問
+            {reviewItems.length > 0 && (
+              <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                {reviewItems.length}
               </span>
             )}
           </button>
@@ -274,6 +295,40 @@ export default function ProfilePage() {
                         {remaining !== null && (
                           <p className="text-xs text-orange-500 mt-0.5">残り {remaining}時間</p>
                         )}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {tab === 'review' && (
+          <div>
+            {reviewItems.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <p>回答が届いている質問はありません</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {reviewItems.map(q => {
+                  const s = STATUS_MAP[q.status] ?? STATUS_MAP.open
+                  return (
+                    <li key={q.id}>
+                      <Link
+                        href={`/questions/${q.slug}`}
+                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{q.title}</p>
+                            <p className="text-xs text-red-500 mt-0.5">📩 回答が届いています — 確認してください</p>
+                          </div>
+                          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>
+                            {s.label}
+                          </span>
+                        </div>
                       </Link>
                     </li>
                   )
