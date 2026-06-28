@@ -177,7 +177,7 @@ export default async function QuestionPage({ params }: Props) {
         {showAnswerForm && (
           <section className="border-t pt-6">
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-              AIが自信を持って答えられませんでした。あなたの知識・経験で助けてください。
+              あなたの知識・経験でこの質問を解決してください。回答をお願いします！
             </div>
             <AnswerForm questionId={question.id} />
             <GiveUpButton questionId={question.id} />
