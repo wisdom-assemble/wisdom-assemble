@@ -82,6 +82,27 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   // 回答フォームを表示すべきか（マッチングされた本人 かつ 未回答）
   const showAnswerForm = (isMatchedB || isMatchedCUser) && !isSolved && !alreadyAnswered
 
+  // 投稿直後のみ：類似の解決済み質問を取得
+  let similarQuestions: { id: string; title: string; slug: string }[] = []
+  if (resultParam) {
+    const keywords = question.title
+      .split(/[\s　、。？！,.!?]+/)
+      .filter((w: string) => w.length >= 2)
+      .slice(0, 5)
+    if (keywords.length > 0) {
+      const orFilter = keywords.map((k: string) => `title.ilike.%${k}%`).join(',')
+      const { data: similar } = await supabase
+        .from('questions')
+        .select('id, title, slug')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'solved')
+        .neq('id', question.id)
+        .or(orFilter)
+        .limit(4)
+      similarQuestions = similar ?? []
+    }
+  }
+
   return (
     <>
       <Header />
@@ -116,6 +137,25 @@ export default async function QuestionPage({ params, searchParams }: Props) {
               <p className="text-sm font-semibold text-blue-800">質問を受け付けました</p>
               <p className="text-xs text-blue-600 mt-0.5">しばらくお待ちください。このページをリロードすると状況を確認できます。</p>
             </div>
+          </div>
+        )}
+
+        {/* 類似の解決済み質問 */}
+        {similarQuestions.length > 0 && (
+          <div className="mb-5 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-xs font-semibold text-gray-500 mb-2">💡 似た質問が解決しています — 参考になるかも</p>
+            <ul className="space-y-1">
+              {similarQuestions.map(q => (
+                <li key={q.id}>
+                  <a
+                    href={`/questions/${q.slug}`}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {q.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
