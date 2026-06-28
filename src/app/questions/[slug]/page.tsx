@@ -208,12 +208,12 @@ export default async function QuestionPage({ params }: Props) {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    open:        { label: '受付中',        className: 'bg-blue-50 text-blue-700' },
-    ai_answered: { label: 'AI回答済み',    className: 'bg-purple-50 text-purple-700' },
-    matched:     { label: 'マッチング中',  className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:   { label: 'C対応中',       className: 'bg-orange-50 text-orange-700' },
-    solved:      { label: '解決済み',      className: 'bg-green-50 text-green-700' },
-    hard:        { label: '🔥 高難度',     className: 'bg-red-50 text-red-700' },
+    open:        { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
+    ai_answered: { label: 'AI回答済み',      className: 'bg-purple-50 text-purple-700' },
+    matched:     { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:   { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
+    solved:      { label: '解決済み',         className: 'bg-green-50 text-green-700' },
+    hard:        { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
   }
   const { label, className } = map[status] ?? map.open
   return (
