@@ -20,7 +20,7 @@ export default async function HomePage({
 
   let query = supabase
     .from('questions')
-    .select('id, title, slug, status, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
+    .select('id, title, slug, status, matched_b_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
@@ -82,7 +82,7 @@ export default async function HomePage({
                           {new Date(q.created_at).toLocaleDateString('ja-JP')}
                         </p>
                       </div>
-                      <StatusBadge status={q.status} />
+                      <StatusBadge status={q.status} matchedBId={(q as any).matched_b_id} />
                     </div>
                   </Link>
                 </li>
@@ -110,16 +110,18 @@ export default async function HomePage({
   )
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, matchedBId }: { status: string; matchedBId?: string | null }) {
   const map: Record<string, { label: string; className: string }> = {
     open:        { label: '受付中',      className: 'bg-blue-50 text-blue-700' },
+    open_matched: { label: '回答待ち',   className: 'bg-yellow-50 text-yellow-700' },
     ai_answered: { label: 'AI回答済',    className: 'bg-purple-50 text-purple-700' },
     matched:     { label: 'マッチング中', className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:   { label: 'C対応中',     className: 'bg-orange-50 text-orange-700' },
+    matched_c:   { label: '専門家対応中', className: 'bg-orange-50 text-orange-700' },
     solved:      { label: '解決済み',    className: 'bg-green-50 text-green-700' },
     hard:        { label: '🔥高難度',    className: 'bg-red-50 text-red-700' },
   }
-  const { label, className } = map[status] ?? map.open
+  const key = status === 'open' && matchedBId ? 'open_matched' : status
+  const { label, className } = map[key] ?? map.open
   return (
     <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${className}`}>
       {label}
