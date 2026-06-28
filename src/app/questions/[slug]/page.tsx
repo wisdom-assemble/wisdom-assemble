@@ -73,8 +73,13 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const isMatchedB = user?.id === question.matched_b_id && isOpen && !bExpired
   const isMatchedCUser = user?.id === question.matched_c_id && isMatchedC && !cExpired
 
-  // 回答フォームを表示すべきか（マッチングされた本人のみ）
-  const showAnswerForm = (isMatchedB || isMatchedCUser) && !isSolved
+  // 自分がすでに回答済みか
+  const alreadyAnswered = user
+    ? (answers ?? []).some((a: any) => a.user_id === user.id && !a.is_ai)
+    : false
+
+  // 回答フォームを表示すべきか（マッチングされた本人 かつ 未回答）
+  const showAnswerForm = (isMatchedB || isMatchedCUser) && !isSolved && !alreadyAnswered
 
   return (
     <>
