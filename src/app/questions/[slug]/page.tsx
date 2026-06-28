@@ -190,12 +190,16 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* マッチング待ち（自分はBでもCでもない場合） */}
         {isOpen && question.matched_b_id && !isSolved && user && !isOwner && !showAnswerForm && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
-            現在、専門家にマッチング中です。しばらくお待ちください。
+            {alreadyAnswered
+              ? '✓ 回答しました。質問者の確認をお待ちください。'
+              : '現在、専門家にマッチング中です。しばらくお待ちください。'}
           </div>
         )}
         {isMatchedC && question.matched_c_id && !isSolved && user && !isOwner && !showAnswerForm && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
-            現在、専門家にマッチング中です。しばらくお待ちください。
+            {alreadyAnswered
+              ? '✓ 回答しました。質問者の確認をお待ちください。'
+              : '現在、専門家にマッチング中です。しばらくお待ちください。'}
           </div>
         )}
         {/* matched_b_id/c_id がnull = 候補者なしで止まっている → hardと同じ扱いで全員に開放 */}
