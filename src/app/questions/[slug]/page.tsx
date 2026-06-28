@@ -234,12 +234,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             {canEscalateHard && <EscalateHardButton questionId={question.id} />}
           </div>
         )}
-        {/* 質問者が回答なしでも高難度へ移行できる */}
-        {isOwner && !hasAnswers && !isSolved && !isHard && (isOpen || isMatchedC) && (
-          <div className="mt-6">
-            <EscalateHardButton questionId={question.id} />
-          </div>
-        )}
+
 
         {isSolved && (
           <p className="text-center text-sm text-green-600 py-4">✓ この質問は解決済みです</p>
