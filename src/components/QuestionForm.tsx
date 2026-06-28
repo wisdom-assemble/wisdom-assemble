@@ -35,7 +35,7 @@ export default function QuestionForm() {
       router.push(`/questions/${slug}`)
     } catch (err: any) {
       if (err.message === 'ログインが必要です') {
-        router.push('/auth/login')
+        router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`)
         return
       }
       setError(err.message)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 const ADMIN_EMAIL = 'wisdomassemble@gmail.com'
 
@@ -16,10 +17,15 @@ export async function DELETE(
 
   const { id } = await params
 
-  // 関連する回答を先に削除
-  await supabase.from('answers').delete().eq('question_id', id)
+  // service_role で RLS をバイパスして削除
+  const admin = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-  const { error } = await supabase.from('questions').delete().eq('id', id)
+  await admin.from('answers').delete().eq('question_id', id)
+
+  const { error } = await admin.from('questions').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })

@@ -16,10 +16,12 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     setLoading(true)
     setError('')
+    const params = new URLSearchParams(window.location.search)
+    const next = params.get('next') ?? '/'
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     })
     if (error) { setError('Googleログインに失敗しました'); setLoading(false) }
   }
