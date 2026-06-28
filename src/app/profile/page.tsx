@@ -13,15 +13,15 @@ const SKILL_OPTIONS = [
 ]
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  open:        { label: '受付中',      className: 'bg-blue-50 text-blue-700' },
-  ai_answered: { label: 'AI回答済',    className: 'bg-purple-50 text-purple-700' },
-  matched:     { label: 'マッチング中', className: 'bg-yellow-50 text-yellow-700' },
-  matched_c:   { label: 'C対応中',     className: 'bg-orange-50 text-orange-700' },
-  solved:      { label: '解決済み',    className: 'bg-green-50 text-green-700' },
-  hard:        { label: '🔥高難度',    className: 'bg-red-50 text-red-700' },
+  open:        { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
+  ai_answered: { label: 'AI回答済',        className: 'bg-purple-50 text-purple-700' },
+  matched:     { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
+  matched_c:   { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
+  solved:      { label: '解決済み',         className: 'bg-green-50 text-green-700' },
+  hard:        { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
 }
 
-type Tab = 'profile' | 'myquestions'
+type Tab = 'profile' | 'myquestions' | 'tasks'
 
 export default function ProfilePage() {
   const supabase = createClient()
@@ -33,19 +33,21 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('')
   const [skills, setSkills] = useState<string[]>([])
   const [isAvailable, setIsAvailable] = useState(true)
+  const [emailNotify, setEmailNotify] = useState(true)
   const [stats, setStats] = useState({ answerCount: 0, hardQuestCount: 0 })
   const [message, setMessage] = useState('')
   const [myQuestions, setMyQuestions] = useState<any[]>([])
+  const [myTasks, setMyTasks] = useState<any[]>([])
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth/login?next=/profile'); return }
 
-      const [{ data: profile }, { data: questions }] = await Promise.all([
+      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count')
+          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify')
           .eq('id', user.id)
           .maybeSingle(),
         supabase
@@ -54,15 +56,29 @@ export default function ProfilePage() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(100),
+        supabase
+          .from('questions')
+          .select('id, title, slug, status, created_at, matched_b_deadline')
+          .eq('matched_b_id', user.id)
+          .eq('status', 'open')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('questions')
+          .select('id, title, slug, status, created_at, matched_c_deadline')
+          .eq('matched_c_id', user.id)
+          .eq('status', 'matched_c')
+          .order('created_at', { ascending: false }),
       ])
 
       if (profile) {
         setDisplayName(profile.display_name ?? '')
         setSkills(profile.skill_tags ?? [])
         setIsAvailable(profile.is_available ?? true)
+        setEmailNotify(profile.email_notify ?? true)
         setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
       }
       setMyQuestions(questions ?? [])
+      setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])])
       setLoading(false)
     }
     load()
@@ -82,7 +98,7 @@ export default function ProfilePage() {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name: displayName.trim() || null, skill_tags: skills, is_available: isAvailable })
+      .update({ display_name: displayName.trim() || null, skill_tags: skills, is_available: isAvailable, email_notify: emailNotify })
       .eq('id', user.id)
 
     setSaving(false)
@@ -124,6 +140,19 @@ export default function ProfilePage() {
             プロフィール設定
           </button>
           <button
+            onClick={() => setTab('tasks')}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors relative ${
+              tab === 'tasks' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            あなたへの依頼
+            {myTasks.length > 0 && (
+              <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                {myTasks.length}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setTab('myquestions')}
             className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
               tab === 'myquestions' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -135,7 +164,6 @@ export default function ProfilePage() {
 
         {tab === 'profile' && (
           <div className="space-y-6">
-            {/* 表示名 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
               <input
@@ -147,7 +175,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* 回答ステータス */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">回答ステータス</label>
               <div className="flex gap-3">
@@ -170,7 +197,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* スキルタグ */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 得意なこと <span className="text-gray-400 font-normal">（選ぶと質問が届きやすくなります）</span>
@@ -192,6 +218,20 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* メール通知 */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-gray-700">メール通知</p>
+                <p className="text-xs text-gray-400 mt-0.5">依頼が届いたときにメールで通知します</p>
+              </div>
+              <button
+                onClick={() => setEmailNotify(v => !v)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${emailNotify ? 'bg-gray-800' : 'bg-gray-300'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${emailNotify ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
             <button
               onClick={save}
               disabled={saving}
@@ -204,6 +244,41 @@ export default function ProfilePage() {
               <p className={`text-sm text-center ${message.includes('失敗') ? 'text-red-500' : 'text-green-600'}`}>
                 {message}
               </p>
+            )}
+          </div>
+        )}
+
+        {tab === 'tasks' && (
+          <div>
+            {myTasks.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <p>現在、依頼されている質問はありません</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {myTasks.map(q => {
+                  const deadline = q.matched_b_deadline ?? q.matched_c_deadline
+                  const remaining = deadline ? Math.max(0, Math.ceil((new Date(deadline).getTime() - Date.now()) / 3600000)) : null
+                  return (
+                    <li key={q.id}>
+                      <Link
+                        href={`/questions/${q.slug}`}
+                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm font-medium text-gray-900 flex-1">{q.title}</p>
+                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700">
+                            あなたに依頼
+                          </span>
+                        </div>
+                        {remaining !== null && (
+                          <p className="text-xs text-orange-500 mt-0.5">残り {remaining}時間</p>
+                        )}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
           </div>
         )}

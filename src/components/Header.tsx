@@ -10,10 +10,22 @@ const ADMIN_EMAIL = 'wisdomassemble@gmail.com'
 export default function Header() {
   const tenant = useTenant()
   const [user, setUser] = useState<any>(null)
+  const [taskCount, setTaskCount] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(async ({ data }) => {
+      setUser(data.user)
+      if (data.user) {
+        const { count: bCount } = await supabase.from('questions')
+          .select('id', { count: 'exact', head: true })
+          .eq('matched_b_id', data.user.id).eq('status', 'open')
+        const { count: cCount } = await supabase.from('questions')
+          .select('id', { count: 'exact', head: true })
+          .eq('matched_c_id', data.user.id).eq('status', 'matched_c')
+        setTaskCount((bCount ?? 0) + (cCount ?? 0))
+      }
+    })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null)
@@ -47,8 +59,13 @@ export default function Header() {
                   管理
                 </Link>
               )}
-              <Link href="/profile" className="text-gray-500 hover:text-gray-800 text-sm">
+              <Link href="/profile" className="relative text-gray-500 hover:text-gray-800 text-sm">
                 マイページ
+                {taskCount > 0 && (
+                  <span className="absolute -top-1.5 -right-3 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                    {taskCount}
+                  </span>
+                )}
               </Link>
               <button
                 onClick={handleLogout}

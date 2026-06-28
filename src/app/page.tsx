@@ -17,10 +17,11 @@ export default async function HomePage({
 
   const tenantId = await getTenantId()
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   let query = supabase
     .from('questions')
-    .select('id, title, slug, status, matched_b_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
+    .select('id, title, slug, status, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
@@ -82,7 +83,7 @@ export default async function HomePage({
                           {new Date(q.created_at).toLocaleDateString('ja-JP')}
                         </p>
                       </div>
-                      <StatusBadge status={q.status} matchedBId={(q as any).matched_b_id} />
+                      <StatusBadge status={q.status} matchedBId={(q as any).matched_b_id} myId={user?.id} matchedCId={(q as any).matched_c_id} />
                     </div>
                   </Link>
                 </li>
@@ -110,15 +111,29 @@ export default async function HomePage({
   )
 }
 
-function StatusBadge({ status, matchedBId }: { status: string; matchedBId?: string | null }) {
+function StatusBadge({ status, matchedBId, matchedCId, myId }: { status: string; matchedBId?: string | null; matchedCId?: string | null; myId?: string }) {
+  // 自分宛の依頼かどうか
+  const isMyTask =
+    (status === 'open' && matchedBId && matchedBId === myId) ||
+    (status === 'matched_c' && matchedCId && matchedCId === myId)
+
+  if (isMyTask) {
+    return (
+      <span className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700 flex items-center gap-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
+        あなたに依頼
+      </span>
+    )
+  }
+
   const map: Record<string, { label: string; className: string }> = {
-    open:        { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
-    open_matched: { label: 'メンバー対応中', className: 'bg-yellow-50 text-yellow-700' },
-    ai_answered: { label: 'AI回答済',        className: 'bg-purple-50 text-purple-700' },
-    matched:     { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:   { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
-    solved:      { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-    hard:        { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
+    open:         { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
+    open_matched: { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    ai_answered:  { label: 'AI回答済',         className: 'bg-purple-50 text-purple-700' },
+    matched:      { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:    { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
+    solved:       { label: '解決済み',         className: 'bg-green-50 text-green-700' },
+    hard:         { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
   }
   const key = status === 'open' && matchedBId ? 'open_matched' : status
   const { label, className } = map[key] ?? map.open
