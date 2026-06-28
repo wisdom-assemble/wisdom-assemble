@@ -214,27 +214,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">回答ステータス</label>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsAvailable(true)}
-                  className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${
-                    isAvailable ? 'bg-green-50 border-green-400 text-green-700' : 'bg-white border-gray-300 text-gray-500'
-                  }`}
-                >
-                  ✓ 今日は答えられます
-                </button>
-                <button
-                  onClick={() => setIsAvailable(false)}
-                  className={`flex-1 py-2 rounded text-sm font-medium border transition-colors ${
-                    !isAvailable ? 'bg-gray-100 border-gray-400 text-gray-700' : 'bg-white border-gray-300 text-gray-500'
-                  }`}
-                >
-                  休憩中
-                </button>
-              </div>
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
