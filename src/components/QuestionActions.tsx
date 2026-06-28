@@ -3,6 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+function MatchingOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 animate-in fade-in duration-200">
+      <div className="flex flex-col items-center gap-5">
+        <div className="w-16 h-16 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+        <p className="text-white text-lg font-medium animate-pulse">別のメンバーにマッチング中...</p>
+      </div>
+    </div>
+  )
+}
+
 // ベストアンサー選択ボタン（質問者のみ表示）
 export function AcceptButton({ questionId, answerId }: { questionId: string; answerId: string }) {
   const [loading, setLoading] = useState(false)
@@ -32,18 +43,21 @@ export function AcceptButton({ questionId, answerId }: { questionId: string; ans
 // 別のメンバーに依頼ボタン（質問者が1人目の回答に満足しなかった場合）
 export function RematchButton({ questionId }: { questionId: string }) {
   const [loading, setLoading] = useState(false)
+  const [showOverlay, setShowOverlay] = useState(false)
   const [done, setDone] = useState(false)
   const router = useRouter()
 
   async function rematch() {
     if (!confirm('別のメンバーに依頼しますか？現在の回答者はそのまま残ります。')) return
     setLoading(true)
-    const res = await fetch(`/api/questions/${questionId}/escalate`, {
+    setShowOverlay(true)
+    await fetch(`/api/questions/${questionId}/escalate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     })
-    const data = await res.json()
+    await new Promise(r => setTimeout(r, 1200))
+    setShowOverlay(false)
     setDone(true)
     router.refresh()
   }
@@ -51,13 +65,16 @@ export function RematchButton({ questionId }: { questionId: string }) {
   if (done) return <p className="text-xs text-gray-400 mt-2 text-center">別のメンバーに依頼しました</p>
 
   return (
-    <button
-      onClick={rematch}
-      disabled={loading}
-      className="w-full mt-3 py-2 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-    >
-      {loading ? '処理中...' : '👤 別のメンバーに依頼する'}
-    </button>
+    <>
+      {showOverlay && <MatchingOverlay />}
+      <button
+        onClick={rematch}
+        disabled={loading}
+        className="w-full mt-3 py-2 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+      >
+        {loading ? '処理中...' : '👤 別のメンバーに依頼する'}
+      </button>
+    </>
   )
 }
 
