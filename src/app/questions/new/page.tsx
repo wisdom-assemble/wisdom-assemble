@@ -1,7 +1,16 @@
+import { redirect } from 'next/navigation'
 import Header from '@/components/Header'
 import QuestionForm from '@/components/QuestionForm'
+import { createClient } from '@/lib/supabase/server'
 
-export default function NewQuestionPage() {
+export default async function NewQuestionPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/auth/login?next=/questions/new')
+  }
+
   return (
     <>
       <Header />
