@@ -60,10 +60,10 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const isOpen = question.status === 'open'
   const isMatchedC = question.status === 'matched_c'
   const hasAnswers = (answers?.length ?? 0) > 0
-  // Bが回答済み（B匹配＋回答あり）→ 別メンバーに依頼できる
+  // Bが回答済み → 別メンバーに依頼できる（高難度はまだ出さない）
   const canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && hasAnswers
-  // C回答済み or hard移行可能
-  const canEscalateHard = isOwner && !isSolved && !isHard
+  // Cが回答済み or C段階で答え待ち → 高難度移行のみ
+  const canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasAnswers
 
   // 期限切れチェック
   const bExpired = question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
@@ -118,7 +118,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 質問 */}
         <article className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <StatusBadge status={question.status} matchedBId={question.matched_b_id} />
+            <StatusBadge status={question.status} matchedBId={question.matched_b_id} ownerWaiting={isOwner && hasAnswers && !isSolved} />
           </div>
           <h1 className="text-xl font-bold mb-2">{question.title}</h1>
           <p className="text-xs text-gray-400 mb-4">
@@ -238,19 +238,22 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 質問者向けアクション（回答が届いているが未解決の場合） */}
         {isOwner && hasAnswers && !isSolved && (
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            {canRematch ? (
+            {canRematch && (
               <>
                 <p className="text-sm font-medium text-amber-800 mb-1">回答が届いています。解決しましたか？</p>
                 <p className="text-xs text-amber-600 mb-3">解決しない場合は別のメンバーに依頼できます（残り1回）。</p>
                 <RematchButton questionId={question.id} />
-                <EscalateHardButton questionId={question.id} />
               </>
-            ) : (
+            )}
+            {canEscalateHard && (
               <>
                 <p className="text-sm font-medium text-amber-800 mb-1">2人のメンバーが対応しましたが解決しませんでした。</p>
                 <p className="text-xs text-amber-600 mb-3">高難度クエストに移行すると全メンバーに公開されます。</p>
                 <EscalateHardButton questionId={question.id} />
               </>
+            )}
+            {!canRematch && !canEscalateHard && (
+              <p className="text-sm text-amber-700">回答が届いています。内容を確認してベストアンサーを選んでください。</p>
             )}
           </div>
         )}
@@ -271,7 +274,14 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   )
 }
 
-function StatusBadge({ status, matchedBId }: { status: string; matchedBId?: string | null }) {
+function StatusBadge({ status, matchedBId, ownerWaiting }: { status: string; matchedBId?: string | null; ownerWaiting?: boolean }) {
+  if (ownerWaiting) {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
+        あなたの確認待ち
+      </span>
+    )
+  }
   const map: Record<string, { label: string; className: string }> = {
     open:         { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
     open_matched: { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
