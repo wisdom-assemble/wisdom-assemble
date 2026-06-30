@@ -36,6 +36,8 @@ export default function ProfilePage() {
   const [isAvailable, setIsAvailable] = useState(true)
   const [emailNotify, setEmailNotify] = useState(true)
   const [stats, setStats] = useState({ answerCount: 0, hardQuestCount: 0 })
+  const [titles, setTitles] = useState<{ id: string; name: string; rarity: string }[]>([])
+  const [activeTitle, setActiveTitle] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [myQuestions, setMyQuestions] = useState<any[]>([])
   const [myTasks, setMyTasks] = useState<any[]>([])
@@ -47,10 +49,10 @@ export default function ProfilePage() {
       if (!user) { router.push('/auth/login?next=/profile'); return }
       setUserEmail(user.email ?? '')
 
-      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }] = await Promise.all([
+      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }, { data: userTitles }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify')
+          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify, active_title_id')
           .eq('id', user.id)
           .maybeSingle(),
         supabase
@@ -77,6 +79,10 @@ export default function ProfilePage() {
           .eq('user_id', user.id)
           .not('status', 'in', '("solved","hard")')
           .order('created_at', { ascending: false }),
+        supabase
+          .from('user_titles')
+          .select('title_id, titles(id, name, rarity)')
+          .eq('user_id', user.id),
       ])
 
       if (profile) {
@@ -85,6 +91,10 @@ export default function ProfilePage() {
         setIsAvailable(profile.is_available ?? true)
         setEmailNotify(profile.email_notify ?? true)
         setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
+        setActiveTitle(profile.active_title_id ?? null)
+      }
+      if (userTitles) {
+        setTitles(userTitles.map((ut: any) => ut.titles).filter(Boolean))
       }
       // 自分が回答済みの質問IDを取得してタスクから除外
       const { data: myAnswers } = await supabase
@@ -119,12 +129,22 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // メアド・URLを含む表示名は拒否
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
+    const urlRegex = /https?:\/\//
+    if (emailRegex.test(displayName) || urlRegex.test(displayName)) {
+      setMessage('表示名にメールアドレスやURLは使用できません')
+      setSaving(false)
+      return
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ display_name: displayName.trim() || null, skill_tags: skills, is_available: isAvailable, email_notify: emailNotify })
       .eq('id', user.id)
 
     setSaving(false)
+    if (error) console.error('profile save error:', JSON.stringify(error))
     setMessage(error ? '保存に失敗しました' : '保存しました')
   }
 
@@ -140,19 +160,49 @@ export default function ProfilePage() {
         </div>
 
         {/* 実績 */}
-        <div className="flex gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-800">{stats.answerCount}</p>
-            <p className="text-xs text-gray-500 mt-1">解決した質問</p>
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="flex gap-6 mb-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-800">{stats.answerCount}</p>
+              <p className="text-xs text-gray-500 mt-1">解決した質問</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-800">{stats.hardQuestCount}</p>
+              <p className="text-xs text-gray-500 mt-1">高難度クエスト</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-800">{myQuestions.length}</p>
+              <p className="text-xs text-gray-500 mt-1">投稿した質問</p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-800">{stats.hardQuestCount}</p>
-            <p className="text-xs text-gray-500 mt-1">高難度クエスト</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-800">{myQuestions.length}</p>
-            <p className="text-xs text-gray-500 mt-1">投稿した質問</p>
-          </div>
+          {/* 称号バッジ */}
+          {titles.length > 0 && (
+            <div>
+              <p className="text-xs text-gray-500 mb-2">獲得した称号</p>
+              <div className="flex flex-wrap gap-2">
+                {titles.map(t => {
+                  const rarityStyle = t.rarity === 'legendary'
+                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                    : t.rarity === 'rare'
+                    ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                    : 'bg-gray-100 text-gray-700 border border-gray-200'
+                  const isActive = t.id === activeTitle
+                  return (
+                    <span
+                      key={t.id}
+                      className={`text-xs px-2 py-1 rounded-full font-medium ${rarityStyle} ${isActive ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                      title={isActive ? '表示中の称号' : ''}
+                    >
+                      {isActive && '⭐ '}{t.name}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {titles.length === 0 && stats.answerCount === 0 && (
+            <p className="text-xs text-gray-400 mt-2">回答するとここに称号が表示されます</p>
+          )}
         </div>
 
         {/* タブ */}
@@ -212,6 +262,9 @@ export default function ProfilePage() {
                 placeholder="例：田中太郎"
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
               />
+              {displayName.startsWith('ユーザー#') && (
+                <p className="text-xs text-gray-400 mt-1">💡 表示名を設定するとマッチング時に覚えてもらいやすくなります</p>
+              )}
             </div>
 
 
