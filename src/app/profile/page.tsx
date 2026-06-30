@@ -81,7 +81,7 @@ export default function ProfilePage() {
           .order('created_at', { ascending: false }),
         supabase
           .from('user_titles')
-          .select('title_id, titles(id, name, rarity)')
+          .select('title_id')
           .eq('user_id', user.id),
       ])
 
@@ -93,8 +93,13 @@ export default function ProfilePage() {
         setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
         setActiveTitle(profile.active_title_id ?? null)
       }
-      if (userTitles) {
-        setTitles(userTitles.map((ut: any) => ut.titles).filter(Boolean))
+      if (userTitles && userTitles.length > 0) {
+        const titleIds = userTitles.map((ut: any) => ut.title_id)
+        const { data: titleData } = await supabase
+          .from('titles')
+          .select('id, name, rarity')
+          .in('id', titleIds)
+        setTitles(titleData ?? [])
       }
       // 自分が回答済みの質問IDを取得してタスクから除外
       const { data: myAnswers } = await supabase

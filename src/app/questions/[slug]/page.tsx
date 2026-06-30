@@ -3,6 +3,7 @@ import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
 import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
 import OwnerReviewTracker from '@/components/OwnerReviewTracker'
+import MarkdownBody from '@/components/MarkdownBody'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -47,9 +48,22 @@ export default async function QuestionPage({ params, searchParams }: Props) {
 
   const { data: answers } = await supabase
     .from('answers')
-    .select('*, profiles(username, display_name)')
+    .select('*, profiles(username, display_name, active_title_id)')
     .eq('question_id', question.id)
     .order('created_at', { ascending: true })
+
+  // 回答者のアクティブ称号を取得
+  const activeTitleIds = [...new Set(
+    (answers ?? []).map((a: any) => a.profiles?.active_title_id).filter(Boolean)
+  )]
+  const titleMap: Record<string, string> = {}
+  if (activeTitleIds.length > 0) {
+    const { data: titleRows } = await supabase
+      .from('titles')
+      .select('id, name')
+      .in('id', activeTitleIds)
+    for (const t of titleRows ?? []) titleMap[t.id] = t.name
+  }
 
   // ビュー数インクリメント（fire and forget）
   supabase.from('questions').update({ view_count: question.view_count + 1 }).eq('id', question.id)
@@ -61,10 +75,14 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const isOpen = question.status === 'open'
   const isMatchedC = question.status === 'matched_c'
   const hasAnswers = (answers?.length ?? 0) > 0
+  // Cが実際に回答したかどうか
+  const hasCAnswer = isMatchedC && question.matched_c_id
+    ? (answers ?? []).some((a: any) => a.user_id === question.matched_c_id)
+    : false
   // Bが回答済み → 別メンバーに依頼できる（高難度はまだ出さない）
   const canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && hasAnswers
-  // Cが回答済み or C段階で答え待ち → 高難度移行のみ
-  const canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasAnswers
+  // Cが回答済みの場合のみ高難度移行ボタンを表示（絶対ルール）
+  const canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasCAnswer
 
   // 期限切れチェック
   const bExpired = question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
@@ -170,9 +188,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             {new Date(question.created_at).toLocaleDateString('ja-JP')} ·{' '}
             {question.view_count} views
           </p>
-          <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-            {question.body}
-          </div>
+          <MarkdownBody content={question.body} />
         </article>
 
         {/* 高難度クエストバナー */}
@@ -209,16 +225,23 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                       {a.is_ai ? (
                         <span className="font-medium text-purple-700">AI (Groq)</span>
                       ) : (
-                        <span className="font-medium text-gray-700">
-                          {responder?.display_name ?? responder?.username}
-                        </span>
+                        <>
+                          <span className="font-medium text-gray-700">
+                            {responder?.display_name ?? responder?.username}
+                          </span>
+                          {responder?.active_title_id && titleMap[responder.active_title_id] && (
+                            <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                              {titleMap[responder.active_title_id]}
+                            </span>
+                          )}
+                        </>
                       )}
                       {a.is_accepted && (
                         <span className="text-green-700 font-medium">✓ ベストアンサー</span>
                       )}
                       <span>{new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
                     </div>
-                    <div className="text-sm text-gray-700 whitespace-pre-wrap">{a.body}</div>
+                    <MarkdownBody content={a.body} />
 
                     {/* 質問者：ベストアンサーボタン */}
                     {isOwner && !isSolved && !a.is_accepted && (
@@ -285,7 +308,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             {canRematch && (
               <>
                 <p className="text-sm font-medium text-amber-800 mb-1">回答が届いています。解決しましたか？</p>
-                <p className="text-xs text-amber-600 mb-3">解決しない場合は別のメンバーに依頼できます（残り1回）。</p>
+                <p className="text-xs text-amber-600 mb-3">解決しない場合は別のメンバーに依頼できます。依頼後に解決しなければ🔥高難度に昇格します。</p>
                 <RematchButton questionId={question.id} />
               </>
             )}
@@ -296,7 +319,10 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                 <EscalateHardButton questionId={question.id} />
               </>
             )}
-            {!canRematch && !canEscalateHard && (
+            {!canRematch && !canEscalateHard && isMatchedC && (
+              <p className="text-sm text-amber-700">2人目のメンバーに依頼中です。回答が届いたら🔥高難度に昇格できます。<br /><span className="text-xs text-amber-600">Ryoの回答で解決する場合はベストアンサーを選んでください。</span></p>
+            )}
+            {!canRematch && !canEscalateHard && !isMatchedC && (
               <p className="text-sm text-amber-700">回答が届いています。内容を確認してベストアンサーを選んでください。</p>
             )}
           </div>

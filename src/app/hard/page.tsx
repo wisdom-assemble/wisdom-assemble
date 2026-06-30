@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
+import HardQuestionList from '@/components/HardQuestionList'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 
@@ -63,47 +64,7 @@ export default async function HardQuestPage({
         </div>
 
         {questions.length > 0 ? (
-          <ul className="divide-y divide-gray-100">
-            {questions.map((q) => {
-              const createdAt = new Date(q.created_at)
-              const solvedAt = tab === 'solved' ? new Date((q as any).updated_at) : null
-              const hours = solvedAt
-                ? Math.round((solvedAt.getTime() - createdAt.getTime()) / 1000 / 60 / 60)
-                : null
-
-              return (
-                <li key={q.id}>
-                  <Link
-                    href={`/questions/${q.slug}`}
-                    className="block py-4 hover:bg-gray-50 -mx-2 px-2 rounded"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                            tab === 'solved' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                          }`}>
-                            {tab === 'solved' ? '解決済み' : '高難度'}
-                          </span>
-                          <p className="font-medium text-gray-900 truncate">{q.title}</p>
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          {(q.profiles as any)?.display_name ?? (q.profiles as any)?.username} ·{' '}
-                          {createdAt.toLocaleDateString('ja-JP')} ·{' '}
-                          {q.view_count} views
-                          {hours !== null && (
-                            <span className="ml-2 text-green-600">
-                              · 解決まで {hours < 24 ? `${hours}時間` : `${Math.round(hours / 24)}日`}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+          <HardQuestionList questions={questions as any} tab={tab as 'unsolved' | 'solved'} />
         ) : (
           <div className="text-center py-16 text-gray-400">
             {tab === 'solved' ? (
