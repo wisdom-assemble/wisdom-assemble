@@ -54,7 +54,7 @@ export async function POST(
       await admin.from('questions').update({
         status: 'matched_c',
         matched_c_id: matchedC,
-        matched_c_deadline: calcDeadline(24),
+        matched_c_deadline: calcDeadline(8),
       }).eq('id', questionId)
       return NextResponse.json({ ok: true, nextStatus: 'matched_c', matchedC })
     } else {

@@ -21,7 +21,7 @@ export default async function AdminPage({
   const [{ data: questions }, { data: profiles }] = await Promise.all([
     supabase
       .from('questions')
-      .select('id, slug, title, status, tenant_id, created_at, user_id, profiles!questions_user_id_fkey(username, display_name)')
+      .select('id, slug, title, status, tenant_id, created_at, user_id, matched_b_id, profiles!questions_user_id_fkey(username, display_name)')
       .order('created_at', { ascending: false })
       .limit(200),
     supabase
@@ -34,9 +34,9 @@ export default async function AdminPage({
   return (
     <>
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8 w-full">
+      <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">管理者ダッシュボード</h1>
+          <h1 className="text-2xl font-bold">管理者ダッシュボード</h1>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">admin only</span>
         </div>
 

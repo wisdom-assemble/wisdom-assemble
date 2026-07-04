@@ -79,18 +79,22 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const hasCAnswer = isMatchedC && question.matched_c_id
     ? (answers ?? []).some((a: any) => a.user_id === question.matched_c_id)
     : false
-  // Bが回答済み → 別メンバーに依頼できる（高難度はまだ出さない）
-  const canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && hasAnswers
-  // Cが回答済みの場合のみ高難度移行ボタンを表示（絶対ルール）
-  const canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasCAnswer
-
   // 期限切れチェック
   const bExpired = question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
   const cExpired = question.matched_c_deadline && new Date(question.matched_c_deadline) < new Date()
 
+  // Bが回答済み or 期限切れ → 次の専門家に依頼 or 高難度昇格が選べる
+  const canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && (hasAnswers || !!bExpired)
+  // Cが回答済みの場合のみ高難度移行ボタンを表示（絶対ルール）
+  const canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasCAnswer
+
   // マッチングされた本人かどうか
   const isMatchedB = user?.id === question.matched_b_id && isOpen && !bExpired
   const isMatchedCUser = user?.id === question.matched_c_id && isMatchedC && !cExpired
+
+  // 期限切れ専門家かどうか（UI表示用）
+  const isExpiredMatchedB = user?.id === question.matched_b_id && isOpen && !!bExpired
+  const isExpiredMatchedCUser = user?.id === question.matched_c_id && isMatchedC && !!cExpired
 
   // 自分がすでに回答済みか
   const alreadyAnswered = user
@@ -132,28 +136,28 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 投稿直後バナー */}
         {resultParam === 'ai' && (
           <div className="mb-5 p-4 bg-purple-50 border border-purple-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-            <span className="text-2xl">✨</span>
+            <span className="text-lg font-bold text-purple-700">AI</span>
             <div>
               <p className="text-sm font-semibold text-purple-800">AIが回答しました！</p>
-              <p className="text-xs text-purple-600 mt-0.5">下の回答をご確認ください。解決したら「ベストアンサー」を押してください。</p>
+              <p className="text-xs text-purple-600 mt-0.5">下の回答をご確認ください。解決したら「ベストアンサーにして解決」を押してください。</p>
             </div>
           </div>
         )}
         {resultParam === 'matched' && (
           <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-            <span className="text-2xl">🙌</span>
+            <span className="text-lg font-bold text-green-700">●</span>
             <div>
-              <p className="text-sm font-semibold text-green-800">メンバーにマッチングしました！</p>
-              <p className="text-xs text-green-600 mt-0.5">回答が届くまでしばらくお待ちください（通常24時間以内）。</p>
+              <p className="text-sm font-semibold text-green-800">専門家にマッチングしました！</p>
+              <p className="text-xs text-green-600 mt-0.5">回答が届くまでお待ちください（8時間以内に返答がなければ自動で次のステップへ移行します）。</p>
             </div>
           </div>
         )}
         {resultParam === 'pending' && (
           <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-            <span className="text-2xl">⏳</span>
+            <span className="text-lg font-bold text-blue-700">●</span>
             <div>
               <p className="text-sm font-semibold text-blue-800">質問を受け付けました</p>
-              <p className="text-xs text-blue-600 mt-0.5">しばらくお待ちください。このページをリロードすると状況を確認できます。</p>
+              <p className="text-xs text-blue-600 mt-0.5">しばらくお待ちください。（このページをリロードすると状況を確認できます。）</p>
             </div>
           </div>
         )}
@@ -161,7 +165,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 類似の解決済み質問 */}
         {similarQuestions.length > 0 && (
           <div className="mb-5 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-xs font-semibold text-gray-500 mb-2">💡 似た質問が解決しています — 参考になるかも</p>
+            <p className="text-xs font-semibold text-gray-500 mb-2">似た質問が解決しています — 参考になるかも</p>
             <ul className="space-y-1">
               {similarQuestions.map(q => (
                 <li key={q.id}>
@@ -194,9 +198,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 高難度クエストバナー */}
         {isHard && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-medium text-red-800">🔥 高難度クエスト</p>
+            <p className="text-sm font-medium text-red-800">高難度 / 解決募集中</p>
             <p className="text-xs text-red-700 mt-1">
-              AIも人間2人も解決できなかった質問です。あなたの知識・経験で助けてください。
+              AIも専門家も解決できなかった質問です。あなたの知識・経験で助けてください。
             </p>
           </div>
         )}
@@ -223,7 +227,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                   >
                     <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
                       {a.is_ai ? (
-                        <span className="font-medium text-purple-700">AI (Groq)</span>
+                        <span className="font-medium text-purple-700">AI</span>
                       ) : (
                         <>
                           <span className="font-medium text-gray-700">
@@ -254,15 +258,22 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           </section>
         )}
 
+        {/* 期限切れ専門家向けメッセージ */}
+        {(isExpiredMatchedB || isExpiredMatchedCUser) && !isSolved && (
+          <div className="border-t pt-6 p-4 bg-gray-100 rounded text-sm text-gray-500 text-center">
+            回答期限が過ぎたため、この質問への回答受付は終了しました。
+          </div>
+        )}
+
         {/* マッチング待ち（自分はBでもCでもない場合） */}
-        {isOpen && question.matched_b_id && !isSolved && user && !isOwner && !showAnswerForm && (
+        {isOpen && question.matched_b_id && !isSolved && user && !isOwner && !showAnswerForm && !isExpiredMatchedB && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
             {alreadyAnswered
               ? '✓ 回答しました。質問者の確認をお待ちください。'
               : '現在、専門家にマッチング中です。しばらくお待ちください。'}
           </div>
         )}
-        {isMatchedC && question.matched_c_id && !isSolved && user && !isOwner && !showAnswerForm && (
+        {isMatchedC && question.matched_c_id && !isSolved && user && !isOwner && !showAnswerForm && !isExpiredMatchedCUser && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
             {alreadyAnswered
               ? '✓ 回答しました。質問者の確認をお待ちください。'
@@ -272,7 +283,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* matched_b_id/c_id がnull = 候補者なしで止まっている → hardと同じ扱いで全員に開放 */}
         {((isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && !isSolved && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-medium text-red-800">🔥 専門家を募集中</p>
+            <p className="text-sm font-medium text-red-800">専門家を募集中</p>
             <p className="text-xs text-red-700 mt-1">
               現在マッチングできる専門家がいません。あなたの知識・経験で助けてください。
             </p>
@@ -302,25 +313,35 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           </section>
         )}
 
-        {/* 質問者向けアクション（回答が届いているが未解決の場合） */}
-        {isOwner && hasAnswers && !isSolved && (
+        {/* 質問者向けアクション（回答が届いているか期限切れで未解決の場合） */}
+        {isOwner && !isSolved && (canRematch || canEscalateHard || isMatchedC) && (
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             {canRematch && (
               <>
-                <p className="text-sm font-medium text-amber-800 mb-1">回答が届いています。解決しましたか？</p>
-                <p className="text-xs text-amber-600 mb-3">解決しない場合は別のメンバーに依頼できます。依頼後に解決しなければ🔥高難度に昇格します。</p>
+                {hasAnswers ? (
+                  <>
+                    <p className="text-sm font-medium text-amber-800 mb-1">専門家①の回答が届いています。どうしますか？</p>
+                    <p className="text-xs text-amber-600 mb-3">解決した場合は「ベストアンサーにして解決」を押してください。解決しない場合は次の専門家に依頼するか、高難度質問に移行して全員に解決を求めることができます。</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-amber-800 mb-1">専門家①から回答がありませんでした。</p>
+                    <p className="text-xs text-amber-600 mb-3">次の専門家に依頼するか、高難度質問に移行できます。</p>
+                  </>
+                )}
                 <RematchButton questionId={question.id} />
+                <EscalateHardButton questionId={question.id} />
               </>
             )}
             {canEscalateHard && (
               <>
-                <p className="text-sm font-medium text-amber-800 mb-1">2人のメンバーが対応しましたが解決しませんでした。</p>
-                <p className="text-xs text-amber-600 mb-3">高難度クエストに移行すると全メンバーに公開されます。</p>
+                <p className="text-sm font-medium text-amber-800 mb-1">2人の専門家が対応しましたが解決しませんでした。</p>
+                <p className="text-xs text-amber-600 mb-3">高難度質問に移行すると全員に公開され解決を求める事ができます。</p>
                 <EscalateHardButton questionId={question.id} />
               </>
             )}
             {!canRematch && !canEscalateHard && isMatchedC && (
-              <p className="text-sm text-amber-700">2人目のメンバーに依頼中です。回答が届いたら🔥高難度に昇格できます。<br /><span className="text-xs text-amber-600">Ryoの回答で解決する場合はベストアンサーを選んでください。</span></p>
+              <p className="text-sm text-amber-700">2人目の専門家に依頼中です。回答が届いたら、回答次第で高難度に移行できます。<br /><span className="text-xs text-amber-600">回答で解決する場合はベストアンサーにして解決してください。8時間以内に回答がない場合は自動で高難度に移行します。</span></p>
             )}
             {!canRematch && !canEscalateHard && !isMatchedC && (
               <p className="text-sm text-amber-700">回答が届いています。内容を確認してベストアンサーを選んでください。</p>
@@ -354,12 +375,12 @@ function StatusBadge({ status, matchedBId, ownerWaiting }: { status: string; mat
   }
   const map: Record<string, { label: string; className: string }> = {
     open:         { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
-    open_matched: { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    open_matched: { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
     ai_answered:  { label: 'AI回答済み',       className: 'bg-purple-50 text-purple-700' },
-    matched:      { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:    { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
+    matched:      { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:    { label: '専門家②が対応中', className: 'bg-orange-50 text-orange-700' },
     solved:       { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-    hard:         { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
+    hard:         { label: '高難度',           className: 'bg-red-50 text-red-700' },
   }
   const key = status === 'open' && matchedBId ? 'open_matched' : status
   const { label, className } = map[key] ?? map.open

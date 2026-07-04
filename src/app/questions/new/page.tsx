@@ -17,7 +17,7 @@ export default async function NewQuestionPage() {
     <>
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
-        <h1 className="text-xl font-bold mb-6">質問する</h1>
+        <h1 className="text-2xl font-bold mb-6">質問する</h1>
         <QuestionForm />
       </main>
     </>

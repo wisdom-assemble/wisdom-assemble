@@ -8,7 +8,7 @@ type OverlayPhase = 'ai' | 'matched' | null
 
 function Overlay({ phase }: { phase: OverlayPhase }) {
   if (!phase) return null
-  const label = phase === 'ai' ? 'AIが考え中...' : '他のメンバーにマッチング中...'
+  const label = phase === 'ai' ? 'AIが考え中...' : '専門家にマッチング中...'
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 animate-in fade-in duration-200">
       <div className="flex flex-col items-center gap-5">
@@ -72,7 +72,7 @@ export default function QuestionForm() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error ?? '投稿に失敗しました')
+        throw new Error(data.error ?? '投稿に失敗しました。お手数ですが再度お試しください。')
       }
 
       const { slug, result } = await res.json()
@@ -122,7 +122,7 @@ export default function QuestionForm() {
           {/* 類似質問サジェスト */}
           {similar.length > 0 && (
             <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs font-semibold text-amber-700 mb-1.5">💡 似た質問が既にあります — 解決済みのものも確認してみてください</p>
+              <p className="text-xs font-semibold text-amber-700 mb-1.5">似た質問が既にあります — 解決済みのものも確認してみてください</p>
               <ul className="space-y-1">
                 {similar.map(q => (
                   <li key={q.id} className="flex items-center gap-2">

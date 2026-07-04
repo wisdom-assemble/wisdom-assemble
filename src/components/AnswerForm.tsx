@@ -35,7 +35,7 @@ export default function AnswerForm({ questionId }: Props) {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error ?? '投稿に失敗しました')
+        throw new Error(data.error ?? '投稿に失敗しました。お手数ですが再度お試しください。')
       }
 
       setBody('')
@@ -53,7 +53,7 @@ export default function AnswerForm({ questionId }: Props) {
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="あなたの経験・知識をシェアしてください（30文字以上）"
+        placeholder="あなたの経験・知識をシェアして質問者を助けてあげて下さい。（30文字以上）"
         className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[120px] resize-y"
       />
       <p className="text-xs text-gray-400">{body.length}文字</p>

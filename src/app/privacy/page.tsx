@@ -4,9 +4,8 @@ export default function PrivacyPage() {
   return (
     <>
       <Header />
-      <main className="max-w-2xl mx-auto px-4 py-10 w-full">
+      <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold mb-2">プライバシーポリシー</h1>
-        <p className="text-xs text-gray-400 mb-8">最終更新：2026年6月28日</p>
 
         <div className="prose prose-sm max-w-none text-gray-700 space-y-8">
           <Section title="1. 取得する情報">
@@ -17,52 +16,60 @@ export default function PrivacyPage() {
               <li>プロフィールに設定したスキルタグ・表示名・稼働状態</li>
               <li>アクセスログ（IPアドレス・閲覧ページ）</li>
             </ul>
+            <p>氏名・住所・電話番号などの個人を特定できる情報は取得しません。</p>
           </Section>
 
           <Section title="2. 情報の利用目的">
             <ul>
-              <li>サービスの提供・改善</li>
+              <li>サービスの提供・運営・改善</li>
               <li>質問と回答者のマッチング処理</li>
-              <li>不正利用の防止</li>
-              <li>サービスに関するお知らせ</li>
+              <li>不正利用・スパムの防止</li>
             </ul>
           </Section>
 
-          <Section title="3. 第三者への提供">
+          <Section title="3. 第三者提供・外部サービス">
             <p>
-              法令に基づく場合を除き、取得した個人情報を第三者に提供することはありません。
-              ただし、以下のサービスを利用しており、各社のプライバシーポリシーが適用されます。
+              以下の外部サービスを利用しており、各社のプライバシーポリシーが適用されます。
+              当該サービスへのデータ送信を含む利用に同意した上でご使用ください。
             </p>
             <ul>
               <li>Supabase（データベース・認証）</li>
-              <li>Groq（AI回答生成 ※質問内容が処理に利用されます）</li>
+              <li>Groq（AI回答生成 ※質問内容が処理されます）</li>
               <li>Google（OAuth認証）</li>
             </ul>
+            <p>上記以外の第三者へ個人情報を提供することはありません。</p>
           </Section>
 
           <Section title="4. データの保管・削除">
             <p>
-              取得したデータはSupabaseのデータベースに保管されます。
-              アカウント削除をご希望の場合は、お問い合わせフォームよりご連絡ください。
-              確認後、速やかに対応いたします。
+              データはSupabaseのデータベースに保管されます。
+              アカウント削除をご希望の場合は、お問い合わせフォームよりご連絡ください。できる限り対応します。
             </p>
           </Section>
 
           <Section title="5. Cookieの利用">
             <p>
-              本サービスでは、ログイン状態の維持のためにCookieを使用しています。
-              ブラウザの設定からCookieを無効にすることができますが、その場合ログイン機能が正常に動作しない場合があります。
+              ログイン状態の維持のためにCookieを使用しています。
+              Cookieを無効にするとログイン機能が正常に動作しない場合があります。
             </p>
           </Section>
 
-          <Section title="6. ポリシーの変更">
+          <Section title="6. 免責">
+            <p>
+              本サービスは取得した情報の安全管理に努めますが、
+              完全なセキュリティを保証するものではありません。
+              情報漏洩等によって生じた損害について、運営は責任を負いません。
+            </p>
+          </Section>
+
+          <Section title="7. ポリシーの変更">
             <p>
               本ポリシーは予告なく変更することがあります。
-              重要な変更がある場合はサービス上でお知らせします。
+              変更後も本サービスを利用した場合、変更後のポリシーに同意したものとみなします。
             </p>
           </Section>
 
-          <Section title="7. お問い合わせ">
+          <Section title="8. お問い合わせ">
             <p>
               プライバシーに関するご質問・削除依頼は、
               <a href="/contact" className="underline text-gray-900 hover:opacity-70">お問い合わせフォーム</a>

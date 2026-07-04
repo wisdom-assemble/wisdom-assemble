@@ -62,6 +62,11 @@ export async function POST(request: NextRequest) {
     // answer_countをインクリメント
     await admin.rpc('increment_answer_count', { uid: answer.user_id })
 
+    // 高難度クエストの解決数をインクリメント
+    if (question.status === 'hard') {
+      await admin.rpc('increment_hard_quest_count', { uid: answer.user_id })
+    }
+
     // 回答実績タグに質問タグを追加（No.27）
     const questionTags: string[] = question.tags ?? []
     if (questionTags.length > 0) {
@@ -83,9 +88,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 称号チェック（DB関数で自動付与）
+    // 称号チェック（回答者）
     await admin.rpc('check_and_award_titles', { p_user_id: answer.user_id })
   }
+
+  // 質問者の解決済みカウント＋称号チェック
+  await admin.rpc('increment_solved_question_count', { uid: question.user_id })
+  await admin.rpc('check_and_award_titles', { p_user_id: question.user_id })
 
   return NextResponse.json({ ok: true })
 }

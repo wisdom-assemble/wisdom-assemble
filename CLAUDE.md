@@ -9,14 +9,20 @@
 ## ビジネスモデル
 - ジャンル別サブドメイン（例: debug.wisdom-assemble.com）
 - 20〜100サイト展開予定
-- 収益: ドネーション + 広告
+- 収益（優先順）: Google AdSense（メイン）> アフィリエイト ASP（サブ）> 投げ銭（補助）
+- **投げ銭（チップ）機能**: 質問者がベストアンサー選択後に専門家へチップを送れる
+  - Stripe Connect を使用
+  - 専門家 90% / プラットフォーム 10% の手数料モデル
+  - donations テーブルで管理（donor_id・recipient_id・question_id・amount・platform_fee）
+  - 「使い方」ページ・利用規約・FAQへの文言追加も必要
+- アフィリエイト: ASP登録（A8.net・もしもアフィリエイト等）してリンクを貼るだけ、カスタム追跡システムは不要
 
 ## 技術スタック
 - Next.js 14 (App Router) + TypeScript
 - Supabase (PostgreSQL + Auth + RLS)
 - Tailwind CSS
 - Groq API (llama-3.3-70b-versatile) for AI answers
-- Vercel（デプロイ先）
+- Cloudflare Pages（デプロイ先）※ Vercel は使わない
 
 ## セッション管理ルール
 - 開発のキリがいいタイミングで**セッションを切り替える**
@@ -38,6 +44,7 @@
 - 開発ログ page_id: 38af5fa8-bcb9-80d1-ac24-d3b3478d0fde
 - 基本用語 page_id: 38af5fa8-bcb9-80a7-8b9b-da2f6d7064ae
 - プロジェクト仕様書 page_id: 38af5fa8-bcb9-8065-9ccb-c55550c8d4ed
+- **ローンチタスクチェックリスト page_id: 390f5fa8-bcb9-80c6-bacb-f23143389627**
 
 ## Supabase
 - URL: https://scnkpmxvtwtsxzbhfdnf.supabase.co
@@ -89,18 +96,44 @@
 
 ### 🔜 フェーズ③ 次回から
 
-**⚠️ 次セッション開始前の必須作業：なし（apply-phase-c.sql実行済み）**
+**⚠️ 次セッション開始前の必須作業：なし**
+
+### ✅ 称号システム v2 完了（2026-07-05）
+- 25種称号（回答7・高難度7・質問投稿4・質問解決済み7）
+- scripts/titles-v2.sql 実行済み（Supabase本番DB適用済み）
+- profiles に question_count / solved_question_count カラム追加済み
+- increment_question_count / increment_solved_question_count RPC追加済み
+- check_and_award_titles 関数更新済み
+- マイページ：称号クリックで表示称号選択UI
+- マイページ：「解決した回答」アーカイブタブ追加
+- トップページ：1ページ50件表示・スティッキー検索バー（top-[73px]）
+- 管理画面：スティッキー検索バー（top-[73px]）
+
+**⏸️ テスト待ち（2026-07-02実装済み・未テスト）**
+- 期限切れUX修正（src/app/questions/[slug]/page.tsx）
+  - Notion テスト⑦: https://app.notion.com/p/Wisdom-Assemble-UX-390f5fa8bcb981a5a33fdc749975a099
+  - テスト項目#1〜#16（優先: #1〜#5 + #14〜#15）
+  - DBで `matched_b_deadline = '2024-01-01'` に書き換えて再現
 
 **リリース前必須**
 1. Googleログインのみに絞る（メールログイン削除・テストアカウント削除）
 2. テストデータ削除・本番DBクリーンアップ
 3. 回答最小文字数バリデーション（20文字以上、AnswerForm + API両方）
 4. 法的ページ内容精査（/terms /privacy /contact 内容の確認・修正）
-5. Resendメール通知実装（マッチング時メール送信・email_notifyトグル連動・スパム仕分け機能）
+5. **Brevo**メール通知実装（マッチング時メール送信・email_notifyトグル連動・スパム仕分け機能）
+   - Brevo（旧Sendinblue）: 無料 9,000通/月・300通/日
+   - Supabase Edge Functions 経由でメール送信
+   - ※ Resend は使わない（Resendは3,000通/月）
 
 **機能追加（優先度高）**
 6. No.34 タグフィルター検索（questionsにtagsカラム追加済み・UIのみ実装残り）
 7. No.26 質問下書き保存（localStorage）
+8. **専門家への投げ銭（チップ）機能**（Stripe Connect）
+   - donations テーブル設計・Stripe アカウント作成
+   - 回答下に「チップを送る」ボタン UI
+   - 専門家プロフィールに Stripe Connect 登録フロー
+   - マイページに受取履歴
+   - /how-it-works・利用規約・FAQ の文言更新
 
 **フロントエンド未対応**
 10. モバイル細かい修正（デプロイ後の実機確認後）
@@ -109,8 +142,8 @@
 13. 404・エラーページのデザイン
 
 **インフラ**
-14. ドメイン取得（wisdomassemble.com）
-15. Vercel / Cloudflare 本番デプロイ
+14. ドメイン取得・Cloudflare 設定（wisdomassemble.com）
+15. Cloudflare Pages 本番デプロイ（※ Vercel は使わない）
 16. サブドメインマルチテナント本番確認
 
 **実装済み（フェーズ②末）**
@@ -175,8 +208,10 @@ GRANT SELECT ON public.tenants TO service_role;
 ---
 
 ## 重要な実装メモ
-- `canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasAnswers`（Bステージでは絶対に出さない）
-- `canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && hasAnswers`
+- `canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasCAnswer`（Bステージでは絶対に出さない）
+- `canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && (hasAnswers || !!bExpired)`（期限切れでも質問者がアクション可能）
+- `isExpiredMatchedB = user?.id === question.matched_b_id && isOpen && !!bExpired`（期限切れ専門家向けUI表示用）
+- `bExpired/cExpired` の宣言は `canRematch` より前に置くこと（temporal dead zone回避）
 - DB更新系APIは全てservice_role使用（RLS回避）
 - `findMatch`の除外フィルター: `.not('id', 'in', \`(${excludeUserIds.join(',')})\`)` （引用符なし）
 

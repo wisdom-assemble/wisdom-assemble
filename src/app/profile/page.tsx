@@ -15,13 +15,13 @@ const SKILL_OPTIONS = [
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   open:        { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
   ai_answered: { label: 'AI回答済',        className: 'bg-purple-50 text-purple-700' },
-  matched:     { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
-  matched_c:   { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
+  matched:     { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
+  matched_c:   { label: '専門家②が対応中', className: 'bg-orange-50 text-orange-700' },
   solved:      { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-  hard:        { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
+  hard:        { label: '高難度',   className: 'bg-red-50 text-red-700' },
 }
 
-type Tab = 'profile' | 'myquestions' | 'tasks' | 'review'
+type Tab = 'profile' | 'myquestions' | 'tasks' | 'review' | 'solved'
 
 export default function ProfilePage() {
   const supabase = createClient()
@@ -42,6 +42,7 @@ export default function ProfilePage() {
   const [myQuestions, setMyQuestions] = useState<any[]>([])
   const [myTasks, setMyTasks] = useState<any[]>([])
   const [reviewItems, setReviewItems] = useState<any[]>([])
+  const [solvedAnswers, setSolvedAnswers] = useState<any[]>([])
 
   useEffect(() => {
     async function load() {
@@ -49,7 +50,7 @@ export default function ProfilePage() {
       if (!user) { router.push('/auth/login?next=/profile'); return }
       setUserEmail(user.email ?? '')
 
-      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }, { data: userTitles }] = await Promise.all([
+      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }, { data: userTitles }, { data: solvedAnswerRows }] = await Promise.all([
         supabase
           .from('profiles')
           .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify, active_title_id')
@@ -83,6 +84,14 @@ export default function ProfilePage() {
           .from('user_titles')
           .select('title_id')
           .eq('user_id', user.id),
+        supabase
+          .from('answers')
+          .select('id, created_at, questions(id, title, slug)')
+          .eq('user_id', user.id)
+          .eq('is_accepted', true)
+          .eq('is_ai', false)
+          .order('created_at', { ascending: false })
+          .limit(100),
       ])
 
       if (profile) {
@@ -110,6 +119,7 @@ export default function ProfilePage() {
       const answeredQIds = new Set((myAnswers ?? []).map((a: any) => a.question_id))
 
       setMyQuestions(questions ?? [])
+      setSolvedAnswers(solvedAnswerRows ?? [])
       setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredQIds.has(q.id)))
       setReviewItems((reviewQuestions ?? []).filter((q: any) => {
         if (!q.answers?.length) return false
@@ -121,6 +131,14 @@ export default function ProfilePage() {
     }
     load()
   }, [])
+
+  async function handleTitleClick(titleId: string) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const newActive = activeTitle === titleId ? null : titleId
+    setActiveTitle(newActive)
+    await supabase.from('profiles').update({ active_title_id: newActive }).eq('id', user.id)
+  }
 
   function toggleSkill(skill: string) {
     setSkills(prev =>
@@ -153,14 +171,14 @@ export default function ProfilePage() {
     setMessage(error ? '保存に失敗しました' : '保存しました')
   }
 
-  if (loading) return <><Header /><div className="max-w-xl mx-auto px-4 py-16 text-center text-gray-400">読み込み中...</div></>
+  if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400">読み込み中...</div></>
 
   return (
     <>
       <Header />
-      <main className="max-w-xl mx-auto px-4 py-8 w-full">
+      <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold">マイページ</h1>
+          <h1 className="text-2xl font-bold">マイページ</h1>
           <p className="text-xs text-gray-400">{userEmail}</p>
         </div>
 
@@ -173,7 +191,7 @@ export default function ProfilePage() {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-800">{stats.hardQuestCount}</p>
-              <p className="text-xs text-gray-500 mt-1">高難度クエスト</p>
+              <p className="text-xs text-gray-500 mt-1">解決した高難度質問</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-800">{myQuestions.length}</p>
@@ -183,7 +201,8 @@ export default function ProfilePage() {
           {/* 称号バッジ */}
           {titles.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 mb-2">獲得した称号</p>
+              <p className="text-xs text-gray-500 mb-1">獲得した称号</p>
+              <p className="text-xs text-gray-400 mb-2">クリックで表示する称号を選べます</p>
               <div className="flex flex-wrap gap-2">
                 {titles.map(t => {
                   const rarityStyle = t.rarity === 'legendary'
@@ -193,20 +212,21 @@ export default function ProfilePage() {
                     : 'bg-gray-100 text-gray-700 border border-gray-200'
                   const isActive = t.id === activeTitle
                   return (
-                    <span
+                    <button
                       key={t.id}
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${rarityStyle} ${isActive ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
-                      title={isActive ? '表示中の称号' : ''}
+                      onClick={() => handleTitleClick(t.id)}
+                      className={`text-xs px-2 py-1 rounded-full font-medium cursor-pointer transition-all ${rarityStyle} ${isActive ? 'ring-2 ring-offset-1 ring-gray-500' : 'opacity-70 hover:opacity-100'}`}
+                      title={isActive ? 'クリックで解除' : 'クリックで表示'}
                     >
-                      {isActive && '⭐ '}{t.name}
-                    </span>
+                      {isActive && '★ '}{t.name}
+                    </button>
                   )
                 })}
               </div>
             </div>
           )}
           {titles.length === 0 && stats.answerCount === 0 && (
-            <p className="text-xs text-gray-400 mt-2">回答するとここに称号が表示されます</p>
+            <p className="text-xs text-gray-400 mt-2">回答するとここにあなたの実績「称号」が表示されます</p>
           )}
         </div>
 
@@ -247,6 +267,14 @@ export default function ProfilePage() {
             )}
           </button>
           <button
+            onClick={() => setTab('solved')}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+              tab === 'solved' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            解決した回答 ({solvedAnswers.length})
+          </button>
+          <button
             onClick={() => setTab('myquestions')}
             className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
               tab === 'myquestions' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -268,7 +296,7 @@ export default function ProfilePage() {
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
               />
               {displayName.startsWith('ユーザー#') && (
-                <p className="text-xs text-gray-400 mt-1">💡 表示名を設定するとマッチング時に覚えてもらいやすくなります</p>
+                <p className="text-xs text-gray-400 mt-1">表示名を設定するとマッチング時に覚えてもらいやすくなります</p>
               )}
             </div>
 
@@ -297,8 +325,8 @@ export default function ProfilePage() {
             {/* メール通知 */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-700">メール通知</p>
-                <p className="text-xs text-gray-400 mt-0.5">依頼が届いたときにメールで通知します</p>
+                <p className="text-sm font-medium text-gray-700">メール</p>
+                <p className="text-xs text-gray-400 mt-0.5">依頼が届いたときに登録したGmailで通知します</p>
               </div>
               <button
                 onClick={() => setEmailNotify(v => !v)}
@@ -378,12 +406,42 @@ export default function ProfilePage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">{q.title}</p>
-                            <p className="text-xs text-red-500 mt-0.5">📩 回答が届いています — 確認してください</p>
+                            <p className="text-xs text-red-500 mt-0.5">回答が届いています — 確認してください</p>
                           </div>
                           <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>
                             {s.label}
                           </span>
                         </div>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {tab === 'solved' && (
+          <div>
+            {solvedAnswers.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <p>まだベストアンサーに選ばれた回答はありません</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {solvedAnswers.map((a: any) => {
+                  const q = a.questions
+                  if (!q) return null
+                  return (
+                    <li key={a.id}>
+                      <Link
+                        href={`/questions/${q.slug}`}
+                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                      >
+                        <p className="text-sm font-medium text-gray-900">{q.title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {new Date(a.created_at).toLocaleDateString('ja-JP')} · ベストアンサー
+                        </p>
                       </Link>
                     </li>
                   )

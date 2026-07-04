@@ -37,9 +37,9 @@ export default async function HardQuestPage({
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <div className="mb-6">
-          <h1 className="text-xl font-bold mb-1">🔥 高難度クエストボード</h1>
+          <h1 className="text-2xl font-bold mb-1">高難度質問一覧</h1>
           <p className="text-sm text-gray-500">
-            AIも人間2人も答えられなかった質問です。あなたの知識で解決できますか？
+            AIも専門家も答えられなかった質問です。あなたの知識で解決できますか？
           </p>
         </div>
 
@@ -68,11 +68,11 @@ export default async function HardQuestPage({
         ) : (
           <div className="text-center py-16 text-gray-400">
             {tab === 'solved' ? (
-              <p>まだ解決した高難度クエストはありません</p>
+              <p>まだ解決した高難度質問はありません</p>
             ) : (
               <>
-                <p>高難度クエストはまだありません</p>
-                <p className="text-sm mt-1">すべての質問がAIまたは人間によって解決されています 🎉</p>
+                <p>高難度質問はまだありません</p>
+                <p className="text-sm mt-1">すべての質問が解決されています</p>
               </>
             )}
           </div>

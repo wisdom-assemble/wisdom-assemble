@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { askWithScore, checkInScope } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
+import { checkContent } from '@/lib/contentFilter'
 
 function toSlug(text: string): string {
   return text
@@ -36,6 +37,11 @@ export async function POST(request: NextRequest) {
   }
   if (body.trim().length < 30) {
     return NextResponse.json({ error: '詳細は30文字以上入力してください' }, { status: 400 })
+  }
+
+  const filterResult = checkContent(`${title} ${body}`)
+  if (!filterResult.ok) {
+    return NextResponse.json({ error: filterResult.reason }, { status: 422 })
   }
 
   // ① 保存前にジャンル判定（OKなら保存、NGなら即拒否）
@@ -107,7 +113,7 @@ export async function POST(request: NextRequest) {
           status: 'open',
           ai_score: result.score,
           matched_b_id: matchedB,
-          matched_b_deadline: calcDeadline(24),
+          matched_b_deadline: calcDeadline(8),
         }).eq('id', question.id)
         console.log(`[Matching] B=${matchedB}`)
         resultType = 'matched'
@@ -118,7 +124,7 @@ export async function POST(request: NextRequest) {
             status: 'matched_c',
             ai_score: result.score,
             matched_c_id: matchedC,
-            matched_c_deadline: calcDeadline(24),
+            matched_c_deadline: calcDeadline(8),
           }).eq('id', question.id)
           console.log(`[Matching] B=none → C=${matchedC}`)
           resultType = 'matched'
@@ -133,6 +139,14 @@ export async function POST(request: NextRequest) {
     }
   } catch (e) {
     console.error('Groq error:', e)
+  }
+
+  // 質問投稿数カウント＋称号チェック
+  try {
+    await supabase.rpc('increment_question_count', { uid: user.id })
+    await supabase.rpc('check_and_award_titles', { p_user_id: user.id })
+  } catch (e) {
+    console.error('question title award error:', e)
   }
 
   return NextResponse.json({ slug: question.slug, result: resultType })

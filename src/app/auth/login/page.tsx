@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTenant } from '@/components/TenantProvider'
+import SiteLogo from '@/components/SiteLogo'
 
 export default function LoginPage() {
   const tenant = useTenant()
@@ -43,10 +44,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-8">
-        <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
-          {tenant?.name ?? 'Wisdom Assemble'}
-        </h1>
-        <p className="text-sm text-gray-500 mb-8">ログイン / 新規登録</p>
+        <div className="mb-8 pl-1">
+          <a href="/"><SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} /></a>
+        </div>
 
         {error && (
           <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2 mb-4">{error}</p>

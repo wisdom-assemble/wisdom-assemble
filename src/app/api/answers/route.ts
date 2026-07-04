@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
+import { checkContent } from '@/lib/contentFilter'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -20,6 +21,11 @@ export async function POST(request: NextRequest) {
   }
   if (body.trim().length < 30) {
     return NextResponse.json({ error: '回答は30文字以上入力してください' }, { status: 400 })
+  }
+
+  const filterResult = checkContent(body)
+  if (!filterResult.ok) {
+    return NextResponse.json({ error: filterResult.reason }, { status: 422 })
   }
 
   // 質問の存在確認

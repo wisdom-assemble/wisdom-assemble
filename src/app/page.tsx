@@ -1,10 +1,19 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
+import Tutorial from '@/components/Tutorial'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import SearchForm from '@/components/SearchForm'
 
-const PAGE_SIZE = 20
+function getAdminClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+const PAGE_SIZE = 50
 
 export default async function HomePage({
   searchParams,
@@ -30,9 +39,10 @@ export default async function HomePage({
     query = query.or(`title.ilike.%${q.trim()}%,body.ilike.%${q.trim()}%`)
   }
 
+  const admin = getAdminClient()
   const [{ data: questions, count }, { data: tenant }] = await Promise.all([
     query,
-    supabase.from('tenants').select('name, description').eq('id', tenantId).single(),
+    admin.from('tenants').select('name, description').eq('id', tenantId).single(),
   ])
 
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
@@ -40,13 +50,13 @@ export default async function HomePage({
   return (
     <>
       <Header />
+      <Tutorial />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-1">{tenant?.name ?? 'Wisdom Assemble'}</h1>
-          <p className="text-gray-500 text-sm">{tenant?.description}</p>
-        </div>
+        {tenant?.description && (
+          <p className="text-gray-500 text-sm mb-6">{tenant.description}</p>
+        )}
 
-        <div className="flex gap-3 mb-6">
+        <div className="sticky top-[73px] z-[9] bg-white py-2 flex flex-wrap gap-3 mb-3 border-b border-gray-200">
           <Link
             href="/questions/new"
             className="shrink-0 px-4 py-2 rounded font-medium text-white text-sm"
@@ -54,7 +64,7 @@ export default async function HomePage({
           >
             + 質問する
           </Link>
-          <SearchForm defaultValue={q} />
+          <SearchForm key={q} defaultValue={q} />
         </div>
 
         {q && (
@@ -128,12 +138,12 @@ function StatusBadge({ status, matchedBId, matchedCId, myId }: { status: string;
 
   const map: Record<string, { label: string; className: string }> = {
     open:         { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
-    open_matched: { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    open_matched: { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
     ai_answered:  { label: 'AI回答済',         className: 'bg-purple-50 text-purple-700' },
-    matched:      { label: 'メンバー対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:    { label: '別メンバー対応中', className: 'bg-orange-50 text-orange-700' },
+    matched:      { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:    { label: '専門家②が対応中', className: 'bg-orange-50 text-orange-700' },
     solved:       { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-    hard:         { label: '🔥みんなで解決',   className: 'bg-red-50 text-red-700' },
+    hard:         { label: '高難度',           className: 'bg-red-50 text-red-700' },
   }
   const key = status === 'open' && matchedBId ? 'open_matched' : status
   const { label, className } = map[key] ?? map.open
