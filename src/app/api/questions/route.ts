@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const inScope = await checkInScope(tenantId, `${title}\n\n${body}`)
     if (!inScope) {
       return NextResponse.json(
-        { error: 'このサービスではプログラミング・デバッグの質問のみ受け付けています。' },
+        { error: 'このサービスでは関連のある質問のみ受け付けています。' },
         { status: 422 }
       )
     }
