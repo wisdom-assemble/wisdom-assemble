@@ -8,13 +8,9 @@ const VALID_SUBDOMAINS = [
 ]
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({
-    request: { headers: request.headers },
-  })
-
   // --- テナント解決 ---
   const host = request.headers.get('host') ?? ''
-  let tenantId = 'debug' // 開発デフォルト
+  let tenantId = 'debug' // 開発デフォルト・未知のホストのフォールバック
 
   if (!host.includes('localhost') && !host.includes('127.0.0.1')) {
     const subdomain = host.split('.')[0]
@@ -32,6 +28,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ダウンストリーム（Server Components）にも実際に伝わるよう、
+  // request.headers自体を書き換えてからNextResponse.nextに渡す
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-tenant-id', tenantId)
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
   response.headers.set('x-tenant-id', tenantId)
 
   // --- Supabase セッション更新 ---
