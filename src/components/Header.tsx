@@ -55,10 +55,13 @@ export default function Header() {
         const answeredIds = (answered ?? []).map((a: any) => a.question_id)
 
         const [{ data: bTasks }, { data: cTasks }] = await Promise.all([
-          supabase.from('questions').select('id').eq('matched_b_id', data.user.id).eq('status', 'open'),
-          supabase.from('questions').select('id').eq('matched_c_id', data.user.id).eq('status', 'matched_c'),
+          supabase.from('questions').select('id, matched_b_deadline').eq('matched_b_id', data.user.id).eq('status', 'open'),
+          supabase.from('questions').select('id, matched_c_deadline').eq('matched_c_id', data.user.id).eq('status', 'matched_c'),
         ])
-        const pending = [...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredIds.includes(q.id))
+        const now = new Date()
+        const bPending = (bTasks ?? []).filter(q => !q.matched_b_deadline || new Date(q.matched_b_deadline) > now)
+        const cPending = (cTasks ?? []).filter(q => !q.matched_c_deadline || new Date(q.matched_c_deadline) > now)
+        const pending = [...bPending, ...cPending].filter(q => !answeredIds.includes(q.id))
         setTaskCount(pending.length)
 
         const { data: myQuestions } = await supabase

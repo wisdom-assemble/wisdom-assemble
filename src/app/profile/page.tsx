@@ -118,9 +118,13 @@ export default function ProfilePage() {
         .eq('is_ai', false)
       const answeredQIds = new Set((myAnswers ?? []).map((a: any) => a.question_id))
 
+      const now = new Date()
+      const bPending = (bTasks ?? []).filter((q: any) => !q.matched_b_deadline || new Date(q.matched_b_deadline) > now)
+      const cPending = (cTasks ?? []).filter((q: any) => !q.matched_c_deadline || new Date(q.matched_c_deadline) > now)
+
       setMyQuestions(questions ?? [])
       setSolvedAnswers(solvedAnswerRows ?? [])
-      setMyTasks([...(bTasks ?? []), ...(cTasks ?? [])].filter(q => !answeredQIds.has(q.id)))
+      setMyTasks([...bPending, ...cPending].filter(q => !answeredQIds.has(q.id)))
       setReviewItems((reviewQuestions ?? []).filter((q: any) => {
         if (!q.answers?.length) return false
         if (!q.owner_reviewed_at) return true
@@ -206,9 +210,13 @@ export default function ProfilePage() {
               <div className="flex flex-wrap gap-2">
                 {titles.map(t => {
                   const rarityStyle = t.rarity === 'legendary'
-                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                    : t.rarity === 'rare'
+                    ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                    : t.rarity === 'super_rare'
                     ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                    : t.rarity === 'rare'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : t.rarity === 'uncommon'
+                    ? 'bg-green-100 text-green-800 border border-green-300'
                     : 'bg-gray-100 text-gray-700 border border-gray-200'
                   const isActive = t.id === activeTitle
                   return (
