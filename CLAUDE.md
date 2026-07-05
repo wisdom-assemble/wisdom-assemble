@@ -115,6 +115,17 @@
 - **バグ修正②**：ヘッダー／マイページの「あなたへの依頼」バッジが期限切れ後も消えなかった。`Header.tsx`・`src/app/profile/page.tsx` のタスク集計クエリに期限切れ除外フィルターを追加
 - #13（C候補なし→即hard昇格）はClaudeがAPIを直接叩いて検証。テストで一時変更したis_availableは全員trueに復元済み
 
+### ✅ ドメイン取得・Cloudflare Workers本番デプロイ完了（2026-07-06）
+- `wisdomassemble.com` をCloudflare Registrarで取得（年間$10.46・自動更新オン）
+- `@opennextjs/cloudflare` アダプターを導入（`wrangler.jsonc`・`open-next.config.ts`追加）。Next.js 16対応、Cloudflare Workers上で動作
+- GitHubリポジトリ（wisdom-assemble/wisdom-assemble）とCloudflare Workers Buildsを連携。mainブランチにpushすると自動デプロイ
+- Build command: `npm run build` / Deploy command: `npm run deploy`
+- 暫定URL: https://wisdom-assemble.wisdomassemble.workers.dev （まだカスタムドメイン未接続）
+- **ハマったポイント**: Cloudflare Workers Buildsの「Build variables」（ビルド時のみ有効）と、Worker本体の「Settings > Variables and secrets」（実行時に必要）は別物。最初Build variablesだけ設定して500エラーになった。両方に同じ4つの環境変数（NEXT_PUBLIC_SUPABASE_URL・NEXT_PUBLIC_SUPABASE_ANON_KEY・SUPABASE_SERVICE_ROLE_KEY・GROQ_API_KEY）を設定する必要がある
+- `tsconfig.json`から`scripts/`を除外（本番ビルドが検証用スクリプトの型エラーで落ちていたのを修正）
+
+**次にやること**: カスタムドメイン(`wisdomassemble.com`)をWorkerに接続、サブドメインマルチテナント設定、Google OAuth・Supabase Authのリダイレクト先を本番ドメインに追加
+
 **リリース前必須**
 1. Googleログインのみに絞る（メールログイン削除・テストアカウント削除）
 2. テストデータ削除・本番DBクリーンアップ
