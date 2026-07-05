@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
     .select('name, description')
     .eq('id', tenantId)
     .single()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdom-assemble.com'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
   return {
     title: tenant?.name ?? 'Wisdom Assemble',
     description: tenant?.description ?? 'AIが答えられない専門知識を持つ人とマッチングできる知識コミュニティ',

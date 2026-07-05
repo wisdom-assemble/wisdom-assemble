@@ -25,8 +25,8 @@ const CONTACT_PATTERNS = [
   /(wechat|weixin|微信)\s*([:：]|id\s*[:：]?)\s*[\w.\-]+/i,
   // Zoom
   /zoom\.us\/j\/\d+/i,
-  // 外部URL全般（連絡誘導目的）
-  /https?:\/\/(?!wisdom-assemble\.com)[^\s]+/i,
+  // 外部URL全般（連絡誘導目的）※自サイト（サブドメイン含む）は除外
+  /https?:\/\/(?!([\w-]+\.)?wisdomassemble\.com)[^\s]+/i,
 ]
 
 const SPAM_PATTERNS = [
