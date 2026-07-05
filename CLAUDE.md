@@ -132,7 +132,18 @@
   - **ハマったポイント**: 最初`https://*.wisdomassemble.com/auth/callback`（末尾ワイルドカードなし）で登録したところ、アプリ側が`?next=...`のクエリパラメータ付きでredirectToを送るため一致せず、Site URL（`http://localhost:3000`）にフォールバックしてログイン後localhostに飛ばされるバグが発生。末尾を`/**`にして解決
 - `debug.wisdomassemble.com`でGoogleログイン・データ表示とも動作確認済み
 
-**次にやること**: Googleログインのみに絞る（メールログイン削除）、Brevoメール設定、テストデータ削除など「リリース前必須」項目
+### ✅ ドメイン表記統一・favicon動的化・GENRE_CONFIG不一致修正（2026-07-06）
+- テナントごとに動的favicon生成（`icon.tsx`がテナントのname・color_themeから自動生成、debugテナントのみ完了・他9テナントは中身待ち）
+- `TENANT_NAME_MAP`をテナント名ベース→テナントIDベースに変更（DBの名前に補足が付くと一致しないバグを修正）
+- `gemini.ts`の`GENRE_CONFIG`キーが実テナントIDと不一致（tax→tax-japan、workingholiday→australia-whv、migration→bali/chiangmai/portugal/philippines/canadaの5つに複製）で専用AI設定が効いていなかったバグを修正
+- スコープ判定拒否時のエラー文言のハードコードをテナント共通文言に修正
+- 古いドメイン表記`wisdom-assemble.com`（ハイフンあり）が`contentFilter.ts`（外部URL自動ブロック除外規則）・`layout.tsx`・本ファイルに残っていて、自サイトへのリンクまでブロックされるバグを修正。正しい`wisdomassemble.com`に統一
+- 禁止ワード（スパム・連絡先ブロック）は管理画面化せず、都度コードに追加してデプロイする運用で確定
+- 詳細は Notion「テナント作成ワークフロー」ページ: https://app.notion.com/p/Wisdom-Assemble-394f5fa8bcb9806eb516f9430b35e4e6
+
+**⏸️ 2026-07-06セッション終了・次回2026-07-08開始予定**（7/7まで作業ストップ、旅行のため）
+
+**次にやること（2026-07-08開始）**: Brevoメール設定から着手 → Googleログインのみ化 → SEO質問投入 → AdSense申請 の順
 
 **リリース前必須**
 1. Googleログインのみに絞る（メールログイン削除・テストアカウント削除）
