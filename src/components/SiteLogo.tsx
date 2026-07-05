@@ -1,24 +1,15 @@
+import { getTenantDisplayName } from '@/lib/tenantNames'
+import { getLogoShadowShades } from '@/lib/logoColor'
+
 type Props = {
   name: string
+  tenantId?: string
+  colorTheme?: string
 }
 
-// テナント名を英語表記に変換（DBに英語名がなければフォールバック）
-const NAME_MAP: Record<string, string> = {
-  'バグ・デバッグ': 'BUG DEBUG',
-  'バグデバッグ': 'BUG DEBUG',
-  '確定申告': 'TAX JAPAN',
-  'ワーホリ': 'WORK HOLIDAY',
-  'バリ島移住': 'BALI LIFE',
-  'チェンマイ移住': 'CHIANGMAI',
-  'ポルトガル移住': 'PORTUGAL',
-  'DTM・音楽制作': 'MUSIC PROD',
-  '自作キーボード': 'KEYBOARDS',
-  'フィリピン留学': 'PH STUDY',
-  'カナダ留学': 'CA STUDY',
-}
-
-export default function SiteLogo({ name }: Props) {
-  const label = NAME_MAP[name] ?? name.toUpperCase()
+export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Props) {
+  const label = getTenantDisplayName(tenantId, name)
+  const shadowShades = getLogoShadowShades(colorTheme)
 
   const fontSize = label.length > 10 ? 26 : label.length > 8 ? 30 : 34
   // 影が右下に5px分はみ出るのでwidthに余裕を持たせる
@@ -44,7 +35,7 @@ export default function SiteLogo({ name }: Props) {
             fontSize={fontSize}
             fontWeight="900"
             letterSpacing="1"
-            fill={`hsl(152, 60%, ${8 + i * 4}%)`}
+            fill={shadowShades[5 - i]}
           >
             {label}
           </text>

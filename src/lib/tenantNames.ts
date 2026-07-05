@@ -1,0 +1,20 @@
+// テナントID（middleware.tsのVALID_SUBDOMAINSと一致）を英語表記に変換
+// テナント名（DBのnameカラム）は「確定申告（日本）」のように補足が付くことがあり
+// 完全一致しないため、キーは変わらないテナントIDにする
+export const TENANT_NAME_MAP: Record<string, string> = {
+  debug: 'BUG DEBUG',
+  'tax-japan': 'TAX JAPAN',
+  'australia-whv': 'WORK HOLIDAY',
+  bali: 'BALI LIFE',
+  chiangmai: 'CHIANGMAI',
+  portugal: 'PORTUGAL',
+  dtm: 'MUSIC PROD',
+  keyboard: 'KEYBOARDS',
+  philippines: 'PH STUDY',
+  canada: 'CA STUDY',
+}
+
+export function getTenantDisplayName(tenantId: string | undefined, name: string): string {
+  if (tenantId && TENANT_NAME_MAP[tenantId]) return TENANT_NAME_MAP[tenantId]
+  return name.toUpperCase()
+}

@@ -17,7 +17,7 @@ const GENRE_CONFIG: Record<string, {
     outScope: '動物・食べ物・スポーツ・恋愛・政治など、プログラミングと全く無関係な話題',
     dangerKeywords: /本番|突然|インシデント|不審|流出|削除された|止まった|落ちた/,
   },
-  tax: {
+  'tax-japan': {
     label: '確定申告・税務',
     threshold: 87,
     inScope: '確定申告・税金・経費・控除・freee・マネーフォワード・青色申告・源泉徴収・インボイス',
@@ -31,13 +31,37 @@ const GENRE_CONFIG: Record<string, {
     outScope: '料理・プログラミング・税金など、医療と無関係な話題',
     dangerKeywords: /緊急|救急|死|意識がない|呼吸|心臓/,
   },
-  workingholiday: {
+  'australia-whv': {
     label: 'ワーキングホリデー・留学',
     threshold: 87,
     inScope: 'ワーホリ・留学・ビザ・現地生活・語学学校・海外就労・費用・滞在',
     outScope: 'プログラミング・医療・税金など、ワーホリ・留学と無関係な話題',
   },
-  migration: {
+  bali: {
+    label: '移住・海外生活',
+    threshold: 87,
+    inScope: '移住・永住権・海外生活・現地情報・生活費・住居・手続き',
+    outScope: 'プログラミング・医療・税金など、移住と無関係な話題',
+  },
+  chiangmai: {
+    label: '移住・海外生活',
+    threshold: 87,
+    inScope: '移住・永住権・海外生活・現地情報・生活費・住居・手続き',
+    outScope: 'プログラミング・医療・税金など、移住と無関係な話題',
+  },
+  portugal: {
+    label: '移住・海外生活',
+    threshold: 87,
+    inScope: '移住・永住権・海外生活・現地情報・生活費・住居・手続き',
+    outScope: 'プログラミング・医療・税金など、移住と無関係な話題',
+  },
+  philippines: {
+    label: '移住・海外生活',
+    threshold: 87,
+    inScope: '移住・永住権・海外生活・現地情報・生活費・住居・手続き',
+    outScope: 'プログラミング・医療・税金など、移住と無関係な話題',
+  },
+  canada: {
     label: '移住・海外生活',
     threshold: 87,
     inScope: '移住・永住権・海外生活・現地情報・生活費・住居・手続き',

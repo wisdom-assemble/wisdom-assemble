@@ -96,7 +96,7 @@ export default function Header() {
     <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
       <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/">
-          <SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} />
+          <SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} />
         </Link>
 
         {/* PC nav */}

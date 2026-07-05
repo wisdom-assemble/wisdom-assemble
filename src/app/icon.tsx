@@ -1,11 +1,25 @@
 import { ImageResponse } from 'next/og'
+import { getTenantId } from '@/lib/tenant'
+import { createClient } from '@/lib/supabase/server'
+import { getTenantDisplayName } from '@/lib/tenantNames'
+import { getLogoShadowShades } from '@/lib/logoColor'
 
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
 
-export default function Icon() {
-  const primary = '#10B981'
-  const shadows = ['#0a4a30', '#0d5c3a', '#106e45', '#138050', '#16925b']
+export default async function Icon() {
+  const tenantId = await getTenantId()
+  const supabase = await createClient()
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('name, color_theme')
+    .eq('id', tenantId)
+    .maybeSingle()
+
+  const label = getTenantDisplayName(tenantId, tenant?.name ?? 'Wisdom Assemble')
+  const letter = label.trim().charAt(0) || 'W'
+  const primary = tenant?.color_theme ?? '#4F46E5'
+  const shadows = getLogoShadowShades(primary)
 
   return new ImageResponse(
     (
@@ -34,7 +48,7 @@ export default function Icon() {
               fontFamily: 'sans-serif',
             }}
           >
-            B
+            {letter}
           </div>
         ))}
         {/* Main letter */}
@@ -49,7 +63,7 @@ export default function Icon() {
             fontFamily: 'sans-serif',
           }}
         >
-          B
+          {letter}
         </div>
       </div>
     ),
