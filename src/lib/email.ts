@@ -12,7 +12,7 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;')
 }
 
-async function sendEmail(params: { to: string; subject: string; htmlContent: string }): Promise<void> {
+async function sendEmail(params: { to: string; subject: string; htmlContent: string; replyTo?: string }): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY
   if (!apiKey) {
     console.error('BREVO_API_KEY未設定のためメール送信をスキップしました')
@@ -31,12 +31,32 @@ async function sendEmail(params: { to: string; subject: string; htmlContent: str
       to: [{ email: params.to }],
       subject: params.subject,
       htmlContent: params.htmlContent,
+      replyTo: params.replyTo ? { email: params.replyTo } : undefined,
     }),
   })
 
   if (!res.ok) {
     console.error('Brevo送信エラー:', await res.text())
   }
+}
+
+const CONTACT_INBOX = 'wisdomassemble@gmail.com'
+
+// 問い合わせフォームの内容を運営者のGmailに転送する（ユーザーには宛先を見せない）
+export async function sendContactInquiry(params: {
+  fromEmail: string
+  subject: string
+  body: string
+}): Promise<void> {
+  await sendEmail({
+    to: CONTACT_INBOX,
+    subject: `【お問い合わせ】${params.subject}`,
+    htmlContent: `
+      <p>送信者: ${escapeHtml(params.fromEmail)}</p>
+      <p style="white-space:pre-wrap;">${escapeHtml(params.body)}</p>
+    `,
+    replyTo: params.fromEmail,
+  })
 }
 
 // マッチングされたユーザーに通知メールを送る（email_notify=falseなら送らない）

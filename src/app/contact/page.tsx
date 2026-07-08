@@ -10,6 +10,8 @@ export default function ContactPage() {
   const [body, setBody] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => {
@@ -18,13 +20,30 @@ export default function ContactPage() {
     })
   }, [])
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (subject.trim().length < 10 || body.trim().length < 20) return
-    const encodedSubject = encodeURIComponent(subject || 'お問い合わせ')
-    const mailBody = encodeURIComponent(`送信者：${user?.email ?? '不明'}\n\n${body}`)
-    window.location.href = `mailto:wisdomassemble@gmail.com?subject=${encodedSubject}&body=${mailBody}`
-    setSent(true)
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? '送信に失敗しました')
+        return
+      }
+      setSent(true)
+      setSubject('')
+      setBody('')
+    } catch {
+      setError('送信に失敗しました')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400 text-sm">読み込み中...</div></>
@@ -56,9 +75,9 @@ export default function ContactPage() {
           </div>
         ) : sent ? (
           <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-            <p className="text-green-700 font-medium mb-2">メールアプリが開きます</p>
+            <p className="text-green-700 font-medium mb-2">送信しました</p>
             <p className="text-sm text-green-600 mb-4">
-              送信内容が自動入力されました。そのまま送信してください。
+              お問い合わせを受け付けました。
             </p>
             <button
               onClick={() => setSent(false)}
@@ -69,6 +88,9 @@ export default function ContactPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">件名 <span className="text-red-500">*</span></label>
               <input
@@ -111,11 +133,11 @@ export default function ContactPage() {
             )}
             <button
               type="submit"
-              disabled={subject.trim().length < 10 || body.trim().length < 20}
+              disabled={submitting || subject.trim().length < 10 || body.trim().length < 20}
               className="w-full py-2.5 rounded font-medium text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >
-              送信する
+              {submitting ? '送信中...' : '送信する'}
             </button>
           </form>
         )}
