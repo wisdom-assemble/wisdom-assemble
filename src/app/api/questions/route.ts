@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { askWithScore, checkInScope } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
+import { notifyMatchedUser } from '@/lib/email'
 
 function toSlug(text: string): string {
   return text
@@ -117,6 +118,16 @@ export async function POST(request: NextRequest) {
         }).eq('id', question.id)
         console.log(`[Matching] B=${matchedB}`)
         resultType = 'matched'
+        try {
+          await notifyMatchedUser({
+            userId: matchedB,
+            tenantId,
+            questionTitle: title.trim(),
+            questionSlug: question.slug,
+          })
+        } catch (e) {
+          console.error('notifyMatchedUser error:', e)
+        }
       } else {
         const matchedC = await findMatch(tenantId, question.id, [user.id])
         if (matchedC) {
@@ -128,6 +139,16 @@ export async function POST(request: NextRequest) {
           }).eq('id', question.id)
           console.log(`[Matching] B=none → C=${matchedC}`)
           resultType = 'matched'
+          try {
+            await notifyMatchedUser({
+              userId: matchedC,
+              tenantId,
+              questionTitle: title.trim(),
+              questionSlug: question.slug,
+            })
+          } catch (e) {
+            console.error('notifyMatchedUser error:', e)
+          }
         } else {
           await supabase.from('questions').update({
             status: 'hard',

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { findMatch, calcDeadline } from '@/lib/matching'
+import { notifyMatchedUser } from '@/lib/email'
 
 // 回答者がギブアップ → B→C→高難度クエストへエスカレーション
 export async function POST(
@@ -24,7 +25,7 @@ export async function POST(
 
   const { data: question } = await supabase
     .from('questions')
-    .select('id, status, user_id, matched_b_id, matched_c_id')
+    .select('id, status, user_id, matched_b_id, matched_c_id, title, slug')
     .eq('id', questionId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
@@ -56,6 +57,16 @@ export async function POST(
         matched_c_id: matchedC,
         matched_c_deadline: calcDeadline(8),
       }).eq('id', questionId)
+      try {
+        await notifyMatchedUser({
+          userId: matchedC,
+          tenantId,
+          questionTitle: question.title,
+          questionSlug: question.slug,
+        })
+      } catch (e) {
+        console.error('notifyMatchedUser error:', e)
+      }
       return NextResponse.json({ ok: true, nextStatus: 'matched_c', matchedC })
     } else {
       // C候補なし → 即hard昇格
