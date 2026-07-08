@@ -141,19 +141,24 @@
 - 禁止ワード（スパム・連絡先ブロック）は管理画面化せず、都度コードに追加してデプロイする運用で確定
 - 詳細は Notion「テナント作成ワークフロー」ページ: https://app.notion.com/p/Wisdom-Assemble-394f5fa8bcb9806eb516f9430b35e4e6
 
-**⏸️ 2026-07-06セッション終了・次回2026-07-08開始予定**（7/7まで作業ストップ、旅行のため）
+### ✅ Brevoメール設定完了・マッチング通知/問い合わせフォーム実装（2026-07-08）
+- Brevoアカウント作成（無料プラン・wisdomassemble@gmail.com）
+- `wisdomassemble.com`のドメイン認証完了。CloudflareにBrevo code(TXT)・DKIM1/DKIM2(CNAME)・DMARC(TXT)の4レコード追加、即Authenticated。送信者`noreply@wisdomassemble.com`を追加
+- APIキー発行、Cloudflare WorkerのSecret環境変数`BREVO_API_KEY`として登録
+- `src/lib/email.ts`新規作成：Brevo Transactional Email API(`v3/smtp/email`)を叩く共通関数。`notifyMatchedUser()`（マッチング通知）と`sendContactInquiry()`（問い合わせ転送）を実装
+- `questions/route.ts`・`escalate/route.ts`に`notifyMatchedUser`を組み込み。質問がB/Cにマッチング、またはエスカレーションでCに割り当てられた際、`profiles.email_notify=true`のユーザーに通知メール送信
+- 問い合わせフォーム(`/contact`)を`mailto:`リンク（宛先メアドが見えてしまう）から`/api/contact`経由のBrevo送信に変更。`replyTo`にユーザーメールを設定し、返信すればそのまま届く
+- **コードレビューで2件検出・修正**：①質問タイトルをエスケープせずHTMLメールに埋め込んでいた（HTMLインジェクション対策で`escapeHtml`追加）②Cloudflare Workersでfire-and-forget送信だと処理が打ち切られる恐れがあったため`await`に変更
+- 本番デプロイ後に実地テスト。問い合わせフォーム→実際に`wisdomassemble@gmail.com`に届き開封確認・返信テストも成功。マッチング通知→質問投稿してBにマッチング、Brevo Logsで送信ログ確認（テストアカウント`ken@test.com`は実在しないためSoft bounceだが、送信ロジック自体は正常動作を確認）
+- GitHub commit: `caf530f`「feat: Brevoによるマッチング通知メール実装」・`31f1d88`「feat: 問い合わせフォームをBrevo経由の送信に変更」をmainにpush、Cloudflare Workers Buildsで自動デプロイ済み
 
-**次にやること（2026-07-08開始）**: Brevoメール設定から着手 → Googleログインのみ化 → SEO質問投入 → AdSense申請 の順
+**次にやること**: Googleログインのみ化 → SEO質問投入 → AdSense申請 の順
 
 **リリース前必須**
 1. Googleログインのみに絞る（メールログイン削除・テストアカウント削除）
 2. テストデータ削除・本番DBクリーンアップ
 3. 回答最小文字数バリデーション（20文字以上、AnswerForm + API両方）
 4. 法的ページ内容精査（/terms /privacy /contact 内容の確認・修正）
-5. **Brevo**メール通知実装（マッチング時メール送信・email_notifyトグル連動・スパム仕分け機能）
-   - Brevo（旧Sendinblue）: 無料 9,000通/月・300通/日
-   - Supabase Edge Functions 経由でメール送信
-   - ※ Resend は使わない（Resendは3,000通/月）
 
 **機能追加（優先度高）**
 6. No.34 タグフィルター検索（questionsにtagsカラム追加済み・UIのみ実装残り）
@@ -261,6 +266,7 @@ src/
           escalate/route.ts         # エスカレーション（B→C→hard）
           review/route.ts           # 既読マーク（owner_reviewed_at更新）
       answers/route.ts              # 回答投稿API（重複チェックあり）
+      contact/route.ts              # 問い合わせフォームAPI（Brevo経由で運営者Gmailに転送）
       admin/
         questions/[id]/route.ts     # 管理者 質問削除
         users/[id]/ban/route.ts     # 管理者 BAN
@@ -281,6 +287,7 @@ src/
     TenantProvider.tsx
   lib/
     matching.ts                     # findMatch() + calcDeadline()
+    email.ts                        # Brevo送信（notifyMatchedUser / sendContactInquiry）
     supabase/client.ts
     supabase/server.ts
     supabase/types.ts
