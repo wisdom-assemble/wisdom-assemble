@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -24,6 +24,7 @@ type SimilarQuestion = { id: string; title: string; slug: string; status: string
 
 export default function QuestionForm() {
   const t = useTranslations('questionForm')
+  const locale = useLocale()
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -69,7 +70,7 @@ export default function QuestionForm() {
       const res = await fetch('/api/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({ title, body, locale }),
       })
 
       if (!res.ok) {

@@ -174,7 +174,10 @@
     "statusSolved": "해결됨",
     "statusHard": "고난도",
     "aiLabel": "AI",
-    "views": "조회"
+    "views": "조회",
+    "translationNotice": "이 내용은 AI에 의해 자동 번역되었습니다.",
+    "showOriginal": "원문 보기",
+    "showTranslation": "번역 보기"
   },
   "profilePage": {
     "title": "마이페이지",

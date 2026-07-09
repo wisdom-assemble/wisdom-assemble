@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 
 type Props = {
@@ -10,6 +10,7 @@ type Props = {
 
 export default function AnswerForm({ questionId }: Props) {
   const t = useTranslations('answerForm')
+  const locale = useLocale()
   const router = useRouter()
   const [body, setBody] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -32,7 +33,7 @@ export default function AnswerForm({ questionId }: Props) {
           'Content-Type': 'application/json',
           'x-tenant-id': window.location.hostname.split('.')[0] === 'localhost' ? 'debug' : window.location.hostname.split('.')[0],
         },
-        body: JSON.stringify({ questionId, body }),
+        body: JSON.stringify({ questionId, body, locale }),
       })
 
       if (!res.ok) {

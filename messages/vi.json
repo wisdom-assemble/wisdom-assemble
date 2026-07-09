@@ -174,7 +174,10 @@
     "statusSolved": "Đã giải quyết",
     "statusHard": "Khó",
     "aiLabel": "AI",
-    "views": "lượt xem"
+    "views": "lượt xem",
+    "translationNotice": "Nội dung này đã được AI tự động dịch.",
+    "showOriginal": "Xem bản gốc",
+    "showTranslation": "Xem bản dịch"
   },
   "profilePage": {
     "title": "Trang của tôi",

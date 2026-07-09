@@ -174,7 +174,10 @@
     "statusSolved": "解決済み",
     "statusHard": "高難度",
     "aiLabel": "AI",
-    "views": "views"
+    "views": "views",
+    "translationNotice": "この内容はAIによって自動翻訳されています。",
+    "showOriginal": "原文を表示",
+    "showTranslation": "翻訳を表示"
   },
   "profilePage": {
     "title": "マイページ",

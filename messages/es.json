@@ -174,7 +174,10 @@
     "statusSolved": "Resuelta",
     "statusHard": "Difícil",
     "aiLabel": "IA",
-    "views": "vistas"
+    "views": "vistas",
+    "translationNotice": "Este contenido ha sido traducido automáticamente por IA.",
+    "showOriginal": "Ver original",
+    "showTranslation": "Ver traducción"
   },
   "profilePage": {
     "title": "Mi página",

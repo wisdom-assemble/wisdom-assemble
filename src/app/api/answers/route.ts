@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { checkContent } from '@/lib/contentFilter'
+import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -14,7 +15,8 @@ export async function POST(request: NextRequest) {
   const headersList = await headers()
   const tenantId = headersList.get('x-tenant-id') ?? 'debug'
 
-  const { questionId, body } = await request.json()
+  const { questionId, body, locale } = await request.json()
+  const sourceLocale = (SUPPORTED_LOCALES as readonly string[]).includes(locale) ? locale : 'ja'
 
   if (!questionId || !body?.trim()) {
     return NextResponse.json({ error: '回答内容は必須です' }, { status: 400 })
@@ -53,17 +55,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'すでにこの質問に回答しています' }, { status: 409 })
   }
 
-  const { error } = await supabase.from('answers').insert({
-    question_id: questionId,
-    tenant_id: tenantId,
-    user_id: user.id,
-    body: body.trim(),
-    is_ai: false,
-  })
+  const { data: answer, error } = await supabase
+    .from('answers')
+    .insert({
+      question_id: questionId,
+      tenant_id: tenantId,
+      user_id: user.id,
+      body: body.trim(),
+      is_ai: false,
+      source_locale: sourceLocale,
+    })
+    .select('id')
+    .single()
 
   if (error) {
     console.error('Answer insert error:', error)
     return NextResponse.json({ error: '投稿に失敗しました' }, { status: 500 })
+  }
+
+  // 対応8言語へ自動翻訳して保存（Cloudflare Workers対策のため必ずawaitする）
+  try {
+    const body_i18n = await translateToLocales(body.trim(), sourceLocale)
+    await supabase.from('answers').update({ body_i18n }).eq('id', answer.id)
+  } catch (e) {
+    console.error('answer translation error:', e)
   }
 
   // 質問を「受付中→open維持」（解決はベストアンサー選択時）

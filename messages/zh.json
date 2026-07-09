@@ -174,7 +174,10 @@
     "statusSolved": "已解决",
     "statusHard": "高难度",
     "aiLabel": "AI",
-    "views": "次浏览"
+    "views": "次浏览",
+    "translationNotice": "此内容由AI自动翻译。",
+    "showOriginal": "显示原文",
+    "showTranslation": "显示翻译"
   },
   "profilePage": {
     "title": "我的页面",

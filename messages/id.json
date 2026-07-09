@@ -174,7 +174,10 @@
     "statusSolved": "Terselesaikan",
     "statusHard": "Sulit",
     "aiLabel": "AI",
-    "views": "dilihat"
+    "views": "dilihat",
+    "translationNotice": "Konten ini diterjemahkan secara otomatis oleh AI.",
+    "showOriginal": "Tampilkan teks asli",
+    "showTranslation": "Tampilkan terjemahan"
   },
   "profilePage": {
     "title": "Halaman Saya",

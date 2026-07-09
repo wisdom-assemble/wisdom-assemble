@@ -5,6 +5,7 @@ import { askWithScore, checkInScope } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser } from '@/lib/email'
+import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
 
 function toSlug(text: string): string {
   return text
@@ -41,7 +42,8 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { title, body } = await request.json()
+  const { title, body, locale } = await request.json()
+  const sourceLocale = (SUPPORTED_LOCALES as readonly string[]).includes(locale) ? locale : 'ja'
 
   if (!title?.trim() || !body?.trim()) {
     return NextResponse.json({ error: 'タイトルと詳細は必須です' }, { status: 400 })
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
       body: body.trim(),
       slug,
       ip_address: ip,
+      source_locale: sourceLocale,
     })
     .select('id, slug')
     .single()
@@ -99,6 +102,19 @@ export async function POST(request: NextRequest) {
     console.error('Question insert error:', error)
     return NextResponse.json({ error: '投稿に失敗しました' }, { status: 500 })
   }
+
+  // ①.5 対応8言語へ自動翻訳（投稿時に静的な多言語ページとして存在させるためSEO優位）
+  // AI回答・マッチング処理と並行実行するため、ここではPromiseを開始するだけで待たない。
+  // Cloudflare Workersはレスポンスを返すと未完了のfire-and-forget処理を打ち切るため、
+  // 必ずレスポンス返却前にawaitする（下部参照）。
+  const titleTranslationPromise = translateToLocales(title.trim(), sourceLocale).catch((e) => {
+    console.error('title translation error:', e)
+    return {}
+  })
+  const bodyTranslationPromise = translateToLocales(body.trim(), sourceLocale).catch((e) => {
+    console.error('body translation error:', e)
+    return {}
+  })
 
   // ② ジャンル内確定なのでスコア付き回答を生成
   let resultType: 'ai' | 'matched' | 'pending' = 'pending'
@@ -182,6 +198,10 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.error('question title award error:', e)
   }
+
+  // 翻訳結果を保存（Cloudflare Workersがレスポンス返却後に処理を打ち切るため必ずawaitする）
+  const [title_i18n, body_i18n] = await Promise.all([titleTranslationPromise, bodyTranslationPromise])
+  await supabase.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
 
   return NextResponse.json({ slug: question.slug, result: resultType })
 }

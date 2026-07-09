@@ -4,7 +4,8 @@ import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
 import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
 import OwnerReviewTracker from '@/components/OwnerReviewTracker'
-import MarkdownBody from '@/components/MarkdownBody'
+import TranslatedQuestionBody from '@/components/TranslatedQuestionBody'
+import TranslatedAnswerBody from '@/components/TranslatedAnswerBody'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -189,13 +190,22 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           <div className="flex items-center gap-2 mb-3">
             <StatusBadge status={question.status} matchedBId={question.matched_b_id} ownerWaiting={isOwner && hasAnswers && !isSolved} t={t} />
           </div>
-          <h1 className="text-xl font-bold mb-2">{question.title}</h1>
-          <p className="text-xs text-gray-400 mb-4">
-            {poster?.display_name ?? poster?.username} ·{' '}
-            {new Date(question.created_at).toLocaleDateString(locale)} ·{' '}
-            {question.view_count} {t('views')}
-          </p>
-          <MarkdownBody content={question.body} />
+          <TranslatedQuestionBody
+            title={question.title}
+            translatedTitle={question.title_i18n?.[locale] ?? null}
+            body={question.body}
+            translatedBody={question.body_i18n?.[locale] ?? null}
+            meta={
+              <p className="text-xs text-gray-400 mb-4">
+                {poster?.display_name ?? poster?.username} ·{' '}
+                {new Date(question.created_at).toLocaleDateString(locale)} ·{' '}
+                {question.view_count} {t('views')}
+              </p>
+            }
+            notice={t('translationNotice')}
+            showOriginalLabel={t('showOriginal')}
+            showTranslationLabel={t('showTranslation')}
+          />
         </article>
 
         {/* 高難度クエストバナー */}
@@ -248,7 +258,13 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                       )}
                       <span>{new Date(a.created_at).toLocaleDateString(locale)}</span>
                     </div>
-                    <MarkdownBody content={a.body} />
+                    <TranslatedAnswerBody
+                      body={a.body}
+                      translatedBody={a.body_i18n?.[locale] ?? null}
+                      notice={t('translationNotice')}
+                      showOriginalLabel={t('showOriginal')}
+                      showTranslationLabel={t('showTranslation')}
+                    />
 
                     {/* 質問者：ベストアンサーボタン */}
                     {isOwner && !isSolved && !a.is_accepted && (
