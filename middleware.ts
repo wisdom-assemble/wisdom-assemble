@@ -23,17 +23,6 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isUnlocalized = UNLOCALIZED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 
-  // --- ロケール解決（next-intl） ---
-  // /api・/auth/callbackは[locale]配下に存在しないルートなのでスキップする
-  let intlResponse: NextResponse | null = null
-  if (!isUnlocalized) {
-    intlResponse = intlMiddleware(request)
-    // ロケール未指定URLへのアクセスはプレフィックス付きURLへリダイレクトする
-    if (intlResponse.status >= 300 && intlResponse.status < 400) {
-      return intlResponse
-    }
-  }
-
   // --- テナント解決 ---
   const host = request.headers.get('host') ?? ''
   let tenantId = 'debug' // 開発デフォルト・未知のホストのフォールバック
@@ -54,17 +43,32 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ダウンストリーム（Server Components）にも実際に伝わるよう、
-  // request.headers自体を書き換えてからNextResponse.nextに渡す
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-tenant-id', tenantId)
+  // next-intlミドルウェアを呼ぶ前にrequest.headersへ直接書き込んでおく。
+  // next-intlは内部で`new Headers(request.headers)`により現在のヘッダーを
+  // 複製した上でX-NEXT-INTL-LOCALEを追加してNextResponse.next/rewriteに渡すため、
+  // ここで先にx-tenant-idを設定しておけば、next-intlが生成するレスポンスの
+  // 書き換え済みrequestヘッダーに両方とも含まれ、下流のServer Componentsに届く。
+  // （以前はここでintl呼び出し後に全く別のNextResponse.nextを作り直しており、
+  // next-intlが設定したX-NEXT-INTL-LOCALEが失われ、ソフトナビゲーションで
+  // レイアウトが再実行されない場合にgetLocale()がdefaultLocaleへフォールバック
+  // してしまう不具合の原因だった）
+  request.headers.set('x-tenant-id', tenantId)
 
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  })
-  if (intlResponse) {
-    intlResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+  // --- ロケール解決（next-intl） ---
+  // /api・/auth/callbackは[locale]配下に存在しないルートなのでスキップする
+  let response: NextResponse
+  if (!isUnlocalized) {
+    response = intlMiddleware(request)
+    // ロケール未指定URLへのアクセスはプレフィックス付きURLへリダイレクトする
+    if (response.status >= 300 && response.status < 400) {
+      return response
+    }
+  } else {
+    response = NextResponse.next({
+      request: { headers: request.headers },
+    })
   }
+
   response.headers.set('x-tenant-id', tenantId)
 
   // --- Supabase セッション更新 ---
