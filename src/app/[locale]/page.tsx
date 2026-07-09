@@ -45,18 +45,19 @@ export default async function HomePage({
   const admin = getAdminClient()
   const [{ data: questions, count }, { data: tenant }] = await Promise.all([
     query,
-    admin.from('tenants').select('name, description').eq('id', tenantId).single(),
+    admin.from('tenants').select('name, description, description_en').eq('id', tenantId).single(),
   ])
 
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
+  const tagline = locale === 'en' ? (tenant?.description_en ?? tenant?.description) : tenant?.description
 
   return (
     <>
       <Header />
       <Tutorial />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
-        {tenant?.description && (
-          <p className="text-gray-500 text-sm mb-6">{tenant.description}</p>
+        {tagline && (
+          <p className="text-gray-500 text-sm mb-6">{tagline}</p>
         )}
 
         <div className="sticky top-[73px] z-[9] bg-white py-2 flex flex-wrap gap-3 mb-3 border-b border-gray-200">

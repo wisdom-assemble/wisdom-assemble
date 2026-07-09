@@ -20,17 +20,20 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const supabase = await createClient()
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('name, description')
+    .select('name, description, description_en')
     .eq('id', tenantId)
     .single()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
-  const fallbackDescription = 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス'
+  const fallbackDescription = locale === 'en'
+    ? "A Q&A service connecting questions AI can't confidently answer with real human experts."
+    : 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス'
+  const description = (locale === 'en' ? (tenant?.description_en ?? tenant?.description) : tenant?.description) ?? fallbackDescription
   return {
     title: tenant?.name ?? 'Wisdom Assemble',
-    description: tenant?.description ?? fallbackDescription,
+    description,
     openGraph: {
       title: tenant?.name ?? 'Wisdom Assemble',
-      description: tenant?.description ?? fallbackDescription,
+      description,
       url: siteUrl,
       siteName: tenant?.name ?? 'Wisdom Assemble',
       locale: OG_LOCALE_MAP[locale] ?? 'en_US',
@@ -39,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     twitter: {
       card: 'summary_large_image',
       title: tenant?.name ?? 'Wisdom Assemble',
-      description: tenant?.description ?? fallbackDescription,
+      description,
     },
   }
 }
