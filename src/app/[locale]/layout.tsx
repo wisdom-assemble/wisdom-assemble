@@ -23,10 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
   return {
     title: tenant?.name ?? 'Wisdom Assemble',
-    description: tenant?.description ?? 'AIが答えられない専門知識を持つ人とマッチングできる知識コミュニティ',
+    description: tenant?.description ?? 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
     openGraph: {
       title: tenant?.name ?? 'Wisdom Assemble',
-      description: tenant?.description ?? 'AIが答えられない専門知識を持つ人とマッチングできる知識コミュニティ',
+      description: tenant?.description ?? 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
       url: siteUrl,
       siteName: tenant?.name ?? 'Wisdom Assemble',
       locale: 'ja_JP',
@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: 'summary_large_image',
       title: tenant?.name ?? 'Wisdom Assemble',
-      description: tenant?.description ?? 'AIが答えられない専門知識を持つ人とマッチングできる知識コミュニティ',
+      description: tenant?.description ?? 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
     },
   }
 }

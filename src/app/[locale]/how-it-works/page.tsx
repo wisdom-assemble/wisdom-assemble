@@ -10,13 +10,16 @@ export default function HowItWorksPage() {
         <p className="text-gray-500 text-sm mb-2">
           AIが苦手な専門的・個人的な質問を、本物の人間のエキスパートに繋げるサービスです。
         </p>
+        <p className="text-gray-500 text-sm mb-2">
+          AI時代だからこそ必要な、AIではできないセカンドオピニオンサービスとなります。
+        </p>
         <p className="text-xs text-gray-400 mb-10">質問には Googleアカウントでログインが必要です。</p>
 
         <div className="space-y-10">
           <Step
             number={1}
             title="質問を投稿する"
-            description="解決したい問題を投稿します。AIがまずジャンルに合った質問かを判定し、適切でない場合は受け付けません。"
+            description="解決したい問題を投稿します。AIがまずジャンルに合った質問かを判定し、適切でない場合は受け付けません。1日に質問ができる回数は3回までです。"
             icon="●"
           />
 
