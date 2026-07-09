@@ -45,7 +45,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-8">
         <div className="mb-8 pl-1">
-          <a href="/"><SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} /></a>
+          <a href="/"><SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} /></a>
         </div>
 
         {error && (

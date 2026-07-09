@@ -14,6 +14,11 @@ const VALID_SUBDOMAINS = [
   'philippines', 'canada',
 ]
 
+// 公開URL用のサブドメインエイリアス（内部のテナントID・DB主キーは変更しない）
+const SUBDOMAIN_ALIASES: Record<string, string> = {
+  bug: 'debug',
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isUnlocalized = UNLOCALIZED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
@@ -34,7 +39,7 @@ export async function middleware(request: NextRequest) {
   let tenantId = 'debug' // 開発デフォルト・未知のホストのフォールバック
 
   if (!host.includes('localhost') && !host.includes('127.0.0.1')) {
-    const subdomain = host.split('.')[0]
+    const subdomain = SUBDOMAIN_ALIASES[host.split('.')[0]] ?? host.split('.')[0]
     if (VALID_SUBDOMAINS.includes(subdomain)) {
       tenantId = subdomain
     }
