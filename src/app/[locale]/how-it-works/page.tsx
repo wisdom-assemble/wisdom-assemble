@@ -1,8 +1,12 @@
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 import Header from '@/components/Header'
 import { Link } from '@/i18n/navigation'
 
-export default async function HowItWorksPage() {
+type Props = { params: Promise<{ locale: string }> }
+
+export default async function HowItWorksPage({ params }: Props) {
+  const { locale } = await params
+  setRequestLocale(locale)
   const t = await getTranslations('howItWorksPage')
 
   return (
