@@ -166,6 +166,14 @@
 - **AdSense審査対策**: 事業者名非開示・AI回答中心・コンテンツ薄いままだと審査通過リスクが高いと判断。ルートドメインのプラポリに事業者名記載・人間回答版の質問を混ぜる・少数精鋭（2テナント）で先に審査を通す方針に修正
 - 詳細・全設計はNotionローンチチェックリスト参照。今回は設計のみで実装はまだ着手していない
 
+### ✅ 質問投稿レート制限 実装完了（2026-07-09）
+- Notion仕様（グローバル1日10件・全テナント横断＋テナント別1日3件の二段構え）に基づき実装
+- 旧`rate_limits`テーブル（ip_address+tenant_idのみでコード側から一切未参照）を`user_id + scope`（'global'またはtenant_id）構成に再設計
+- `check_and_increment_rate_limit(p_user_id, p_tenant_id)` RPCを追加（security definer、24時間ウィンドウでリセット、グローバル/テナント別を同一トランザクションでアトミックに判定・カウント）
+- `supabase/migrations/20260709000001_rate_limits_v2.sql`をSupabase本番DBに適用済み
+- `src/app/api/questions/route.ts`の認証直後・バリデーション前にRPC呼び出しを追加、上限超過時は429エラー
+- 本番DBでSQL Editorから`check_and_increment_rate_limit`を4回連続呼び出して動作確認（1〜3回目true・4回目false）。テストで使ったカウントは削除済み
+
 **次にやること（確定）**: 多言語対応の実装から着手する（`profiles.language`カラム追加 → Google locale自動取得 → next-intl導入 → 質問・回答の自動翻訳の順。詳細設計はNotionローンチチェックリスト「多言語対応」セクション参照）。その後にフェーズ2（AdSense審査用2テナント準備）へ進む
 
 **リリース前必須**

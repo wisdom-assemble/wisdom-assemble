@@ -21,6 +21,7 @@ export interface Profile {
   answer_count: number
   hard_quest_count: number
   active_title_id: string | null
+  language: string
   created_at: string
 }
 

@@ -28,6 +28,19 @@ export async function POST(request: NextRequest) {
   const tenantId = headersList.get('x-tenant-id') ?? 'debug'
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? '0.0.0.0'
 
+  const { data: withinLimit, error: rateLimitError } = await supabase.rpc(
+    'check_and_increment_rate_limit',
+    { p_user_id: user.id, p_tenant_id: tenantId }
+  )
+  if (rateLimitError) {
+    console.error('Rate limit check error:', rateLimitError)
+  } else if (!withinLimit) {
+    return NextResponse.json(
+      { error: '本日の質問投稿数の上限に達しました。時間をおいて再度お試しください。' },
+      { status: 429 }
+    )
+  }
+
   const { title, body } = await request.json()
 
   if (!title?.trim() || !body?.trim()) {
