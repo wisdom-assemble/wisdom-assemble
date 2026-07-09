@@ -45,11 +45,11 @@ export default async function HomePage({
   const admin = getAdminClient()
   const [{ data: questions, count }, { data: tenant }] = await Promise.all([
     query,
-    admin.from('tenants').select('name, description, description_en').eq('id', tenantId).single(),
+    admin.from('tenants').select('name, description, description_i18n').eq('id', tenantId).single(),
   ])
 
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
-  const tagline = locale === 'en' ? (tenant?.description_en ?? tenant?.description) : tenant?.description
+  const tagline = tenant?.description_i18n?.[locale] ?? tenant?.description
 
   return (
     <>

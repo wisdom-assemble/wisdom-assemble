@@ -236,7 +236,7 @@
 | `id` | `debug` | ミドルウェアで使うID |
 | `name` | `バグ・デバッグ` | 表示名（日本語OK） |
 | `description` | `AIが答えられない・不確かな{ジャンル}質問・問題を、人間のエキスパートに繋げるQ&Aサービス` | トップページ説明文（日本語版・2026-07-09〜共通テンプレート化。{ジャンル}部分だけ差し替える。例: debugは「コードのバグや技術的な」） |
-| `description_en` | `A Q&A service connecting {genre} questions AI can't confidently answer with real human experts.` | トップページ説明文の英語版（2026-07-09追加。/enアクセス時はこちらを表示。同じテンプレートの{genre}部分だけ差し替える） |
+| `description_i18n` | `{"en": "...", "zh": "...", "id": "...", "vi": "...", "ko": "...", "es": "...", "pt": "..."}` | トップページ説明文のen/ja以外7言語分（JSONB、2026-07-09追加。当初description_enという専用カラムだったが、8言語に拡張するタイミングで1つのJSONBカラムに統合。ロケールに応じて`description_i18n[locale] ?? description`で参照） |
 | `color_theme` | `#10B981` | ロゴ・ボタン色（hex） |
 | `subdomain` | `debug` | サブドメイン名 |
 | `language` | `ja` または `en` | デフォルト言語 |

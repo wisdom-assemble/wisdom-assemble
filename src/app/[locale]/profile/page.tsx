@@ -14,6 +14,17 @@ const SKILL_OPTIONS = [
   'AWS', 'Supabase', 'Git', 'Linux', 'セキュリティ',
 ]
 
+const LANGUAGE_OPTIONS = [
+  { code: 'en', label: 'English' },
+  { code: 'ja', label: '日本語' },
+  { code: 'zh', label: '中文' },
+  { code: 'id', label: 'Bahasa Indonesia' },
+  { code: 'vi', label: 'Tiếng Việt' },
+  { code: 'ko', label: '한국어' },
+  { code: 'es', label: 'Español' },
+  { code: 'pt', label: 'Português' },
+]
+
 type Tab = 'profile' | 'myquestions' | 'tasks' | 'review' | 'solved'
 
 export default function ProfilePage() {
@@ -364,23 +375,18 @@ export default function ProfilePage() {
             <div className="p-4 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium text-gray-700 mb-0.5">{t('languageLabel')}</p>
               <p className="text-xs text-gray-400 mb-3">{t('languageHint')}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleLanguageChange('en')}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                    language === 'en' ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  onClick={() => handleLanguageChange('ja')}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                    language === 'ja' ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
-                  }`}
-                >
-                  日本語
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGE_OPTIONS.map(opt => (
+                  <button
+                    key={opt.code}
+                    onClick={() => handleLanguageChange(opt.code)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      language === opt.code ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
 

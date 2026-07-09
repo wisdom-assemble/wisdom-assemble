@@ -12,7 +12,21 @@ import Footer from '@/components/Footer'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
-const OG_LOCALE_MAP: Record<string, string> = { en: 'en_US', ja: 'ja_JP' }
+const OG_LOCALE_MAP: Record<string, string> = {
+  en: 'en_US', ja: 'ja_JP', zh: 'zh_CN', id: 'id_ID',
+  vi: 'vi_VN', ko: 'ko_KR', es: 'es_ES', pt: 'pt_PT',
+}
+
+const FALLBACK_DESCRIPTION_MAP: Record<string, string> = {
+  en: "A Q&A service connecting questions AI can't confidently answer with real human experts.",
+  ja: 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
+  zh: '一个将AI无法确定回答的问题连接给真正人类专家的问答服务。',
+  id: 'Layanan tanya jawab yang menghubungkan pertanyaan yang tidak dapat dijawab AI dengan yakin kepada ahli manusia sungguhan.',
+  vi: 'Dịch vụ hỏi đáp kết nối những câu hỏi mà AI không thể trả lời chắc chắn với các chuyên gia con người thực sự.',
+  ko: 'AI가 자신 있게 답변하지 못하는 질문을 진짜 사람 전문가와 연결해주는 Q&A 서비스입니다.',
+  es: 'Un servicio de preguntas y respuestas que conecta preguntas que la IA no puede responder con confianza con expertos humanos reales.',
+  pt: 'Um serviço de perguntas e respostas que conecta perguntas que a IA não consegue responder com confiança a especialistas humanos reais.',
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
@@ -20,14 +34,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const supabase = await createClient()
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('name, description, description_en')
+    .select('name, description, description_i18n')
     .eq('id', tenantId)
     .single()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
-  const fallbackDescription = locale === 'en'
-    ? "A Q&A service connecting questions AI can't confidently answer with real human experts."
-    : 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス'
-  const description = (locale === 'en' ? (tenant?.description_en ?? tenant?.description) : tenant?.description) ?? fallbackDescription
+  const fallbackDescription = FALLBACK_DESCRIPTION_MAP[locale] ?? FALLBACK_DESCRIPTION_MAP.en
+  const description = tenant?.description_i18n?.[locale] ?? tenant?.description ?? fallbackDescription
   return {
     title: tenant?.name ?? 'Wisdom Assemble',
     description,

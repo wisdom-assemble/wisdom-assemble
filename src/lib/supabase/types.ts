@@ -6,7 +6,7 @@ export interface Tenant {
   id: string
   name: string
   description: string | null
-  description_en: string | null
+  description_i18n: Record<string, string> | null
   subdomain: string
   language: string
   color_theme: string
