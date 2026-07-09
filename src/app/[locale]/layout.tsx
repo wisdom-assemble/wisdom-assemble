@@ -9,6 +9,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { TenantProvider } from '@/components/TenantProvider'
 import Footer from '@/components/Footer'
+import { getTenantDisplayName } from '@/lib/tenantNames'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
@@ -40,20 +41,22 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
   const fallbackDescription = FALLBACK_DESCRIPTION_MAP[locale] ?? FALLBACK_DESCRIPTION_MAP.en
   const description = tenant?.description_i18n?.[locale] ?? tenant?.description ?? fallbackDescription
+  // タブタイトル・OGPはロゴ表記に合わせて常に英語表記（DBのnameは日本語の場合があるため）
+  const displayName = getTenantDisplayName(tenantId, tenant?.name ?? 'Wisdom Assemble')
   return {
-    title: tenant?.name ?? 'Wisdom Assemble',
+    title: displayName,
     description,
     openGraph: {
-      title: tenant?.name ?? 'Wisdom Assemble',
+      title: displayName,
       description,
       url: siteUrl,
-      siteName: tenant?.name ?? 'Wisdom Assemble',
+      siteName: displayName,
       locale: OG_LOCALE_MAP[locale] ?? 'en_US',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: tenant?.name ?? 'Wisdom Assemble',
+      title: displayName,
       description,
     },
   }

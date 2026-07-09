@@ -6,7 +6,7 @@ import { routing } from '@/i18n/routing'
 const intlMiddleware = createIntlMiddleware(routing)
 
 // ロケールプレフィックスの対象外（[locale]配下に存在しないルート）
-const UNLOCALIZED_PREFIXES = ['/api', '/auth/callback']
+const UNLOCALIZED_PREFIXES = ['/api', '/auth/callback', '/icon', '/opengraph-image']
 
 const VALID_SUBDOMAINS = [
   'debug', 'tax-japan', 'australia-whv', 'bali',
