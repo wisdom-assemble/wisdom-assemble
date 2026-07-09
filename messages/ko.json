@@ -19,7 +19,8 @@
   "footer": {
     "terms": "이용약관",
     "privacy": "개인정보처리방침",
-    "contact": "문의하기"
+    "contact": "문의하기",
+    "support": "후원하기"
   },
   "tutorial": {
     "slide1Title": "AI가 먼저 답변합니다",

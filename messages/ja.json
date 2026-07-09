@@ -19,7 +19,8 @@
   "footer": {
     "terms": "利用規約",
     "privacy": "プライバシーポリシー",
-    "contact": "お問い合わせ"
+    "contact": "お問い合わせ",
+    "support": "応援する"
   },
   "tutorial": {
     "slide1Title": "AIが先に回答します",
