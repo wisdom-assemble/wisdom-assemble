@@ -9,14 +9,6 @@ export default function Footer() {
         <Link prefetch={false} href="/terms" className="hover:text-gray-600 transition-colors">{t('terms')}</Link>
         <Link prefetch={false} href="/privacy" className="hover:text-gray-600 transition-colors">{t('privacy')}</Link>
         <Link prefetch={false} href="/contact" className="hover:text-gray-600 transition-colors">{t('contact')}</Link>
-        <a
-          href="https://ko-fi.com/wisdomassemble"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-gray-600 transition-colors"
-        >
-          {t('support')}
-        </a>
       </div>
     </footer>
   )
