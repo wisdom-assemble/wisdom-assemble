@@ -18,3 +18,16 @@ export function getTenantDisplayName(tenantId: string | undefined, name: string)
   if (tenantId && TENANT_NAME_MAP[tenantId]) return TENANT_NAME_MAP[tenantId]
   return name.toUpperCase()
 }
+
+// 内部テナントIDに対する公開URL用サブドメイン（middleware.tsのSUBDOMAIN_ALIASESの逆引き）
+// debugの公開サブドメインはbug.wisdomassemble.com
+export const PUBLIC_SUBDOMAIN_MAP: Record<string, string> = {
+  debug: 'bug',
+}
+
+export function getPublicSubdomain(tenantId: string): string {
+  return PUBLIC_SUBDOMAIN_MAP[tenantId] ?? tenantId
+}
+
+// ルートポータルに掲載する、実際にサブドメインが稼働済みのテナントID
+export const LIVE_TENANT_IDS = ['debug']

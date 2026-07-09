@@ -361,5 +361,11 @@
     "solved_10": "Solucionador",
     "solved_20": "Mestre Solucionador",
     "solved_50": "Solucionador Lendário"
+  },
+  "portalPage": {
+    "title": "Wisdom Assemble",
+    "subtitle": "Uma rede de comunidades de perguntas e respostas onde a IA responde primeiro, e especialistas humanos reais entram quando a IA não é suficiente.",
+    "chooseGenre": "Escolha uma comunidade para começar",
+    "comingSoon": "Em breve"
   }
 }

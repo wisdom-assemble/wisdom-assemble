@@ -19,6 +19,11 @@ const SUBDOMAIN_ALIASES: Record<string, string> = {
   bug: 'debug',
 }
 
+// ルートドメイン（サブドメインなし）はテナントQ&Aではなく、
+// 各ジャンル別サブドメインへの入口ポータルを表示する特別扱いのID
+const ROOT_TENANT_ID = 'root'
+const ROOT_HOSTS = ['wisdomassemble.com', 'www.wisdomassemble.com']
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isUnlocalized = UNLOCALIZED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
@@ -28,17 +33,23 @@ export async function middleware(request: NextRequest) {
   let tenantId = 'debug' // 開発デフォルト・未知のホストのフォールバック
 
   if (!host.includes('localhost') && !host.includes('127.0.0.1')) {
-    const subdomain = SUBDOMAIN_ALIASES[host.split('.')[0]] ?? host.split('.')[0]
-    if (VALID_SUBDOMAINS.includes(subdomain)) {
-      tenantId = subdomain
+    if (ROOT_HOSTS.includes(host)) {
+      tenantId = ROOT_TENANT_ID
+    } else {
+      const subdomain = SUBDOMAIN_ALIASES[host.split('.')[0]] ?? host.split('.')[0]
+      if (VALID_SUBDOMAINS.includes(subdomain)) {
+        tenantId = subdomain
+      }
     }
   } else {
-    // 開発用: ?tenant=xxx or x-tenant-id header
+    // 開発用: ?tenant=xxx or x-tenant-id header（rootポータルのテストも可能にする）
     const paramTenant = request.nextUrl.searchParams.get('tenant')
     const headerTenant = request.headers.get('x-tenant-id')
-    if (paramTenant && VALID_SUBDOMAINS.includes(paramTenant)) {
+    const isValidOrRoot = (v: string | null): v is string =>
+      v === ROOT_TENANT_ID || (!!v && VALID_SUBDOMAINS.includes(v))
+    if (isValidOrRoot(paramTenant)) {
       tenantId = paramTenant
-    } else if (headerTenant && VALID_SUBDOMAINS.includes(headerTenant)) {
+    } else if (isValidOrRoot(headerTenant)) {
       tenantId = headerTenant
     }
   }

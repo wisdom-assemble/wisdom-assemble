@@ -361,5 +361,11 @@
     "solved_10": "해결사",
     "solved_20": "해결의 달인",
     "solved_50": "전설의 해결사"
+  },
+  "portalPage": {
+    "title": "Wisdom Assemble",
+    "subtitle": "AI가 먼저 답변하고, AI가 부족한 부분은 실제 인간 전문가가 채워주는 Q&A 커뮤니티 네트워크입니다.",
+    "chooseGenre": "시작할 커뮤니티를 선택하세요",
+    "comingSoon": "준비 중"
   }
 }

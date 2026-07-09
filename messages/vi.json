@@ -361,5 +361,11 @@
     "solved_10": "Người Giải Quyết Vấn Đề",
     "solved_20": "Bậc Thầy Giải Quyết",
     "solved_50": "Người Giải Quyết Huyền Thoại"
+  },
+  "portalPage": {
+    "title": "Wisdom Assemble",
+    "subtitle": "Một mạng lưới các cộng đồng Hỏi & Đáp, nơi AI trả lời trước, và các chuyên gia con người thực sự sẽ hỗ trợ khi AI chưa đủ khả năng.",
+    "chooseGenre": "Chọn một cộng đồng để bắt đầu",
+    "comingSoon": "Sắp ra mắt"
   }
 }

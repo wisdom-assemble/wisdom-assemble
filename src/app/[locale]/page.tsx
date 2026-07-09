@@ -2,10 +2,13 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
+import PortalHome from '@/components/PortalHome'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import SearchForm from '@/components/SearchForm'
+
+const ROOT_TENANT_ID = 'root'
 
 function getAdminClient() {
   return createServiceClient(
@@ -25,9 +28,13 @@ export default async function HomePage({
   const page = Math.max(1, parseInt(pageStr) || 1)
   const offset = (page - 1) * PAGE_SIZE
 
+  const tenantId = await getTenantId()
+  if (tenantId === ROOT_TENANT_ID) {
+    return <PortalHome />
+  }
+
   const t = await getTranslations('home')
   const locale = await getLocale()
-  const tenantId = await getTenantId()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

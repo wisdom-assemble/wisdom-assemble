@@ -361,5 +361,11 @@
     "solved_10": "解決人",
     "solved_20": "解決の達人",
     "solved_50": "伝説の解決人"
+  },
+  "portalPage": {
+    "title": "Wisdom Assemble",
+    "subtitle": "AIがまず回答し、AIが苦手な部分を人間の専門家が埋める、Q&Aコミュニティのネットワークです。",
+    "chooseGenre": "ジャンルを選んで始めましょう",
+    "comingSoon": "準備中"
   }
 }

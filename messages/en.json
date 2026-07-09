@@ -361,5 +361,11 @@
     "solved_10": "Problem Solver",
     "solved_20": "Master Solver",
     "solved_50": "Legendary Solver"
+  },
+  "portalPage": {
+    "title": "Wisdom Assemble",
+    "subtitle": "A network of Q&A communities where AI answers first, and real human experts step in where AI falls short.",
+    "chooseGenre": "Choose a community to get started",
+    "comingSoon": "Coming soon"
   }
 }
