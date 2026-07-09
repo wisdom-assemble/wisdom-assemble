@@ -109,7 +109,9 @@
     "expertStep3": "「今日は答えられます」をオンにする",
     "expertStep4": "メール通知をオンにしていると、質問がマッチングされると通知が届きます",
     "tryButton": "質問してみる",
-    "listButton": "質問一覧へ"
+    "listButton": "質問一覧へ",
+    "supportText": "本サイトは有志で運営しています。よろしければ運営の応援をお願いします。",
+    "supportButton": "応援する"
   },
   "answerForm": {
     "heading": "回答を投稿する",

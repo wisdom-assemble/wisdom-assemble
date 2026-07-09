@@ -109,7 +109,9 @@
     "expertStep3": "打开“今天可以回答”开关",
     "expertStep4": "开启邮件通知后，匹配到问题时会收到通知",
     "tryButton": "试着提问",
-    "listButton": "查看问题列表"
+    "listButton": "查看问题列表",
+    "supportText": "本站由志愿者运营。如果可以的话，欢迎支持我们。",
+    "supportButton": "支持我们"
   },
   "answerForm": {
     "heading": "发布回答",

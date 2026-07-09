@@ -24,6 +24,17 @@ export default async function HowItWorksPage({ params }: Props) {
 
         <div className="space-y-10">
           <Step number={1} title={t('step1Title')} description={t('step1Description')} icon="●" />
+          <div className="pl-12">
+            <p className="text-xs text-gray-400 mb-2 leading-relaxed">{t('supportText')}</p>
+            <a
+              href="https://ko-fi.com/wisdomassemble"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-3 py-1.5 rounded text-xs font-medium border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              {t('supportButton')}
+            </a>
+          </div>
           <Step number={2} title={t('step2Title')} description={t('step2Description')} note={t('step2Note')} icon="●" />
           <Step number={3} title={t('step3Title')} description={t('step3Description')} icon="●" />
           <Step number={4} title={t('step4Title')} description={t('step4Description')} icon="●" />

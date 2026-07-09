@@ -109,7 +109,9 @@
     "expertStep3": "Bật \"Có thể trả lời hôm nay\"",
     "expertStep4": "Khi bật thông báo email, bạn sẽ được thông báo khi được ghép nối với một câu hỏi",
     "tryButton": "Thử đặt câu hỏi",
-    "listButton": "Xem danh sách câu hỏi"
+    "listButton": "Xem danh sách câu hỏi",
+    "supportText": "Trang web này được vận hành bởi các tình nguyện viên. Nếu bạn muốn, hãy ủng hộ chúng tôi.",
+    "supportButton": "Ủng hộ chúng tôi"
   },
   "answerForm": {
     "heading": "Đăng câu trả lời",

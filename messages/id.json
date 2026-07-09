@@ -109,7 +109,9 @@
     "expertStep3": "Aktifkan \"Tersedia hari ini\"",
     "expertStep4": "Dengan notifikasi email aktif, kamu akan diberi tahu saat dicocokkan dengan pertanyaan",
     "tryButton": "Coba ajukan pertanyaan",
-    "listButton": "Lihat daftar pertanyaan"
+    "listButton": "Lihat daftar pertanyaan",
+    "supportText": "Situs ini dikelola secara sukarela. Jika berkenan, dukungan Anda sangat kami hargai.",
+    "supportButton": "Dukung Kami"
   },
   "answerForm": {
     "heading": "Kirim jawaban",

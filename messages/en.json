@@ -109,7 +109,9 @@
     "expertStep3": "Turn on \"Available today\"",
     "expertStep4": "With email notifications on, you'll be notified when matched with a question",
     "tryButton": "Try asking a question",
-    "listButton": "Go to question list"
+    "listButton": "Go to question list",
+    "supportText": "This site is run by volunteers. If you'd like, please consider supporting us.",
+    "supportButton": "Support Us"
   },
   "answerForm": {
     "heading": "Post an answer",

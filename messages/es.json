@@ -109,7 +109,9 @@
     "expertStep3": "Activa \"Disponible hoy\"",
     "expertStep4": "Con las notificaciones por correo activadas, se te avisará cuando te emparejen con una pregunta",
     "tryButton": "Probar a hacer una pregunta",
-    "listButton": "Ir a la lista de preguntas"
+    "listButton": "Ir a la lista de preguntas",
+    "supportText": "Este sitio está gestionado por voluntarios. Si lo deseas, considera apoyarnos.",
+    "supportButton": "Apóyanos"
   },
   "answerForm": {
     "heading": "Publicar una respuesta",
