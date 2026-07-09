@@ -334,5 +334,32 @@
     "section8ContactPrefix": "개인정보에 관한 문의·삭제 요청은",
     "section8ContactLink": "문의 양식",
     "section8ContactSuffix": "을 통해 연락해 주십시오."
+  },
+  "titles": {
+    "answer_1": "견습 답변자",
+    "answer_2": "초급 답변자",
+    "answer_3": "중급 답변자",
+    "answer_5": "상급 답변자",
+    "answer_10": "지혜로운 자",
+    "answer_20": "현자",
+    "answer_100": "전설의 답변자",
+    "hard_1": "견습 도전자",
+    "hard_2": "초급 도전자",
+    "hard_3": "중급 도전자",
+    "hard_5": "상급 도전자",
+    "hard_10": "난제를 찾는 자",
+    "hard_20": "도전하는 자",
+    "hard_100": "전설의 도전자",
+    "question_1": "첫 질문자",
+    "question_2": "호기심 덩어리",
+    "question_5": "왕성한 호기심",
+    "question_10": "탐구자",
+    "solved_1": "견습 의뢰자",
+    "solved_2": "초급 의뢰자",
+    "solved_3": "중급 의뢰자",
+    "solved_5": "상급 의뢰자",
+    "solved_10": "해결사",
+    "solved_20": "해결의 달인",
+    "solved_50": "전설의 해결사"
   }
 }

@@ -34,6 +34,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const { result: resultParam } = await searchParams
   const slug = decodeURIComponent(rawSlug)
   const t = await getTranslations('questionPage')
+  const tTitles = await getTranslations('titles')
   const locale = await getLocale()
   const tenantId = await getTenantId()
   const supabase = await createClient()
@@ -66,7 +67,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
       .from('titles')
       .select('id, name')
       .in('id', activeTitleIds)
-    for (const t of titleRows ?? []) titleMap[t.id] = t.name
+    for (const row of titleRows ?? []) titleMap[row.id] = tTitles.has(row.id) ? tTitles(row.id) : row.name
   }
 
   // ビュー数インクリメント（fire and forget）

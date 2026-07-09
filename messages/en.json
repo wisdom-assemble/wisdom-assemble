@@ -334,5 +334,32 @@
     "section8ContactPrefix": "For questions about privacy or requests for deletion, please contact us via the",
     "section8ContactLink": "contact form",
     "section8ContactSuffix": "."
+  },
+  "titles": {
+    "answer_1": "Novice Answerer",
+    "answer_2": "Apprentice Answerer",
+    "answer_3": "Adept Answerer",
+    "answer_5": "Veteran Answerer",
+    "answer_10": "Sage",
+    "answer_20": "Wise One",
+    "answer_100": "Legendary Answerer",
+    "hard_1": "Novice Challenger",
+    "hard_2": "Apprentice Challenger",
+    "hard_3": "Adept Challenger",
+    "hard_5": "Veteran Challenger",
+    "hard_10": "Seeker of Hard Questions",
+    "hard_20": "Challenger",
+    "hard_100": "Legendary Challenger",
+    "question_1": "First Question",
+    "question_2": "Curious Mind",
+    "question_5": "Insatiably Curious",
+    "question_10": "Seeker",
+    "solved_1": "Novice Requester",
+    "solved_2": "Apprentice Requester",
+    "solved_3": "Adept Requester",
+    "solved_5": "Veteran Requester",
+    "solved_10": "Problem Solver",
+    "solved_20": "Master Solver",
+    "solved_50": "Legendary Solver"
   }
 }

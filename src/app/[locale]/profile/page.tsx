@@ -30,6 +30,7 @@ type Tab = 'profile' | 'myquestions' | 'tasks' | 'review' | 'solved'
 export default function ProfilePage() {
   const t = useTranslations('profilePage')
   const tCommon = useTranslations('common')
+  const tTitles = useTranslations('titles')
   const locale = useLocale()
   const supabase = createClient()
   const router = useRouter()
@@ -256,7 +257,7 @@ export default function ProfilePage() {
                       className={`text-xs px-2 py-1 rounded-full font-medium cursor-pointer transition-all ${rarityStyle} ${isActive ? 'ring-2 ring-offset-1 ring-gray-500' : 'opacity-70 hover:opacity-100'}`}
                       title={isActive ? t('titleClickToUnselect') : t('titleClickToSelect')}
                     >
-                      {isActive && '★ '}{t2.name}
+                      {isActive && '★ '}{tTitles.has(t2.id) ? tTitles(t2.id) : t2.name}
                     </button>
                   )
                 })}

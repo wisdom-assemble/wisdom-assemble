@@ -334,5 +334,32 @@
     "section8ContactPrefix": "Đối với các câu hỏi về quyền riêng tư hoặc yêu cầu xóa, vui lòng liên hệ với chúng tôi qua",
     "section8ContactLink": "biểu mẫu liên hệ",
     "section8ContactSuffix": "."
+  },
+  "titles": {
+    "answer_1": "Người Trả Lời Mới",
+    "answer_2": "Người Trả Lời Sơ Cấp",
+    "answer_3": "Người Trả Lời Trung Cấp",
+    "answer_5": "Người Trả Lời Cao Cấp",
+    "answer_10": "Nhà Thông Thái",
+    "answer_20": "Bậc Hiền Triết",
+    "answer_100": "Người Trả Lời Huyền Thoại",
+    "hard_1": "Người Thử Thách Mới",
+    "hard_2": "Người Thử Thách Sơ Cấp",
+    "hard_3": "Người Thử Thách Trung Cấp",
+    "hard_5": "Người Thử Thách Cao Cấp",
+    "hard_10": "Người Tìm Kiếm Câu Hỏi Khó",
+    "hard_20": "Người Chinh Phục",
+    "hard_100": "Người Thử Thách Huyền Thoại",
+    "question_1": "Người Đặt Câu Hỏi Đầu Tiên",
+    "question_2": "Tâm Hồn Tò Mò",
+    "question_5": "Ham Học Hỏi",
+    "question_10": "Người Tìm Kiếm",
+    "solved_1": "Người Yêu Cầu Mới",
+    "solved_2": "Người Yêu Cầu Sơ Cấp",
+    "solved_3": "Người Yêu Cầu Trung Cấp",
+    "solved_5": "Người Yêu Cầu Cao Cấp",
+    "solved_10": "Người Giải Quyết Vấn Đề",
+    "solved_20": "Bậc Thầy Giải Quyết",
+    "solved_50": "Người Giải Quyết Huyền Thoại"
   }
 }

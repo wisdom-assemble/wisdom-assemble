@@ -334,5 +334,32 @@
     "section8ContactPrefix": "有关隐私的问题或删除请求，请通过",
     "section8ContactLink": "联系表单",
     "section8ContactSuffix": "与我们联系。"
+  },
+  "titles": {
+    "answer_1": "初级解答者",
+    "answer_2": "二级解答者",
+    "answer_3": "中级解答者",
+    "answer_5": "高级解答者",
+    "answer_10": "智者",
+    "answer_20": "贤者",
+    "answer_100": "传说解答者",
+    "hard_1": "初级挑战者",
+    "hard_2": "二级挑战者",
+    "hard_3": "中级挑战者",
+    "hard_5": "高级挑战者",
+    "hard_10": "难题探求者",
+    "hard_20": "挑战者",
+    "hard_100": "传说挑战者",
+    "question_1": "初次提问者",
+    "question_2": "好奇之心",
+    "question_5": "求知欲旺盛",
+    "question_10": "探求者",
+    "solved_1": "初级委托者",
+    "solved_2": "二级委托者",
+    "solved_3": "中级委托者",
+    "solved_5": "高级委托者",
+    "solved_10": "解决者",
+    "solved_20": "解决大师",
+    "solved_50": "传说解决者"
   }
 }

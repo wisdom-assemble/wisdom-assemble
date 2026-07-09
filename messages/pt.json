@@ -334,5 +334,32 @@
     "section8ContactPrefix": "Para perguntas sobre privacidade ou solicitações de exclusão, entre em contato conosco através do",
     "section8ContactLink": "formulário de contato",
     "section8ContactSuffix": "."
+  },
+  "titles": {
+    "answer_1": "Respondedor Novato",
+    "answer_2": "Respondedor Iniciante",
+    "answer_3": "Respondedor Intermediário",
+    "answer_5": "Respondedor Avançado",
+    "answer_10": "Sábio",
+    "answer_20": "Grande Sábio",
+    "answer_100": "Respondedor Lendário",
+    "hard_1": "Desafiante Novato",
+    "hard_2": "Desafiante Iniciante",
+    "hard_3": "Desafiante Intermediário",
+    "hard_5": "Desafiante Avançado",
+    "hard_10": "Buscador de Desafios Difíceis",
+    "hard_20": "Desafiante",
+    "hard_100": "Desafiante Lendário",
+    "question_1": "Primeira Pergunta",
+    "question_2": "Mente Curiosa",
+    "question_5": "Curiosidade Insaciável",
+    "question_10": "Buscador",
+    "solved_1": "Solicitante Novato",
+    "solved_2": "Solicitante Iniciante",
+    "solved_3": "Solicitante Intermediário",
+    "solved_5": "Solicitante Avançado",
+    "solved_10": "Solucionador",
+    "solved_20": "Mestre Solucionador",
+    "solved_50": "Solucionador Lendário"
   }
 }

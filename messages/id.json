@@ -334,5 +334,32 @@
     "section8ContactPrefix": "Untuk pertanyaan tentang privasi atau permintaan penghapusan, silakan hubungi kami melalui",
     "section8ContactLink": "formulir kontak",
     "section8ContactSuffix": "."
+  },
+  "titles": {
+    "answer_1": "Penjawab Pemula",
+    "answer_2": "Penjawab Junior",
+    "answer_3": "Penjawab Menengah",
+    "answer_5": "Penjawab Senior",
+    "answer_10": "Orang Bijak",
+    "answer_20": "Sang Bijaksana",
+    "answer_100": "Penjawab Legendaris",
+    "hard_1": "Penantang Pemula",
+    "hard_2": "Penantang Junior",
+    "hard_3": "Penantang Menengah",
+    "hard_5": "Penantang Senior",
+    "hard_10": "Pencari Soal Sulit",
+    "hard_20": "Sang Penantang",
+    "hard_100": "Penantang Legendaris",
+    "question_1": "Penanya Pertama",
+    "question_2": "Jiwa Penasaran",
+    "question_5": "Sangat Ingin Tahu",
+    "question_10": "Sang Pencari",
+    "solved_1": "Peminta Pemula",
+    "solved_2": "Peminta Junior",
+    "solved_3": "Peminta Menengah",
+    "solved_5": "Peminta Senior",
+    "solved_10": "Pemecah Masalah",
+    "solved_20": "Master Pemecah Masalah",
+    "solved_50": "Pemecah Masalah Legendaris"
   }
 }

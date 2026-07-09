@@ -334,5 +334,32 @@
     "section8ContactPrefix": "プライバシーに関するご質問・削除依頼は、",
     "section8ContactLink": "お問い合わせフォーム",
     "section8ContactSuffix": "よりご連絡ください。"
+  },
+  "titles": {
+    "answer_1": "見習い解答者",
+    "answer_2": "初級解答者",
+    "answer_3": "中級解答者",
+    "answer_5": "上級解答者",
+    "answer_10": "知恵者",
+    "answer_20": "賢者",
+    "answer_100": "伝説の解答者",
+    "hard_1": "見習い挑戦者",
+    "hard_2": "初級挑戦者",
+    "hard_3": "中級挑戦者",
+    "hard_5": "上級挑戦者",
+    "hard_10": "難問を求めし者",
+    "hard_20": "挑みし者",
+    "hard_100": "伝説の挑戦者",
+    "question_1": "初質問者",
+    "question_2": "好奇心の塊",
+    "question_5": "好奇心旺盛",
+    "question_10": "探求者",
+    "solved_1": "見習い依頼者",
+    "solved_2": "初級依頼者",
+    "solved_3": "中級依頼者",
+    "solved_5": "上級依頼者",
+    "solved_10": "解決人",
+    "solved_20": "解決の達人",
+    "solved_50": "伝説の解決人"
   }
 }

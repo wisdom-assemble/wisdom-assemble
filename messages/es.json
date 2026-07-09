@@ -334,5 +334,32 @@
     "section8ContactPrefix": "Para preguntas sobre privacidad o solicitudes de eliminación, contáctanos a través del",
     "section8ContactLink": "formulario de contacto",
     "section8ContactSuffix": "."
+  },
+  "titles": {
+    "answer_1": "Respondedor Novato",
+    "answer_2": "Respondedor Principiante",
+    "answer_3": "Respondedor Intermedio",
+    "answer_5": "Respondedor Avanzado",
+    "answer_10": "Sabio",
+    "answer_20": "Sabio Mayor",
+    "answer_100": "Respondedor Legendario",
+    "hard_1": "Retador Novato",
+    "hard_2": "Retador Principiante",
+    "hard_3": "Retador Intermedio",
+    "hard_5": "Retador Avanzado",
+    "hard_10": "Buscador de Retos Difíciles",
+    "hard_20": "Retador",
+    "hard_100": "Retador Legendario",
+    "question_1": "Primera Pregunta",
+    "question_2": "Mente Curiosa",
+    "question_5": "Curiosidad Insaciable",
+    "question_10": "Buscador",
+    "solved_1": "Solicitante Novato",
+    "solved_2": "Solicitante Principiante",
+    "solved_3": "Solicitante Intermedio",
+    "solved_5": "Solicitante Avanzado",
+    "solved_10": "Solucionador",
+    "solved_20": "Maestro Solucionador",
+    "solved_50": "Solucionador Legendario"
   }
 }
