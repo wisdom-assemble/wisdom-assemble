@@ -97,14 +97,14 @@ export default function Header() {
   return (
     <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
       <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/">
+        <Link prefetch={false} href="/">
           <SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} />
         </Link>
 
         {/* PC nav */}
         <nav style={{ display: isMobile ? 'none' : 'flex' }} className="items-center gap-4 text-sm">
-          <Link href="/how-it-works" className="text-gray-500 hover:text-gray-800">{t('howItWorks')}</Link>
-          <Link href="/hard" className="relative text-gray-500 hover:text-gray-800">
+          <Link prefetch={false} href="/how-it-works" className="text-gray-500 hover:text-gray-800">{t('howItWorks')}</Link>
+          <Link prefetch={false} href="/hard" className="relative text-gray-500 hover:text-gray-800">
             <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">{t('hard')}</span>
             {hardCount > 0 && (
               <span className="absolute -top-1.5 -right-4 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
@@ -115,9 +115,9 @@ export default function Header() {
           {user ? (
             <>
               {user.email === ADMIN_EMAIL && (
-                <Link href="/admin" className="text-gray-500 hover:text-gray-800">{t('admin')}</Link>
+                <Link prefetch={false} href="/admin" className="text-gray-500 hover:text-gray-800">{t('admin')}</Link>
               )}
-              <Link href="/profile" className="relative text-gray-500 hover:text-gray-800">
+              <Link prefetch={false} href="/profile" className="relative text-gray-500 hover:text-gray-800">
                 {t('myPage')}
                 {badge > 0 && (
                   <span className="absolute -top-1.5 -right-3 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
@@ -128,7 +128,7 @@ export default function Header() {
               <button onClick={handleLogout} className="text-gray-500 hover:text-gray-800">{t('logout')}</button>
             </>
           ) : (
-            <Link href="/auth/login" className="px-3 py-1.5 rounded text-white text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)' }}>
+            <Link prefetch={false} href="/auth/login" className="px-3 py-1.5 rounded text-white text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)' }}>
               {t('login')}
             </Link>
           )}
@@ -155,8 +155,8 @@ export default function Header() {
         <>
           <div className="fixed inset-0 bg-black/30 z-20" onClick={() => setMenuOpen(false)} />
           <div className="absolute right-0 top-full w-56 bg-white border border-gray-200 rounded-bl-lg shadow-lg z-30 px-4 py-3 flex flex-col gap-4 text-sm">
-            <Link href="/how-it-works" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('howItWorks')}</Link>
-            <Link href="/hard" className="flex items-center gap-1 text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>
+            <Link prefetch={false} href="/how-it-works" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('howItWorks')}</Link>
+            <Link prefetch={false} href="/hard" className="flex items-center gap-1 text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>
               <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">{t('hard')}</span>
               {hardCount > 0 && (
                 <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
@@ -167,9 +167,9 @@ export default function Header() {
             {user ? (
               <>
                 {user.email === ADMIN_EMAIL && (
-                  <Link href="/admin" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('admin')}</Link>
+                  <Link prefetch={false} href="/admin" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('admin')}</Link>
                 )}
-                <Link href="/profile" className="text-gray-600 hover:text-gray-900 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                <Link prefetch={false} href="/profile" className="text-gray-600 hover:text-gray-900 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                   {t('myPage')}
                   {badge > 0 && (
                     <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
@@ -182,7 +182,7 @@ export default function Header() {
                 </button>
               </>
             ) : (
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('login')}</Link>
+              <Link prefetch={false} href="/auth/login" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('login')}</Link>
             )}
           </div>
         </>
