@@ -1,9 +1,12 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function SearchForm({ defaultValue }: { defaultValue: string }) {
+  const t = useTranslations('home')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [value, setValue] = useState(defaultValue)
 
@@ -19,14 +22,14 @@ export default function SearchForm({ defaultValue }: { defaultValue: string }) {
         type="text"
         value={value}
         onChange={e => setValue(e.target.value)}
-        placeholder="キーワードで検索..."
+        placeholder={t('searchPlaceholder')}
         className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
       />
       <button
         type="submit"
         className="px-3 py-2 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 shrink-0"
       >
-        検索
+        {tCommon('search')}
       </button>
     </form>
   )

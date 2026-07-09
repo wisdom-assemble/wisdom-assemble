@@ -12,7 +12,10 @@ import Footer from '@/components/Footer'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
-export async function generateMetadata(): Promise<Metadata> {
+const OG_LOCALE_MAP: Record<string, string> = { en: 'en_US', ja: 'ja_JP' }
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params
   const tenantId = await getTenantId()
   const supabase = await createClient()
   const { data: tenant } = await supabase
@@ -21,21 +24,22 @@ export async function generateMetadata(): Promise<Metadata> {
     .eq('id', tenantId)
     .single()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
+  const fallbackDescription = 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス'
   return {
     title: tenant?.name ?? 'Wisdom Assemble',
-    description: tenant?.description ?? 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
+    description: tenant?.description ?? fallbackDescription,
     openGraph: {
       title: tenant?.name ?? 'Wisdom Assemble',
-      description: tenant?.description ?? 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
+      description: tenant?.description ?? fallbackDescription,
       url: siteUrl,
       siteName: tenant?.name ?? 'Wisdom Assemble',
-      locale: 'ja_JP',
+      locale: OG_LOCALE_MAP[locale] ?? 'en_US',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: tenant?.name ?? 'Wisdom Assemble',
-      description: tenant?.description ?? 'AIが答えられない・不確かな質問を、人間のエキスパートに繋げるQ&Aサービス',
+      description: tenant?.description ?? fallbackDescription,
     },
   }
 }

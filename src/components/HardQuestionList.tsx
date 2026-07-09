@@ -1,6 +1,7 @@
 'use client'
 
-import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -21,6 +22,8 @@ export default function HardQuestionList({
   questions: Question[]
   tab: 'unsolved' | 'solved'
 }) {
+  const t = useTranslations('hardPage')
+  const locale = useLocale()
   // undefined=未ロード, null=未訪問（全件NEW）, Date=訪問済み
   const [seenAt, setSeenAt] = useState<Date | null | undefined>(undefined)
 
@@ -66,7 +69,7 @@ export default function HardQuestionList({
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
                       tab === 'solved' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                     }`}>
-                      {tab === 'solved' ? '解決済み' : '高難度'}
+                      {tab === 'solved' ? t('statusSolved') : t('statusHard')}
                     </span>
                     {isNew && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full font-bold bg-red-500 text-white shrink-0">
@@ -77,11 +80,11 @@ export default function HardQuestionList({
                   </div>
                   <p className="text-xs text-gray-400">
                     {q.profiles?.display_name ?? q.profiles?.username} ·{' '}
-                    {createdAt.toLocaleDateString('ja-JP')} ·{' '}
+                    {createdAt.toLocaleDateString(locale)} ·{' '}
                     {q.view_count} views
                     {hours !== null && (
                       <span className="ml-2 text-green-600">
-                        · 解決まで {hours < 24 ? `${hours}時間` : `${Math.round(hours / 24)}日`}
+                        {hours < 24 ? t('solvedInHours', { hours }) : t('solvedInDays', { days: Math.round(hours / 24) })}
                       </span>
                     )}
                   </p>

@@ -1,30 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-const SLIDES = [
-  {
-    icon: '●',
-    title: 'AIが先に回答します',
-    body: 'わからない事があれば「+質問をする」から投稿して下さい。投稿すると、まずAIが回答を試みます。信頼度が高い場合はAIの回答がそのまま表示されます。',
-  },
-  {
-    icon: '●',
-    title: 'AIが無理なら人間へ',
-    body: 'AIが自信を持って答えられない質問は、スキルタグが一致する専門家に自動でマッチングされ人間が回答をしてくれます。AIの隙間を人間が埋めます。',
-  },
-  {
-    icon: '▲',
-    title: '高難度質問を全員参加で解決',
-    body: '2人の専門家でも解決しない場合、「高難度質問」として全ユーザーに公開されます。あなたの知識が誰かを救うかもしれません。質問者を助けてあげましょう。',
-  },
-]
+import { useTranslations } from 'next-intl'
 
 const STORAGE_KEY = 'wa_tutorial_done'
 
 export default function Tutorial() {
+  const t = useTranslations('tutorial')
   const [show, setShow] = useState(false)
   const [slide, setSlide] = useState(0)
+
+  const slides = [
+    { icon: '●', title: t('slide1Title'), body: t('slide1Body') },
+    { icon: '●', title: t('slide2Title'), body: t('slide2Body') },
+    { icon: '▲', title: t('slide3Title'), body: t('slide3Body') },
+  ]
 
   useEffect(() => {
     if (!localStorage.getItem(STORAGE_KEY)) {
@@ -38,7 +28,7 @@ export default function Tutorial() {
   }
 
   function next() {
-    if (slide < SLIDES.length - 1) {
+    if (slide < slides.length - 1) {
       setSlide(slide + 1)
     } else {
       close()
@@ -47,7 +37,7 @@ export default function Tutorial() {
 
   if (!show) return null
 
-  const s = SLIDES[slide]
+  const s = slides[slide]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 animate-in fade-in duration-300">
@@ -58,7 +48,7 @@ export default function Tutorial() {
 
         {/* ドット */}
         <div className="flex justify-center gap-2 mb-6">
-          {SLIDES.map((_, i) => (
+          {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setSlide(i)}
@@ -74,14 +64,14 @@ export default function Tutorial() {
             onClick={close}
             className="flex-1 py-2.5 rounded-lg text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors"
           >
-            スキップ
+            {t('skip')}
           </button>
           <button
             onClick={next}
             className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white transition-colors"
             style={{ backgroundColor: 'var(--color-primary)' }}
           >
-            {slide < SLIDES.length - 1 ? '次へ' : 'はじめる'}
+            {slide < slides.length - 1 ? t('next') : t('start')}
           </button>
         </div>
       </div>

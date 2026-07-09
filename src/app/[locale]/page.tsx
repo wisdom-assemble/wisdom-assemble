@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { getTranslations, getLocale } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
 import { getTenantId } from '@/lib/tenant'
@@ -24,6 +25,8 @@ export default async function HomePage({
   const page = Math.max(1, parseInt(pageStr) || 1)
   const offset = (page - 1) * PAGE_SIZE
 
+  const t = await getTranslations('home')
+  const locale = await getLocale()
   const tenantId = await getTenantId()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -62,16 +65,16 @@ export default async function HomePage({
             className="shrink-0 px-4 py-2 rounded font-medium text-white text-sm"
             style={{ backgroundColor: 'var(--color-primary)' }}
           >
-            + 質問する
+            {t('postQuestion')}
           </Link>
           <SearchForm key={q} defaultValue={q} />
         </div>
 
         {q && (
           <p className="text-sm text-gray-500 mb-4">
-            「{q}」の検索結果 — {count ?? 0}件
+            {t('searchResult', { query: q, count: count ?? 0 })}
             <Link href="/" className="ml-2 underline text-gray-400 hover:text-gray-600 text-xs">
-              クリア
+              {t('clear')}
             </Link>
           </p>
         )}
@@ -90,10 +93,10 @@ export default async function HomePage({
                         <p className="font-medium text-gray-900 truncate">{q.title}</p>
                         <p className="text-xs text-gray-400 mt-1">
                           {(q.profiles as any)?.display_name ?? (q.profiles as any)?.username} ·{' '}
-                          {new Date(q.created_at).toLocaleDateString('ja-JP')}
+                          {new Date(q.created_at).toLocaleDateString(locale)}
                         </p>
                       </div>
-                      <StatusBadge status={q.status} matchedBId={(q as any).matched_b_id} myId={user?.id} matchedCId={(q as any).matched_c_id} />
+                      <StatusBadge status={q.status} matchedBId={(q as any).matched_b_id} myId={user?.id} matchedCId={(q as any).matched_c_id} t={t} />
                     </div>
                   </Link>
                 </li>
@@ -101,17 +104,17 @@ export default async function HomePage({
             </ul>
 
             {totalPages > 1 && (
-              <Pagination currentPage={page} totalPages={totalPages} q={q} />
+              <Pagination currentPage={page} totalPages={totalPages} q={q} t={t} />
             )}
           </>
         ) : (
           <div className="text-center py-16 text-gray-400">
             {q ? (
-              <p>「{q}」に一致する質問が見つかりませんでした</p>
+              <p>{t('noMatch', { query: q })}</p>
             ) : (
               <>
-                <p>まだ質問がありません</p>
-                <p className="text-sm mt-1">最初の質問を投稿してみましょう</p>
+                <p>{t('noQuestions')}</p>
+                <p className="text-sm mt-1">{t('postFirstQuestion')}</p>
               </>
             )}
           </div>
@@ -121,7 +124,7 @@ export default async function HomePage({
   )
 }
 
-function StatusBadge({ status, matchedBId, matchedCId, myId }: { status: string; matchedBId?: string | null; matchedCId?: string | null; myId?: string }) {
+function StatusBadge({ status, matchedBId, matchedCId, myId, t }: { status: string; matchedBId?: string | null; matchedCId?: string | null; myId?: string; t: Awaited<ReturnType<typeof getTranslations>> }) {
   // 自分宛の依頼かどうか
   const isMyTask =
     (status === 'open' && matchedBId && matchedBId === myId) ||
@@ -131,19 +134,19 @@ function StatusBadge({ status, matchedBId, matchedCId, myId }: { status: string;
     return (
       <span className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700 flex items-center gap-1">
         <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-        あなたに依頼
+        {t('assignedToYou')}
       </span>
     )
   }
 
   const map: Record<string, { label: string; className: string }> = {
-    open:         { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
-    open_matched: { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    ai_answered:  { label: 'AI回答済',         className: 'bg-purple-50 text-purple-700' },
-    matched:      { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:    { label: '専門家②が対応中', className: 'bg-orange-50 text-orange-700' },
-    solved:       { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-    hard:         { label: '高難度',           className: 'bg-red-50 text-red-700' },
+    open:         { label: t('statusOpen'),          className: 'bg-blue-50 text-blue-700' },
+    open_matched: { label: t('statusOpenMatched'),    className: 'bg-yellow-50 text-yellow-700' },
+    ai_answered:  { label: t('statusAiAnswered'),     className: 'bg-purple-50 text-purple-700' },
+    matched:      { label: t('statusMatched'),        className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:    { label: t('statusMatchedC'),       className: 'bg-orange-50 text-orange-700' },
+    solved:       { label: t('statusSolved'),         className: 'bg-green-50 text-green-700' },
+    hard:         { label: t('statusHard'),           className: 'bg-red-50 text-red-700' },
   }
   const key = status === 'open' && matchedBId ? 'open_matched' : status
   const { label, className } = map[key] ?? map.open
@@ -154,7 +157,7 @@ function StatusBadge({ status, matchedBId, matchedCId, myId }: { status: string;
   )
 }
 
-function Pagination({ currentPage, totalPages, q }: { currentPage: number; totalPages: number; q: string }) {
+function Pagination({ currentPage, totalPages, q, t }: { currentPage: number; totalPages: number; q: string; t: Awaited<ReturnType<typeof getTranslations>> }) {
   const params = (page: number) => {
     const p = new URLSearchParams()
     if (q) p.set('q', q)
@@ -169,7 +172,7 @@ function Pagination({ currentPage, totalPages, q }: { currentPage: number; total
           href={params(currentPage - 1)}
           className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
         >
-          ← 前へ
+          {t('prevPage')}
         </Link>
       )}
       <span className="text-sm text-gray-500">
@@ -180,7 +183,7 @@ function Pagination({ currentPage, totalPages, q }: { currentPage: number; total
           href={params(currentPage + 1)}
           className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
         >
-          次へ →
+          {t('nextPage')}
         </Link>
       )}
     </div>

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTenant } from '@/components/TenantProvider'
 
 export default function SignupPage() {
+  const t = useTranslations('signupPage')
   const tenant = useTenant()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +32,7 @@ export default function SignupPage() {
 
     if (error) {
       console.error('signup error:', error)
-      setError(error.message || '登録に失敗しました。もう一度お試しください。')
+      setError(error.message || t('signupFailed'))
       setLoading(false)
     } else {
       // 確認メール不要の場合はそのままトップへ
@@ -43,10 +45,10 @@ export default function SignupPage() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50">
         <div className="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-8 text-center">
           <p className="text-2xl mb-2">📬</p>
-          <h2 className="font-bold text-lg mb-2">確認メールを送信しました</h2>
+          <h2 className="font-bold text-lg mb-2">{t('confirmEmailTitle')}</h2>
           <p className="text-sm text-gray-500">
-            {email} に確認メールを送りました。<br />
-            メール内のリンクをクリックして登録を完了してください。
+            {t('confirmEmailBody', { email })}<br />
+            {t('confirmEmailBodyLine2')}
           </p>
         </div>
       </div>
@@ -59,18 +61,18 @@ export default function SignupPage() {
         <h1 className="text-xl font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
           {tenant?.name ?? 'Wisdom Assemble'}
         </h1>
-        <p className="text-sm text-gray-500 mb-6">新規登録</p>
+        <p className="text-sm text-gray-500 mb-6">{t('heading')}</p>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ユーザー名 <span className="text-red-500">*</span>
+              {t('usernameLabel')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="例: taro123"
+              placeholder={t('usernamePlaceholder')}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
               maxLength={30}
               required
@@ -78,7 +80,7 @@ export default function SignupPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              メールアドレス <span className="text-red-500">*</span>
+              {t('emailLabel')} <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -90,13 +92,13 @@ export default function SignupPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              パスワード <span className="text-red-500">*</span>
+              {t('passwordLabel')} <span className="text-red-500">*</span>
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="8文字以上"
+              placeholder={t('passwordPlaceholder')}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
               minLength={8}
               required
@@ -113,14 +115,14 @@ export default function SignupPage() {
             className="w-full py-2.5 rounded font-medium text-white disabled:opacity-50"
             style={{ backgroundColor: 'var(--color-primary)' }}
           >
-            {loading ? '登録中...' : '新規登録'}
+            {loading ? t('submitting') : t('submit')}
           </button>
         </form>
 
         <p className="text-sm text-center text-gray-500 mt-4">
-          すでにアカウントをお持ちの方は{' '}
+          {t('alreadyHaveAccount')}{' '}
           <Link href="/auth/login" className="underline" style={{ color: 'var(--color-primary)' }}>
-            ログイン
+            {t('loginLink')}
           </Link>
         </p>
       </div>

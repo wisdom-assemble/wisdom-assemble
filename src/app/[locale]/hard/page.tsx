@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import HardQuestionList from '@/components/HardQuestionList'
 import { getTenantId } from '@/lib/tenant'
@@ -10,6 +11,7 @@ export default async function HardQuestPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const { tab = 'unsolved' } = await searchParams
+  const t = await getTranslations('hardPage')
   const tenantId = await getTenantId()
   const supabase = await createClient()
 
@@ -37,9 +39,9 @@ export default async function HardQuestPage({
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-1">高難度質問一覧</h1>
+          <h1 className="text-2xl font-bold mb-1">{t('title')}</h1>
           <p className="text-sm text-gray-500">
-            AIも専門家も答えられなかった質問です。あなたの知識で解決できますか？
+            {t('subtitle')}
           </p>
         </div>
 
@@ -51,7 +53,7 @@ export default async function HardQuestPage({
               tab === 'unsolved' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            未解決 {unsolved && unsolved.length > 0 && <span className="ml-1 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{unsolved.length}</span>}
+            {t('tabUnsolved')} {unsolved && unsolved.length > 0 && <span className="ml-1 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{unsolved.length}</span>}
           </Link>
           <Link
             href="/hard?tab=solved"
@@ -59,7 +61,7 @@ export default async function HardQuestPage({
               tab === 'solved' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            解決済み {solved && solved.length > 0 && <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{solved.length}</span>}
+            {t('tabSolved')} {solved && solved.length > 0 && <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{solved.length}</span>}
           </Link>
         </div>
 
@@ -68,11 +70,11 @@ export default async function HardQuestPage({
         ) : (
           <div className="text-center py-16 text-gray-400">
             {tab === 'solved' ? (
-              <p>まだ解決した高難度質問はありません</p>
+              <p>{t('noSolvedYet')}</p>
             ) : (
               <>
-                <p>高難度質問はまだありません</p>
-                <p className="text-sm mt-1">すべての質問が解決されています</p>
+                <p>{t('noneYet')}</p>
+                <p className="text-sm mt-1">{t('allSolved')}</p>
               </>
             )}
           </div>

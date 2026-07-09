@@ -1,6 +1,7 @@
 'use client'
 
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTenant } from './TenantProvider'
@@ -9,6 +10,7 @@ import SiteLogo from './SiteLogo'
 const ADMIN_EMAIL = 'wisdomassemble@gmail.com'
 
 export default function Header() {
+  const t = useTranslations('header')
   const tenant = useTenant()
   const [user, setUser] = useState<any>(null)
   const [taskCount, setTaskCount] = useState(0)
@@ -101,9 +103,9 @@ export default function Header() {
 
         {/* PC nav */}
         <nav style={{ display: isMobile ? 'none' : 'flex' }} className="items-center gap-4 text-sm">
-          <Link href="/how-it-works" className="text-gray-500 hover:text-gray-800">使い方</Link>
+          <Link href="/how-it-works" className="text-gray-500 hover:text-gray-800">{t('howItWorks')}</Link>
           <Link href="/hard" className="relative text-gray-500 hover:text-gray-800">
-            <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">高難度</span>
+            <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">{t('hard')}</span>
             {hardCount > 0 && (
               <span className="absolute -top-1.5 -right-4 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
                 {hardCount}
@@ -113,21 +115,21 @@ export default function Header() {
           {user ? (
             <>
               {user.email === ADMIN_EMAIL && (
-                <Link href="/admin" className="text-gray-500 hover:text-gray-800">管理</Link>
+                <Link href="/admin" className="text-gray-500 hover:text-gray-800">{t('admin')}</Link>
               )}
               <Link href="/profile" className="relative text-gray-500 hover:text-gray-800">
-                マイページ
+                {t('myPage')}
                 {badge > 0 && (
                   <span className="absolute -top-1.5 -right-3 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
                     {badge}
                   </span>
                 )}
               </Link>
-              <button onClick={handleLogout} className="text-gray-500 hover:text-gray-800">ログアウト</button>
+              <button onClick={handleLogout} className="text-gray-500 hover:text-gray-800">{t('logout')}</button>
             </>
           ) : (
             <Link href="/auth/login" className="px-3 py-1.5 rounded text-white text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)' }}>
-              ログイン
+              {t('login')}
             </Link>
           )}
         </nav>
@@ -137,7 +139,7 @@ export default function Header() {
           style={{ display: isMobile ? 'flex' : 'none' }}
           className="relative p-2 text-gray-600"
           onClick={() => setMenuOpen(v => !v)}
-          aria-label="メニュー"
+          aria-label={t('menu')}
         >
           <span className="text-xl">{menuOpen ? '✕' : '☰'}</span>
           {badge > 0 && (
@@ -153,9 +155,9 @@ export default function Header() {
         <>
           <div className="fixed inset-0 bg-black/30 z-20" onClick={() => setMenuOpen(false)} />
           <div className="absolute right-0 top-full w-56 bg-white border border-gray-200 rounded-bl-lg shadow-lg z-30 px-4 py-3 flex flex-col gap-4 text-sm">
-            <Link href="/how-it-works" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>使い方</Link>
+            <Link href="/how-it-works" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('howItWorks')}</Link>
             <Link href="/hard" className="flex items-center gap-1 text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>
-              <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">高難度</span>
+              <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">{t('hard')}</span>
               {hardCount > 0 && (
                 <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
                   {hardCount}
@@ -165,10 +167,10 @@ export default function Header() {
             {user ? (
               <>
                 {user.email === ADMIN_EMAIL && (
-                  <Link href="/admin" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>管理</Link>
+                  <Link href="/admin" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('admin')}</Link>
                 )}
                 <Link href="/profile" className="text-gray-600 hover:text-gray-900 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-                  マイページ
+                  {t('myPage')}
                   {badge > 0 && (
                     <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
                       {badge}
@@ -176,11 +178,11 @@ export default function Header() {
                   )}
                 </Link>
                 <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="text-left text-gray-600 hover:text-gray-900">
-                  ログアウト
+                  {t('logout')}
                 </button>
               </>
             ) : (
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>ログイン</Link>
+              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('login')}</Link>
             )}
           </div>
         </>

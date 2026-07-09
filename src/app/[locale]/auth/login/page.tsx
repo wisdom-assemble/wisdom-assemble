@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTenant } from '@/components/TenantProvider'
 import SiteLogo from '@/components/SiteLogo'
 
 export default function LoginPage() {
+  const t = useTranslations('loginPage')
+  const tCommon = useTranslations('common')
   const tenant = useTenant()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -24,7 +27,7 @@ export default function LoginPage() {
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     })
-    if (error) { setError('Googleログインに失敗しました'); setLoading(false) }
+    if (error) { setError(t('googleLoginFailed')); setLoading(false) }
   }
 
   async function handleEmailLogin(e: React.FormEvent) {
@@ -34,7 +37,7 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('メールアドレスまたはパスワードが間違っています')
+      setError(t('emailLoginFailed'))
       setLoading(false)
     } else {
       router.push('/')
@@ -64,12 +67,12 @@ export default function LoginPage() {
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             <path fill="none" d="M0 0h48v48H0z"/>
           </svg>
-          {loading ? '処理中...' : 'Googleでログイン'}
+          {loading ? tCommon('processing') : t('googleLogin')}
         </button>
 
         <div className="flex items-center gap-3 my-5">
           <hr className="flex-1 border-gray-200" />
-          <span className="text-xs text-gray-400">または</span>
+          <span className="text-xs text-gray-400">{t('or')}</span>
           <hr className="flex-1 border-gray-200" />
         </div>
 
@@ -79,7 +82,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            placeholder="メールアドレス"
+            placeholder={t('emailPlaceholder')}
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
             required
           />
@@ -87,7 +90,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            placeholder="パスワード"
+            placeholder={t('passwordPlaceholder')}
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
             required
           />
@@ -96,12 +99,12 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-2.5 rounded text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
           >
-            {loading ? '処理中...' : 'メールでログイン'}
+            {loading ? tCommon('processing') : t('emailLogin')}
           </button>
         </form>
 
         <p className="text-xs text-center text-gray-400 mt-6">
-          ログインすることで利用規約に同意したものとみなされます
+          {t('termsAgreement')}
         </p>
       </div>
     </div>

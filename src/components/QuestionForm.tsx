@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type OverlayPhase = 'ai' | 'matched' | null
 
-function Overlay({ phase }: { phase: OverlayPhase }) {
+function Overlay({ phase, aiLabel, matchingLabel }: { phase: OverlayPhase; aiLabel: string; matchingLabel: string }) {
   if (!phase) return null
-  const label = phase === 'ai' ? 'AIが考え中...' : '専門家にマッチング中...'
+  const label = phase === 'ai' ? aiLabel : matchingLabel
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 animate-in fade-in duration-200">
       <div className="flex flex-col items-center gap-5">
@@ -22,6 +23,7 @@ function Overlay({ phase }: { phase: OverlayPhase }) {
 type SimilarQuestion = { id: string; title: string; slug: string; status: string }
 
 export default function QuestionForm() {
+  const t = useTranslations('questionForm')
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -56,8 +58,8 @@ export default function QuestionForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !body.trim()) return
-    if (title.trim().length < 5) { setError('タイトルは5文字以上入力してください'); return }
-    if (body.trim().length < 30) { setError('詳細は30文字以上入力してください'); return }
+    if (title.trim().length < 5) { setError(t('titleTooShort')); return }
+    if (body.trim().length < 30) { setError(t('bodyTooShort')); return }
 
     setSubmitting(true)
     setError('')
@@ -72,7 +74,7 @@ export default function QuestionForm() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error ?? '投稿に失敗しました。お手数ですが再度お試しください。')
+        throw new Error(data.error ?? t('submitFailed'))
       }
 
       const { slug, result } = await res.json()
@@ -102,17 +104,17 @@ export default function QuestionForm() {
 
   return (
     <>
-      <Overlay phase={overlay} />
+      <Overlay phase={overlay} aiLabel={t('aiThinking')} matchingLabel={t('matching')} />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            タイトル <span className="text-red-500">*</span>
+            {t('titleLabel')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例：Next.jsでSSRするとhydrationエラーが出る"
+            placeholder={t('titlePlaceholder')}
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             maxLength={200}
             required
@@ -122,7 +124,7 @@ export default function QuestionForm() {
           {/* 類似質問サジェスト */}
           {similar.length > 0 && (
             <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs font-semibold text-amber-700 mb-1.5">似た質問が既にあります — 解決済みのものも確認してみてください</p>
+              <p className="text-xs font-semibold text-amber-700 mb-1.5">{t('similarQuestionsFound')}</p>
               <ul className="space-y-1">
                 {similar.map(q => (
                   <li key={q.id} className="flex items-center gap-2">
@@ -137,28 +139,28 @@ export default function QuestionForm() {
                     <span className={`text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                       q.status === 'solved' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                     }`}>
-                      {q.status === 'solved' ? '解決済み' : '対応中'}
+                      {q.status === 'solved' ? t('statusSolved') : t('statusInProgress')}
                     </span>
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-amber-600 mt-2">それでも解決しない場合は、このまま投稿できます。</p>
+              <p className="text-xs text-amber-600 mt-2">{t('similarStillOpen')}</p>
             </div>
           )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            詳細 <span className="text-red-500">*</span>
+            {t('bodyLabel')} <span className="text-red-500">*</span>
           </label>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="問題の詳細、試したこと、エラーメッセージなどを書いてください（Markdownが使えます）"
+            placeholder={t('bodyPlaceholder')}
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[200px] resize-y font-mono"
             required
           />
-          <p className="text-xs text-gray-400 mt-1">{body.length}文字 · Markdown対応</p>
+          <p className="text-xs text-gray-400 mt-1">{t('bodyCharCount', { count: body.length })}</p>
         </div>
 
         {error && (
@@ -171,7 +173,7 @@ export default function QuestionForm() {
           className="w-full py-2.5 rounded font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           style={{ backgroundColor: 'var(--color-primary)' }}
         >
-          {submitting ? '送信中...' : '質問を投稿する'}
+          {submitting ? t('submitting') : t('submit')}
         </button>
       </form>
     </>

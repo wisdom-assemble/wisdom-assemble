@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRouter as useIntlRouter } from '@/i18n/navigation'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
 
@@ -12,20 +14,24 @@ const SKILL_OPTIONS = [
   'AWS', 'Supabase', 'Git', 'Linux', 'セキュリティ',
 ]
 
-const STATUS_MAP: Record<string, { label: string; className: string }> = {
-  open:        { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
-  ai_answered: { label: 'AI回答済',        className: 'bg-purple-50 text-purple-700' },
-  matched:     { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
-  matched_c:   { label: '専門家②が対応中', className: 'bg-orange-50 text-orange-700' },
-  solved:      { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-  hard:        { label: '高難度',   className: 'bg-red-50 text-red-700' },
-}
-
 type Tab = 'profile' | 'myquestions' | 'tasks' | 'review' | 'solved'
 
 export default function ProfilePage() {
+  const t = useTranslations('profilePage')
+  const tCommon = useTranslations('common')
+  const locale = useLocale()
   const supabase = createClient()
   const router = useRouter()
+  const intlRouter = useIntlRouter()
+
+  const STATUS_MAP: Record<string, { label: string; className: string }> = {
+    open:        { label: t('statusOpen'),        className: 'bg-blue-50 text-blue-700' },
+    ai_answered: { label: t('statusAiAnswered'),   className: 'bg-purple-50 text-purple-700' },
+    matched:     { label: t('statusMatched'),      className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:   { label: t('statusMatchedC'),     className: 'bg-orange-50 text-orange-700' },
+    solved:      { label: t('statusSolved'),       className: 'bg-green-50 text-green-700' },
+    hard:        { label: t('statusHard'),         className: 'bg-red-50 text-red-700' },
+  }
 
   const [tab, setTab] = useState<Tab>('profile')
   const [loading, setLoading] = useState(true)
@@ -35,6 +41,7 @@ export default function ProfilePage() {
   const [skills, setSkills] = useState<string[]>([])
   const [isAvailable, setIsAvailable] = useState(true)
   const [emailNotify, setEmailNotify] = useState(true)
+  const [language, setLanguage] = useState(locale)
   const [stats, setStats] = useState({ answerCount: 0, hardQuestCount: 0 })
   const [titles, setTitles] = useState<{ id: string; name: string; rarity: string }[]>([])
   const [activeTitle, setActiveTitle] = useState<string | null>(null)
@@ -53,7 +60,7 @@ export default function ProfilePage() {
       const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }, { data: userTitles }, { data: solvedAnswerRows }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify, active_title_id')
+          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify, active_title_id, language')
           .eq('id', user.id)
           .maybeSingle(),
         supabase
@@ -101,6 +108,7 @@ export default function ProfilePage() {
         setEmailNotify(profile.email_notify ?? true)
         setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
         setActiveTitle(profile.active_title_id ?? null)
+        if (profile.language) setLanguage(profile.language)
       }
       if (userTitles && userTitles.length > 0) {
         const titleIds = userTitles.map((ut: any) => ut.title_id)
@@ -150,6 +158,15 @@ export default function ProfilePage() {
     )
   }
 
+  async function handleLanguageChange(newLanguage: string) {
+    setLanguage(newLanguage)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('profiles').update({ language: newLanguage }).eq('id', user.id)
+    }
+    intlRouter.replace('/profile', { locale: newLanguage })
+  }
+
   async function save() {
     setSaving(true)
     setMessage('')
@@ -160,7 +177,7 @@ export default function ProfilePage() {
     const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
     const urlRegex = /https?:\/\//
     if (emailRegex.test(displayName) || urlRegex.test(displayName)) {
-      setMessage('表示名にメールアドレスやURLは使用できません')
+      setMessage(t('displayNameRejected'))
       setSaving(false)
       return
     }
@@ -172,17 +189,17 @@ export default function ProfilePage() {
 
     setSaving(false)
     if (error) console.error('profile save error:', JSON.stringify(error))
-    setMessage(error ? '保存に失敗しました' : '保存しました')
+    setMessage(error ? t('saveFailed') : t('saveSuccess'))
   }
 
-  if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400">読み込み中...</div></>
+  if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400">{tCommon('loading')}</div></>
 
   return (
     <>
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">マイページ</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-xs text-gray-400">{userEmail}</p>
         </div>
 
@@ -191,42 +208,42 @@ export default function ProfilePage() {
           <div className="flex gap-6 mb-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-800">{stats.answerCount}</p>
-              <p className="text-xs text-gray-500 mt-1">解決した質問</p>
+              <p className="text-xs text-gray-500 mt-1">{t('solvedQuestions')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-800">{stats.hardQuestCount}</p>
-              <p className="text-xs text-gray-500 mt-1">解決した高難度質問</p>
+              <p className="text-xs text-gray-500 mt-1">{t('solvedHardQuestions')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-800">{myQuestions.length}</p>
-              <p className="text-xs text-gray-500 mt-1">投稿した質問</p>
+              <p className="text-xs text-gray-500 mt-1">{t('postedQuestions')}</p>
             </div>
           </div>
           {/* 称号バッジ */}
           {titles.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 mb-1">獲得した称号</p>
-              <p className="text-xs text-gray-400 mb-2">クリックで表示する称号を選べます</p>
+              <p className="text-xs text-gray-500 mb-1">{t('titlesEarned')}</p>
+              <p className="text-xs text-gray-400 mb-2">{t('titlesHint')}</p>
               <div className="flex flex-wrap gap-2">
-                {titles.map(t => {
-                  const rarityStyle = t.rarity === 'legendary'
+                {titles.map(t2 => {
+                  const rarityStyle = t2.rarity === 'legendary'
                     ? 'bg-orange-100 text-orange-800 border border-orange-300'
-                    : t.rarity === 'super_rare'
+                    : t2.rarity === 'super_rare'
                     ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                    : t.rarity === 'rare'
+                    : t2.rarity === 'rare'
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : t.rarity === 'uncommon'
+                    : t2.rarity === 'uncommon'
                     ? 'bg-green-100 text-green-800 border border-green-300'
                     : 'bg-gray-100 text-gray-700 border border-gray-200'
-                  const isActive = t.id === activeTitle
+                  const isActive = t2.id === activeTitle
                   return (
                     <button
-                      key={t.id}
-                      onClick={() => handleTitleClick(t.id)}
+                      key={t2.id}
+                      onClick={() => handleTitleClick(t2.id)}
                       className={`text-xs px-2 py-1 rounded-full font-medium cursor-pointer transition-all ${rarityStyle} ${isActive ? 'ring-2 ring-offset-1 ring-gray-500' : 'opacity-70 hover:opacity-100'}`}
-                      title={isActive ? 'クリックで解除' : 'クリックで表示'}
+                      title={isActive ? t('titleClickToUnselect') : t('titleClickToSelect')}
                     >
-                      {isActive && '★ '}{t.name}
+                      {isActive && '★ '}{t2.name}
                     </button>
                   )
                 })}
@@ -234,7 +251,7 @@ export default function ProfilePage() {
             </div>
           )}
           {titles.length === 0 && stats.answerCount === 0 && (
-            <p className="text-xs text-gray-400 mt-2">回答するとここにあなたの実績「称号」が表示されます</p>
+            <p className="text-xs text-gray-400 mt-2">{t('noTitlesYet')}</p>
           )}
         </div>
 
@@ -246,7 +263,7 @@ export default function ProfilePage() {
               tab === 'profile' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            プロフィール設定
+            {t('tabProfile')}
           </button>
           <button
             onClick={() => setTab('tasks')}
@@ -254,7 +271,7 @@ export default function ProfilePage() {
               tab === 'tasks' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            あなたへの依頼
+            {t('tabTasks')}
             {myTasks.length > 0 && (
               <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                 {myTasks.length}
@@ -267,7 +284,7 @@ export default function ProfilePage() {
               tab === 'review' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            回答が届いた質問
+            {t('tabReview')}
             {reviewItems.length > 0 && (
               <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                 {reviewItems.length}
@@ -280,7 +297,7 @@ export default function ProfilePage() {
               tab === 'solved' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            解決した回答 ({solvedAnswers.length})
+            {t('tabSolved', { count: solvedAnswers.length })}
           </button>
           <button
             onClick={() => setTab('myquestions')}
@@ -288,30 +305,29 @@ export default function ProfilePage() {
               tab === 'myquestions' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            投稿した質問 ({myQuestions.length})
+            {t('tabMyQuestions', { count: myQuestions.length })}
           </button>
         </div>
 
         {tab === 'profile' && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('displayNameLabel')}</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
-                placeholder="例：田中太郎"
+                placeholder={t('displayNamePlaceholder')}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
               />
               {displayName.startsWith('ユーザー#') && (
-                <p className="text-xs text-gray-400 mt-1">表示名を設定するとマッチング時に覚えてもらいやすくなります</p>
+                <p className="text-xs text-gray-400 mt-1">{t('displayNameHint')}</p>
               )}
             </div>
 
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                得意なこと <span className="text-gray-400 font-normal">（選ぶと質問が届きやすくなります）</span>
+                {t('skillsLabel')} <span className="text-gray-400 font-normal">{t('skillsHint')}</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {SKILL_OPTIONS.map(skill => (
@@ -333,8 +349,8 @@ export default function ProfilePage() {
             {/* メール通知 */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-700">メール</p>
-                <p className="text-xs text-gray-400 mt-0.5">依頼が届いたときに登録したGmailで通知します</p>
+                <p className="text-sm font-medium text-gray-700">{t('emailNotifyLabel')}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t('emailNotifyHint')}</p>
               </div>
               <button
                 onClick={() => setEmailNotify(v => !v)}
@@ -344,16 +360,40 @@ export default function ProfilePage() {
               </button>
             </div>
 
+            {/* 表示言語 */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-0.5">{t('languageLabel')}</p>
+              <p className="text-xs text-gray-400 mb-3">{t('languageHint')}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleLanguageChange('en')}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    language === 'en' ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('ja')}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    language === 'ja' ? 'bg-gray-800 border-gray-800 text-white' : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  日本語
+                </button>
+              </div>
+            </div>
+
             <button
               onClick={save}
               disabled={saving}
               className="w-full py-2 rounded font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
             >
-              {saving ? '保存中...' : '保存する'}
+              {saving ? t('saving') : t('save')}
             </button>
 
             {message && (
-              <p className={`text-sm text-center ${message.includes('失敗') ? 'text-red-500' : 'text-green-600'}`}>
+              <p className={`text-sm text-center ${message.includes('失敗') || message.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}>
                 {message}
               </p>
             )}
@@ -364,7 +404,7 @@ export default function ProfilePage() {
           <div>
             {myTasks.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
-                <p>現在、依頼されている質問はありません</p>
+                <p>{t('noTasks')}</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
@@ -380,11 +420,11 @@ export default function ProfilePage() {
                         <div className="flex items-start justify-between gap-3">
                           <p className="text-sm font-medium text-gray-900 flex-1">{q.title}</p>
                           <span className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700">
-                            あなたに依頼
+                            {t('assignedToYou')}
                           </span>
                         </div>
                         {remaining !== null && (
-                          <p className="text-xs text-orange-500 mt-0.5">残り {remaining}時間</p>
+                          <p className="text-xs text-orange-500 mt-0.5">{t('remainingHours', { hours: remaining })}</p>
                         )}
                       </Link>
                     </li>
@@ -399,7 +439,7 @@ export default function ProfilePage() {
           <div>
             {reviewItems.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
-                <p>回答が届いている質問はありません</p>
+                <p>{t('noReviewItems')}</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
@@ -414,7 +454,7 @@ export default function ProfilePage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">{q.title}</p>
-                            <p className="text-xs text-red-500 mt-0.5">回答が届いています — 確認してください</p>
+                            <p className="text-xs text-red-500 mt-0.5">{t('answerArrived')}</p>
                           </div>
                           <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>
                             {s.label}
@@ -433,7 +473,7 @@ export default function ProfilePage() {
           <div>
             {solvedAnswers.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
-                <p>まだベストアンサーに選ばれた回答はありません</p>
+                <p>{t('noSolvedYet')}</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
@@ -448,7 +488,7 @@ export default function ProfilePage() {
                       >
                         <p className="text-sm font-medium text-gray-900">{q.title}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {new Date(a.created_at).toLocaleDateString('ja-JP')} · ベストアンサー
+                          {new Date(a.created_at).toLocaleDateString(locale)} · {t('bestAnswer')}
                         </p>
                       </Link>
                     </li>
@@ -463,9 +503,9 @@ export default function ProfilePage() {
           <div>
             {myQuestions.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
-                <p>まだ質問を投稿していません</p>
+                <p>{t('noQuestionsYet')}</p>
                 <Link href="/questions/new" className="text-sm underline mt-2 inline-block hover:text-gray-600">
-                  最初の質問を投稿する
+                  {t('postFirstQuestion')}
                 </Link>
               </div>
             ) : (
@@ -485,7 +525,7 @@ export default function ProfilePage() {
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {new Date(q.created_at).toLocaleDateString('ja-JP')}
+                          {new Date(q.created_at).toLocaleDateString(locale)}
                         </p>
                       </Link>
                     </li>

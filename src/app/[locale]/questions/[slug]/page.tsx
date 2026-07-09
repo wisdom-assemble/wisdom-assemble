@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { getTranslations, getLocale } from 'next-intl/server'
 import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
 import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
@@ -31,6 +32,8 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const { slug: rawSlug } = await params
   const { result: resultParam } = await searchParams
   const slug = decodeURIComponent(rawSlug)
+  const t = await getTranslations('questionPage')
+  const locale = await getLocale()
   const tenantId = await getTenantId()
   const supabase = await createClient()
 
@@ -136,10 +139,10 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 投稿直後バナー */}
         {resultParam === 'ai' && (
           <div className="mb-5 p-4 bg-purple-50 border border-purple-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-            <span className="text-lg font-bold text-purple-700">AI</span>
+            <span className="text-lg font-bold text-purple-700">{t('aiLabel')}</span>
             <div>
-              <p className="text-sm font-semibold text-purple-800">AIが回答しました！</p>
-              <p className="text-xs text-purple-600 mt-0.5">下の回答をご確認ください。解決したら「ベストアンサーにして解決」を押してください。</p>
+              <p className="text-sm font-semibold text-purple-800">{t('aiAnsweredTitle')}</p>
+              <p className="text-xs text-purple-600 mt-0.5">{t('aiAnsweredBody')}</p>
             </div>
           </div>
         )}
@@ -147,8 +150,8 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
             <span className="text-lg font-bold text-green-700">●</span>
             <div>
-              <p className="text-sm font-semibold text-green-800">専門家にマッチングしました！</p>
-              <p className="text-xs text-green-600 mt-0.5">回答が届くまでお待ちください（8時間以内に返答がなければ自動で次のステップへ移行します）。</p>
+              <p className="text-sm font-semibold text-green-800">{t('matchedTitle')}</p>
+              <p className="text-xs text-green-600 mt-0.5">{t('matchedBody')}</p>
             </div>
           </div>
         )}
@@ -156,8 +159,8 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
             <span className="text-lg font-bold text-blue-700">●</span>
             <div>
-              <p className="text-sm font-semibold text-blue-800">質問を受け付けました</p>
-              <p className="text-xs text-blue-600 mt-0.5">しばらくお待ちください。（このページをリロードすると状況を確認できます。）</p>
+              <p className="text-sm font-semibold text-blue-800">{t('pendingTitle')}</p>
+              <p className="text-xs text-blue-600 mt-0.5">{t('pendingBody')}</p>
             </div>
           </div>
         )}
@@ -165,7 +168,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 類似の解決済み質問 */}
         {similarQuestions.length > 0 && (
           <div className="mb-5 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-xs font-semibold text-gray-500 mb-2">似た質問が解決しています — 参考になるかも</p>
+            <p className="text-xs font-semibold text-gray-500 mb-2">{t('similarSolved')}</p>
             <ul className="space-y-1">
               {similarQuestions.map(q => (
                 <li key={q.id}>
@@ -184,13 +187,13 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 質問 */}
         <article className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <StatusBadge status={question.status} matchedBId={question.matched_b_id} ownerWaiting={isOwner && hasAnswers && !isSolved} />
+            <StatusBadge status={question.status} matchedBId={question.matched_b_id} ownerWaiting={isOwner && hasAnswers && !isSolved} t={t} />
           </div>
           <h1 className="text-xl font-bold mb-2">{question.title}</h1>
           <p className="text-xs text-gray-400 mb-4">
             {poster?.display_name ?? poster?.username} ·{' '}
-            {new Date(question.created_at).toLocaleDateString('ja-JP')} ·{' '}
-            {question.view_count} views
+            {new Date(question.created_at).toLocaleDateString(locale)} ·{' '}
+            {question.view_count} {t('views')}
           </p>
           <MarkdownBody content={question.body} />
         </article>
@@ -198,9 +201,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 高難度クエストバナー */}
         {isHard && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-medium text-red-800">高難度 / 解決募集中</p>
+            <p className="text-sm font-medium text-red-800">{t('hardBannerTitle')}</p>
             <p className="text-xs text-red-700 mt-1">
-              AIも専門家も解決できなかった質問です。あなたの知識・経験で助けてください。
+              {t('hardBannerBody')}
             </p>
           </div>
         )}
@@ -209,7 +212,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {answers && answers.length > 0 && (
           <section className="mb-8">
             <h2 className="text-base font-semibold mb-4 border-b pb-2">
-              回答 ({answers.length})
+              {t('answersHeading', { count: answers.length })}
             </h2>
             <ul className="space-y-6">
               {answers.map((a) => {
@@ -227,7 +230,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                   >
                     <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
                       {a.is_ai ? (
-                        <span className="font-medium text-purple-700">AI</span>
+                        <span className="font-medium text-purple-700">{t('aiLabel')}</span>
                       ) : (
                         <>
                           <span className="font-medium text-gray-700">
@@ -241,9 +244,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                         </>
                       )}
                       {a.is_accepted && (
-                        <span className="text-green-700 font-medium">✓ ベストアンサー</span>
+                        <span className="text-green-700 font-medium">{t('bestAnswer')}</span>
                       )}
-                      <span>{new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
+                      <span>{new Date(a.created_at).toLocaleDateString(locale)}</span>
                     </div>
                     <MarkdownBody content={a.body} />
 
@@ -261,31 +264,27 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {/* 期限切れ専門家向けメッセージ */}
         {(isExpiredMatchedB || isExpiredMatchedCUser) && !isSolved && (
           <div className="border-t pt-6 p-4 bg-gray-100 rounded text-sm text-gray-500 text-center">
-            回答期限が過ぎたため、この質問への回答受付は終了しました。
+            {t('expiredMessage')}
           </div>
         )}
 
         {/* マッチング待ち（自分はBでもCでもない場合） */}
         {isOpen && question.matched_b_id && !isSolved && user && !isOwner && !showAnswerForm && !isExpiredMatchedB && (alreadyAnswered || !bExpired) && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
-            {alreadyAnswered
-              ? '✓ 回答しました。質問者の確認をお待ちください。'
-              : '現在、専門家にマッチング中です。しばらくお待ちください。'}
+            {alreadyAnswered ? t('alreadyAnswered') : t('waitingForMatch')}
           </div>
         )}
         {isMatchedC && question.matched_c_id && !isSolved && user && !isOwner && !showAnswerForm && !isExpiredMatchedCUser && (alreadyAnswered || !cExpired) && (
           <div className="border-t pt-6 p-4 bg-gray-50 rounded text-sm text-gray-500 text-center">
-            {alreadyAnswered
-              ? '✓ 回答しました。質問者の確認をお待ちください。'
-              : '現在、専門家にマッチング中です。しばらくお待ちください。'}
+            {alreadyAnswered ? t('alreadyAnswered') : t('waitingForMatch')}
           </div>
         )}
         {/* matched_b_id/c_id がnull = 候補者なしで止まっている → hardと同じ扱いで全員に開放 */}
         {((isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && !isSolved && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm font-medium text-red-800">専門家を募集中</p>
+            <p className="text-sm font-medium text-red-800">{t('noExpertBannerTitle')}</p>
             <p className="text-xs text-red-700 mt-1">
-              現在マッチングできる専門家がいません。あなたの知識・経験で助けてください。
+              {t('noExpertBannerBody')}
             </p>
           </div>
         )}
@@ -299,7 +298,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         {showAnswerForm && (
           <section className="border-t pt-6">
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-              あなたの知識・経験でこの質問を解決してください。回答をお願いします！
+              {t('askToAnswer')}
             </div>
             <AnswerForm questionId={question.id} />
             <GiveUpButton questionId={question.id} />
@@ -320,13 +319,13 @@ export default async function QuestionPage({ params, searchParams }: Props) {
               <>
                 {hasAnswers ? (
                   <>
-                    <p className="text-sm font-medium text-amber-800 mb-1">専門家①の回答が届いています。どうしますか？</p>
-                    <p className="text-xs text-amber-600 mb-3">解決した場合は「ベストアンサーにして解決」を押してください。解決しない場合は次の専門家に依頼するか、高難度質問に移行して全員に解決を求めることができます。</p>
+                    <p className="text-sm font-medium text-amber-800 mb-1">{t('ownerRematchHasAnswerTitle')}</p>
+                    <p className="text-xs text-amber-600 mb-3">{t('ownerRematchHasAnswerBody')}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-amber-800 mb-1">専門家①から回答がありませんでした。</p>
-                    <p className="text-xs text-amber-600 mb-3">次の専門家に依頼するか、高難度質問に移行できます。</p>
+                    <p className="text-sm font-medium text-amber-800 mb-1">{t('ownerRematchNoAnswerTitle')}</p>
+                    <p className="text-xs text-amber-600 mb-3">{t('ownerRematchNoAnswerBody')}</p>
                   </>
                 )}
                 <RematchButton questionId={question.id} />
@@ -335,29 +334,29 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             )}
             {canEscalateHard && (
               <>
-                <p className="text-sm font-medium text-amber-800 mb-1">2人の専門家が対応しましたが解決しませんでした。</p>
-                <p className="text-xs text-amber-600 mb-3">高難度質問に移行すると全員に公開され解決を求める事ができます。</p>
+                <p className="text-sm font-medium text-amber-800 mb-1">{t('ownerEscalateTitle')}</p>
+                <p className="text-xs text-amber-600 mb-3">{t('ownerEscalateBody')}</p>
                 <EscalateHardButton questionId={question.id} />
               </>
             )}
             {!canRematch && !canEscalateHard && isMatchedC && (
-              <p className="text-sm text-amber-700">2人目の専門家に依頼中です。回答が届いたら、回答次第で高難度に移行できます。<br /><span className="text-xs text-amber-600">回答で解決する場合はベストアンサーにして解決してください。8時間以内に回答がない場合は自動で高難度に移行します。</span></p>
+              <p className="text-sm text-amber-700">{t('ownerMatchedCWaiting')}<br /><span className="text-xs text-amber-600">{t('ownerMatchedCWaitingNote')}</span></p>
             )}
             {!canRematch && !canEscalateHard && !isMatchedC && (
-              <p className="text-sm text-amber-700">回答が届いています。内容を確認してベストアンサーを選んでください。</p>
+              <p className="text-sm text-amber-700">{t('ownerHasAnswers')}</p>
             )}
           </div>
         )}
 
 
         {isSolved && (
-          <p className="text-center text-sm text-green-600 py-4">✓ この質問は解決済みです</p>
+          <p className="text-center text-sm text-green-600 py-4">{t('solved')}</p>
         )}
 
         {/* ログインしていない場合 */}
         {!user && (isOpen || isMatchedC || isHard) && (
           <div className="border-t pt-6 text-center text-sm text-gray-500">
-            回答するには <a href={`/auth/login?next=/questions/${slug}`} className="underline">ログイン</a> が必要です
+            {t('loginRequired')} <a href={`/auth/login?next=/questions/${slug}`} className="underline">{t('loginLink')}</a> {t('loginRequiredSuffix')}
           </div>
         )}
       </main>
@@ -365,22 +364,22 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   )
 }
 
-function StatusBadge({ status, matchedBId, ownerWaiting }: { status: string; matchedBId?: string | null; ownerWaiting?: boolean }) {
+function StatusBadge({ status, matchedBId, ownerWaiting, t }: { status: string; matchedBId?: string | null; ownerWaiting?: boolean; t: Awaited<ReturnType<typeof getTranslations>> }) {
   if (ownerWaiting) {
     return (
       <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">
-        あなたの確認待ち
+        {t('youAreWaitingReview')}
       </span>
     )
   }
   const map: Record<string, { label: string; className: string }> = {
-    open:         { label: '受付中',          className: 'bg-blue-50 text-blue-700' },
-    open_matched: { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    ai_answered:  { label: 'AI回答済み',       className: 'bg-purple-50 text-purple-700' },
-    matched:      { label: '専門家①が対応中',   className: 'bg-yellow-50 text-yellow-700' },
-    matched_c:    { label: '専門家②が対応中', className: 'bg-orange-50 text-orange-700' },
-    solved:       { label: '解決済み',         className: 'bg-green-50 text-green-700' },
-    hard:         { label: '高難度',           className: 'bg-red-50 text-red-700' },
+    open:         { label: t('statusOpen'),          className: 'bg-blue-50 text-blue-700' },
+    open_matched: { label: t('statusOpenMatched'),    className: 'bg-yellow-50 text-yellow-700' },
+    ai_answered:  { label: t('statusAiAnswered'),     className: 'bg-purple-50 text-purple-700' },
+    matched:      { label: t('statusMatched'),        className: 'bg-yellow-50 text-yellow-700' },
+    matched_c:    { label: t('statusMatchedC'),       className: 'bg-orange-50 text-orange-700' },
+    solved:       { label: t('statusSolved'),         className: 'bg-green-50 text-green-700' },
+    hard:         { label: t('statusHard'),           className: 'bg-red-50 text-red-700' },
   }
   const key = status === 'open' && matchedBId ? 'open_matched' : status
   const { label, className } = map[key] ?? map.open
