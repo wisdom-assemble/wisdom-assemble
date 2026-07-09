@@ -207,7 +207,7 @@
     "saveFailed": "Error al guardar",
     "displayNameRejected": "El nombre visible no puede contener una dirección de correo o URL",
     "languageLabel": "Idioma de visualización",
-    "languageHint": "Esto cambia el idioma de visualización en todo el sitio",
+    "languageHint": "Esto cambia el idioma de visualización en todo el sitio. Se aplica de inmediato al seleccionarlo — no es necesario pulsar Guardar.",
     "noTasks": "Actualmente no tienes preguntas asignadas",
     "assignedToYou": "Asignada a ti",
     "remainingHours": "{hours}h restantes",

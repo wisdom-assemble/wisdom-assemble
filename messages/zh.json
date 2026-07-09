@@ -207,7 +207,7 @@
     "saveFailed": "保存失败",
     "displayNameRejected": "显示名称不能包含电子邮件地址或URL",
     "languageLabel": "显示语言",
-    "languageHint": "此设置将改变整个网站的显示语言",
+    "languageHint": "此设置将改变整个网站的显示语言。选择后立即生效，无需点击保存按钮。",
     "noTasks": "目前没有分配给你的问题",
     "assignedToYou": "指派给你",
     "remainingHours": "剩余{hours}小时",

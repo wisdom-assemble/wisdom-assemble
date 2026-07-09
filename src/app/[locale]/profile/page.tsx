@@ -373,8 +373,22 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* 表示言語 */}
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <button
+              onClick={save}
+              disabled={saving}
+              className="w-full py-2 rounded font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? t('saving') : t('save')}
+            </button>
+
+            {message && (
+              <p className={`text-sm text-center ${message.includes('失敗') || message.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}>
+                {message}
+              </p>
+            )}
+
+            {/* 表示言語（他の設定と違い、選択した瞬間に反映されるため保存ボタンより下に独立させる） */}
+            <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
               <p className="text-sm font-medium text-gray-700 mb-0.5">{t('languageLabel')}</p>
               <p className="text-xs text-gray-400 mb-3">{t('languageHint')}</p>
               <div className="flex flex-wrap gap-2">
@@ -391,20 +405,6 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
-
-            <button
-              onClick={save}
-              disabled={saving}
-              className="w-full py-2 rounded font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
-            >
-              {saving ? t('saving') : t('save')}
-            </button>
-
-            {message && (
-              <p className={`text-sm text-center ${message.includes('失敗') || message.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}>
-                {message}
-              </p>
-            )}
           </div>
         )}
 

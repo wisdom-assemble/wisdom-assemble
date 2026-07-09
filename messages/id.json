@@ -207,7 +207,7 @@
     "saveFailed": "Gagal menyimpan",
     "displayNameRejected": "Nama tampilan tidak boleh berisi alamat email atau URL",
     "languageLabel": "Bahasa tampilan",
-    "languageHint": "Ini mengubah bahasa tampilan di seluruh situs",
+    "languageHint": "Ini mengubah bahasa tampilan di seluruh situs. Diterapkan langsung saat dipilih — tidak perlu menekan tombol Simpan.",
     "noTasks": "Saat ini tidak ada pertanyaan yang ditugaskan padamu",
     "assignedToYou": "Ditugaskan untukmu",
     "remainingHours": "Sisa {hours} jam",

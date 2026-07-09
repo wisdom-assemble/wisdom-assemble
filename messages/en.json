@@ -207,7 +207,7 @@
     "saveFailed": "Failed to save",
     "displayNameRejected": "Display names can't contain an email address or URL",
     "languageLabel": "Display language",
-    "languageHint": "This changes the display language across the whole site",
+    "languageHint": "This changes the display language across the whole site. Applied immediately when selected — no need to press Save.",
     "noTasks": "No questions are currently assigned to you",
     "assignedToYou": "Assigned to you",
     "remainingHours": "{hours}h remaining",

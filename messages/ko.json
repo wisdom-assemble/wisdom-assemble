@@ -207,7 +207,7 @@
     "saveFailed": "저장에 실패했습니다",
     "displayNameRejected": "표시 이름에는 이메일 주소나 URL을 사용할 수 없습니다",
     "languageLabel": "표시 언어",
-    "languageHint": "이 설정은 사이트 전체의 표시 언어에 반영됩니다",
+    "languageHint": "이 설정은 사이트 전체의 표시 언어에 반영됩니다. 선택하면 즉시 적용되며 저장 버튼을 누를 필요가 없습니다.",
     "noTasks": "현재 당신에게 요청된 질문이 없습니다",
     "assignedToYou": "당신에게 요청됨",
     "remainingHours": "남은 시간 {hours}시간",

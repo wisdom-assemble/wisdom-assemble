@@ -207,7 +207,7 @@
     "saveFailed": "Falha ao salvar",
     "displayNameRejected": "O nome de exibição não pode conter um endereço de e-mail ou URL",
     "languageLabel": "Idioma de exibição",
-    "languageHint": "Isso altera o idioma de exibição em todo o site",
+    "languageHint": "Isso altera o idioma de exibição em todo o site. Aplicado imediatamente ao selecionar — não é necessário clicar em Salvar.",
     "noTasks": "Atualmente não há perguntas atribuídas a você",
     "assignedToYou": "Atribuída a você",
     "remainingHours": "{hours}h restantes",
