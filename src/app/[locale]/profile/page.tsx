@@ -14,15 +14,16 @@ const SKILL_OPTIONS = [
   'AWS', 'Supabase', 'Git', 'Linux', 'セキュリティ',
 ]
 
+// ロケールコードのアルファベット順（一般的な言語切替UIの並び順）
 const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English' },
-  { code: 'ja', label: '日本語' },
-  { code: 'zh', label: '中文' },
-  { code: 'id', label: 'Bahasa Indonesia' },
-  { code: 'vi', label: 'Tiếng Việt' },
-  { code: 'ko', label: '한국어' },
   { code: 'es', label: 'Español' },
+  { code: 'id', label: 'Bahasa Indonesia' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
   { code: 'pt', label: 'Português' },
+  { code: 'vi', label: 'Tiếng Việt' },
+  { code: 'zh', label: '中文' },
 ]
 
 type Tab = 'profile' | 'myquestions' | 'tasks' | 'review' | 'solved'
