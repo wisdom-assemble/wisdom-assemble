@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter as useIntlRouter } from '@/i18n/navigation'
 import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
@@ -34,7 +33,6 @@ export default function ProfilePage() {
   const locale = useLocale()
   const supabase = createClient()
   const router = useRouter()
-  const intlRouter = useIntlRouter()
 
   const STATUS_MAP: Record<string, { label: string; className: string }> = {
     open:        { label: t('statusOpen'),        className: 'bg-blue-50 text-blue-700' },
@@ -171,12 +169,15 @@ export default function ProfilePage() {
   }
 
   async function handleLanguageChange(newLanguage: string) {
-    setLanguage(newLanguage)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       await supabase.from('profiles').update({ language: newLanguage }).eq('id', user.id)
     }
-    intlRouter.replace('/profile', { locale: newLanguage })
+    // next-intlのソフトナビゲーションだと、切り替え先によってはNext.jsの
+    // ルーターキャッシュが古いRSCペイロードを再利用し、一部の文言（サーバー
+    // コンポーネントで描画される部分）が古い言語のまま残ることがあるため、
+    // 確実にフルリロードする
+    window.location.href = `/${newLanguage}/profile`
   }
 
   async function save() {
