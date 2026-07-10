@@ -18,7 +18,7 @@ const VALID_SUBDOMAINS = [
 // ルール: 公開ドメイン名はテナント表示名（TENANT_NAME_MAP）に合わせる
 const SUBDOMAIN_ALIASES: Record<string, string> = {
   bug: 'debug',
-  musicprod: 'dtm',
+  'music-prod': 'dtm',
 }
 
 // ルートドメイン（サブドメインなし）はテナントQ&Aではなく、
