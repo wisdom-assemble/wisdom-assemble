@@ -8,7 +8,7 @@ export const TENANT_NAME_MAP: Record<string, string> = {
   bali: 'BALI LIFE',
   chiangmai: 'CHIANGMAI',
   portugal: 'PORTUGAL',
-  dtm: 'MUSIC PROD',
+  dtm: 'MUSIC PRODUCTION',
   keyboard: 'KEYBOARDS',
   philippines: 'PH STUDY',
   canada: 'CA STUDY',
@@ -32,4 +32,4 @@ export function getPublicSubdomain(tenantId: string): string {
 }
 
 // ルートポータルに掲載する、実際にサブドメインが稼働済みのテナントID
-export const LIVE_TENANT_IDS = ['debug']
+export const LIVE_TENANT_IDS = ['debug', 'dtm']
