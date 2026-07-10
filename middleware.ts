@@ -15,8 +15,10 @@ const VALID_SUBDOMAINS = [
 ]
 
 // 公開URL用のサブドメインエイリアス（内部のテナントID・DB主キーは変更しない）
+// ルール: 公開ドメイン名はテナント表示名（TENANT_NAME_MAP）に合わせる
 const SUBDOMAIN_ALIASES: Record<string, string> = {
   bug: 'debug',
+  musicprod: 'dtm',
 }
 
 // ルートドメイン（サブドメインなし）はテナントQ&Aではなく、

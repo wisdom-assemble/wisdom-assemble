@@ -20,9 +20,11 @@ export function getTenantDisplayName(tenantId: string | undefined, name: string)
 }
 
 // 内部テナントIDに対する公開URL用サブドメイン（middleware.tsのSUBDOMAIN_ALIASESの逆引き）
-// debugの公開サブドメインはbug.wisdomassemble.com
+// ルール: 公開ドメイン名はテナント表示名（TENANT_NAME_MAP）に合わせる
+// debugの公開サブドメインはbug.wisdomassemble.com、dtmはmusicprod.wisdomassemble.com
 export const PUBLIC_SUBDOMAIN_MAP: Record<string, string> = {
   debug: 'bug',
+  dtm: 'musicprod',
 }
 
 export function getPublicSubdomain(tenantId: string): string {
