@@ -52,6 +52,11 @@ export default async function PortalHome() {
           )
         })}
       </div>
+
+      <div className="mt-16 pt-10 border-t border-gray-100">
+        <h2 className="text-sm font-bold tracking-tight text-gray-800 mb-3">{t('aboutTitle')}</h2>
+        <p className="text-sm text-gray-500 leading-relaxed">{t('aboutBody')}</p>
+      </div>
     </main>
   )
 }

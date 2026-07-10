@@ -369,6 +369,8 @@
     "title": "Wisdom Assemble",
     "subtitle": "Jaringan komunitas Tanya Jawab di mana AI menjawab lebih dulu, dan pakar manusia sungguhan turun tangan saat AI tidak mampu.",
     "chooseGenre": "Pilih komunitas untuk memulai",
-    "comingSoon": "Segera hadir"
+    "comingSoon": "Segera hadir",
+    "aboutTitle": "Tentang Wisdom Assemble",
+    "aboutBody": "Wisdom Assemble adalah platform multibahasa yang menjalankan jaringan komunitas Tanya Jawab berdasarkan genre. Saat pertanyaan diajukan, AI akan mencoba menjawab terlebih dahulu; jika AI tidak yakin, pakar manusia sungguhan akan turun tangan. Filosofi kami sederhana: biarkan manusia mengisi kekurangan AI, sehingga orang bisa mendapatkan jawaban nyata untuk pertanyaan khusus atau pribadi yang tidak dapat diselesaikan sepenuhnya oleh AI. Proyek ini saat ini dikelola oleh satu pengembang individu dan terus berkembang ke genre-genre baru."
   }
 }

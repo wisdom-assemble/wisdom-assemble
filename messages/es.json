@@ -369,6 +369,8 @@
     "title": "Wisdom Assemble",
     "subtitle": "Una red de comunidades de preguntas y respuestas donde la IA responde primero, y expertos humanos reales intervienen cuando la IA no es suficiente.",
     "chooseGenre": "Elige una comunidad para empezar",
-    "comingSoon": "Próximamente"
+    "comingSoon": "Próximamente",
+    "aboutTitle": "Acerca de Wisdom Assemble",
+    "aboutBody": "Wisdom Assemble es una plataforma multilingüe que opera una red de comunidades de preguntas y respuestas por género. Cuando se publica una pregunta, la IA intenta responder primero; cuando la IA no tiene confianza suficiente, un experto humano real se hace cargo. Nuestra filosofía es simple: dejar que los humanos cubran lo que la IA no logra resolver, para que las personas obtengan respuestas reales a preguntas especializadas o personales que la IA no puede resolver por completo. El proyecto actualmente está gestionado por un desarrollador individual y se expande gradualmente a nuevos géneros."
   }
 }

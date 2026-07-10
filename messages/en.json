@@ -369,6 +369,8 @@
     "title": "Wisdom Assemble",
     "subtitle": "A network of Q&A communities where AI answers first, and real human experts step in where AI falls short.",
     "chooseGenre": "Choose a community to get started",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "aboutTitle": "About Wisdom Assemble",
+    "aboutBody": "Wisdom Assemble is a multi-language platform running a network of genre-specific Q&A communities. When a question is posted, AI attempts to answer first; when AI isn't confident, a real human expert steps in. Our philosophy is simple: let humans fill in where AI falls short, so people can get real answers to specialized or personal questions AI can't fully resolve. The project is currently run by an individual developer and is gradually expanding to new genres."
   }
 }
