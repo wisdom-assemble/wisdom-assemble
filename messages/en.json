@@ -333,7 +333,10 @@
     "section8Title": "8. Contact",
     "section8ContactPrefix": "For questions about privacy or requests for deletion, please contact us via the",
     "section8ContactLink": "contact form",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "section3Item4": "Google AdSense (advertising)",
+    "section3AdsBody": "Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this site or other websites. Google's use of advertising cookies enables it and its partners to serve ads to users based on their visit to this site and/or other sites on the Internet. Users may opt out of personalized advertising by visiting Google Ads Settings.",
+    "section3AdsLink": "Google Ads Settings"
   },
   "titles": {
     "answer_1": "Novice Answerer",

@@ -333,7 +333,10 @@
     "section8Title": "8. 문의",
     "section8ContactPrefix": "개인정보에 관한 문의·삭제 요청은",
     "section8ContactLink": "문의 양식",
-    "section8ContactSuffix": "을 통해 연락해 주십시오."
+    "section8ContactSuffix": "을 통해 연락해 주십시오.",
+    "section3Item4": "Google 애드센스(광고 게재)",
+    "section3AdsBody": "Google을 포함한 제3자 공급업체는 쿠키를 사용하여 사용자가 이전에 본 서비스 또는 다른 웹사이트를 방문한 정보를 기반으로 광고를 게재할 수 있습니다. Google의 광고 쿠키 사용을 통해 Google과 파트너사는 사용자가 본 서비스 및/또는 인터넷의 다른 사이트를 방문한 정보를 기반으로 광고를 게재할 수 있습니다. 사용자는 Google 광고 설정에 방문하여 맞춤 광고를 비활성화할 수 있습니다.",
+    "section3AdsLink": "Google 광고 설정"
   },
   "titles": {
     "answer_1": "견습 답변자",

@@ -333,7 +333,10 @@
     "section8Title": "8. 联系方式",
     "section8ContactPrefix": "有关隐私的问题或删除请求，请通过",
     "section8ContactLink": "联系表单",
-    "section8ContactSuffix": "与我们联系。"
+    "section8ContactSuffix": "与我们联系。",
+    "section3Item4": "Google AdSense（广告投放）",
+    "section3AdsBody": "包括Google在内的第三方供应商会使用Cookie，根据用户之前访问本服务或其他网站的记录来投放广告。Google使用广告Cookie，使其及其合作伙伴能够根据用户访问本网站和/或互联网上其他网站的记录向用户投放广告。用户可以访问Google广告设置来选择停用个性化广告。",
+    "section3AdsLink": "Google广告设置"
   },
   "titles": {
     "answer_1": "初级解答者",

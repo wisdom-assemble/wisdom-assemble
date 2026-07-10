@@ -333,7 +333,10 @@
     "section8Title": "8. Liên hệ",
     "section8ContactPrefix": "Đối với các câu hỏi về quyền riêng tư hoặc yêu cầu xóa, vui lòng liên hệ với chúng tôi qua",
     "section8ContactLink": "biểu mẫu liên hệ",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "section3Item4": "Google AdSense (quảng cáo)",
+    "section3AdsBody": "Các nhà cung cấp bên thứ ba, bao gồm cả Google, sử dụng cookie để phân phát quảng cáo dựa trên các lượt truy cập trước đó của người dùng vào trang này hoặc các trang web khác. Việc Google sử dụng cookie quảng cáo cho phép Google và các đối tác của mình phân phát quảng cáo cho người dùng dựa trên lượt truy cập của họ vào trang này và/hoặc các trang khác trên Internet. Người dùng có thể chọn không nhận quảng cáo được cá nhân hóa bằng cách truy cập Cài đặt quảng cáo của Google.",
+    "section3AdsLink": "Cài đặt quảng cáo của Google"
   },
   "titles": {
     "answer_1": "Người Trả Lời Mới",

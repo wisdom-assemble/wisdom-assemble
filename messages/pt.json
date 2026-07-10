@@ -333,7 +333,10 @@
     "section8Title": "8. Contato",
     "section8ContactPrefix": "Para perguntas sobre privacidade ou solicitações de exclusão, entre em contato conosco através do",
     "section8ContactLink": "formulário de contato",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "section3Item4": "Google AdSense (publicidade)",
+    "section3AdsBody": "Fornecedores terceirizados, incluindo o Google, usam cookies para veicular anúncios com base nas visitas anteriores do usuário a este site ou a outros sites. O uso de cookies de publicidade pelo Google permite que ele e seus parceiros veiculem anúncios aos usuários com base em suas visitas a este site e/ou a outros sites na Internet. Os usuários podem desativar a publicidade personalizada acessando as Configurações de anúncios do Google.",
+    "section3AdsLink": "Configurações de anúncios do Google"
   },
   "titles": {
     "answer_1": "Respondedor Novato",

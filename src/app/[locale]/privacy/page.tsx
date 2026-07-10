@@ -42,8 +42,20 @@ export default async function PrivacyPage({ params }: Props) {
               <li>{t('section3Item1')}</li>
               <li>{t('section3Item2')}</li>
               <li>{t('section3Item3')}</li>
+              <li>{t('section3Item4')}</li>
             </ul>
             <p>{t('section3Outro')}</p>
+            <p>
+              {t('section3AdsBody')}{' '}
+              <a
+                href="https://adssettings.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-gray-900 hover:opacity-70"
+              >
+                {t('section3AdsLink')}
+              </a>
+            </p>
           </Section>
 
           <Section title={t('section4Title')}>

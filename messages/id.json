@@ -333,7 +333,10 @@
     "section8Title": "8. Kontak",
     "section8ContactPrefix": "Untuk pertanyaan tentang privasi atau permintaan penghapusan, silakan hubungi kami melalui",
     "section8ContactLink": "formulir kontak",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "section3Item4": "Google AdSense (periklanan)",
+    "section3AdsBody": "Vendor pihak ketiga, termasuk Google, menggunakan cookie untuk menayangkan iklan berdasarkan kunjungan pengguna sebelumnya ke situs ini atau situs web lain. Penggunaan cookie iklan oleh Google memungkinkan Google dan mitranya menayangkan iklan kepada pengguna berdasarkan kunjungan mereka ke situs ini dan/atau situs lain di Internet. Pengguna dapat memilih untuk tidak menggunakan iklan yang dipersonalisasi dengan mengunjungi Setelan Iklan Google.",
+    "section3AdsLink": "Setelan Iklan Google"
   },
   "titles": {
     "answer_1": "Penjawab Pemula",

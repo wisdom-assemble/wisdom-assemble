@@ -333,7 +333,10 @@
     "section8Title": "8. お問い合わせ",
     "section8ContactPrefix": "プライバシーに関するご質問・削除依頼は、",
     "section8ContactLink": "お問い合わせフォーム",
-    "section8ContactSuffix": "よりご連絡ください。"
+    "section8ContactSuffix": "よりご連絡ください。",
+    "section3Item4": "Google AdSense（広告配信）",
+    "section3AdsBody": "Googleを含む第三者配信事業者は、Cookieを使用して、ユーザーが本サービスや他のウェブサイトにアクセスした際の情報に基づき広告を配信することがあります。Googleの広告Cookieの使用により、Googleおよびそのパートナーは、ユーザーが本サービスや他のサイトにアクセスした情報に基づいて広告を配信できるようになります。ユーザーは、以下のGoogle広告設定にアクセスすることで、パーソナライズ広告を無効にできます。",
+    "section3AdsLink": "Google広告設定"
   },
   "titles": {
     "answer_1": "見習い解答者",
