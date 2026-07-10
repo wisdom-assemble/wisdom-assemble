@@ -179,7 +179,8 @@
     "views": "views",
     "translationNotice": "This content has been automatically translated by AI.",
     "showOriginal": "Show original",
-    "showTranslation": "Show translation"
+    "showTranslation": "Show translation",
+    "breadcrumbHome": "Home"
   },
   "profilePage": {
     "title": "My Page",

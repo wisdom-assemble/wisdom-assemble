@@ -6,6 +6,7 @@ import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@
 import OwnerReviewTracker from '@/components/OwnerReviewTracker'
 import TranslatedQuestionBody from '@/components/TranslatedQuestionBody'
 import TranslatedAnswerBody from '@/components/TranslatedAnswerBody'
+import { Link } from '@/i18n/navigation'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
@@ -134,6 +135,15 @@ export default async function QuestionPage({ params, searchParams }: Props) {
     <>
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
+
+        {/* パンくずリスト */}
+        <nav aria-label="breadcrumb" className="mb-4 text-xs text-gray-400 truncate">
+          <Link href="/" className="hover:text-gray-600 hover:underline">
+            {t('breadcrumbHome')}
+          </Link>
+          <span className="mx-1.5">/</span>
+          <span className="text-gray-500">{question.title}</span>
+        </nav>
 
         {/* オーナーが訪問したら既読マーク */}
         {isOwner && hasAnswers && <OwnerReviewTracker questionId={question.id} />}

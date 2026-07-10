@@ -179,7 +179,8 @@
     "views": "次浏览",
     "translationNotice": "此内容由AI自动翻译。",
     "showOriginal": "显示原文",
-    "showTranslation": "显示翻译"
+    "showTranslation": "显示翻译",
+    "breadcrumbHome": "首页"
   },
   "profilePage": {
     "title": "我的页面",

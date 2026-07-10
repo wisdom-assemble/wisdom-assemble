@@ -179,7 +179,8 @@
     "views": "조회",
     "translationNotice": "이 내용은 AI에 의해 자동 번역되었습니다.",
     "showOriginal": "원문 보기",
-    "showTranslation": "번역 보기"
+    "showTranslation": "번역 보기",
+    "breadcrumbHome": "홈"
   },
   "profilePage": {
     "title": "마이페이지",

@@ -179,7 +179,8 @@
     "views": "lượt xem",
     "translationNotice": "Nội dung này đã được AI tự động dịch.",
     "showOriginal": "Xem bản gốc",
-    "showTranslation": "Xem bản dịch"
+    "showTranslation": "Xem bản dịch",
+    "breadcrumbHome": "Trang chủ"
   },
   "profilePage": {
     "title": "Trang của tôi",

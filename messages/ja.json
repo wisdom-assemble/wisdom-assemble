@@ -179,7 +179,8 @@
     "views": "views",
     "translationNotice": "この内容はAIによって自動翻訳されています。",
     "showOriginal": "原文を表示",
-    "showTranslation": "翻訳を表示"
+    "showTranslation": "翻訳を表示",
+    "breadcrumbHome": "ホーム"
   },
   "profilePage": {
     "title": "マイページ",
