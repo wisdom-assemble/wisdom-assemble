@@ -34,6 +34,28 @@ export function getPublicSubdomain(tenantId: string): string {
 // ルートポータルに掲載する、実際にサブドメインが稼働済みのテナントID
 export const LIVE_TENANT_IDS = ['debug', 'dtm']
 
+// テナントごとのロゴスタイル上書き（Sample Logo builderで作った組み合わせをそのまま反映する用途）。
+// 未指定のテナントは SiteLogo.tsx のデフォルト（Impact系・3D押し出し）のまま
+export type LogoStyleOverride = {
+  fontFamily: string
+  fontWeight: number
+  letterSpacingEm: number
+  fontSizePx: number
+  gradientFrom: string
+  gradientTo: string
+}
+
+export const LOGO_STYLE_OVERRIDES: Record<string, LogoStyleOverride> = {
+  dtm: {
+    fontFamily: "'Century Gothic', Futura, 'Segoe UI', sans-serif",
+    fontWeight: 800,
+    letterSpacingEm: -0.05,
+    fontSizePx: 32,
+    gradientFrom: '#74a7fe',
+    gradientTo: '#606060',
+  },
+}
+
 // ルートポータルのジャンル検索用タグ（表示名に加えて、関連キーワードで検索できるようにする）
 // 対応8言語（en/ja/zh/id/vi/ko/es/pt）どの言語で検索してもヒットするようにキーワードを用意
 export const TENANT_SEARCH_TAGS: Record<string, string[]> = {

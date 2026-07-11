@@ -1,4 +1,4 @@
-import { getTenantDisplayName } from '@/lib/tenantNames'
+import { getTenantDisplayName, LOGO_STYLE_OVERRIDES } from '@/lib/tenantNames'
 import { getLogoShadowShades } from '@/lib/logoColor'
 
 type Props = {
@@ -9,6 +9,47 @@ type Props = {
 
 export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Props) {
   const label = getTenantDisplayName(tenantId, name)
+  const override = tenantId ? LOGO_STYLE_OVERRIDES[tenantId] : undefined
+
+  if (override) {
+    const fontSize = override.fontSizePx
+    const tmFontSize = fontSize * 0.32
+    const svgWidth = label.length * (fontSize * 0.62) + tmFontSize * 2 + 10
+    const svgHeight = fontSize + 10
+    const gradientId = `logo-grad-${tenantId}`
+
+    return (
+      <span className="flex items-center select-none">
+        <svg
+          width={svgWidth}
+          height={svgHeight}
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          xmlns="http://www.w3.org/2000/svg"
+          aria-label={name}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={override.gradientFrom} />
+              <stop offset="100%" stopColor={override.gradientTo} />
+            </linearGradient>
+          </defs>
+          <text
+            x="0"
+            y={fontSize - 1}
+            fontFamily={override.fontFamily}
+            fontSize={fontSize}
+            fontWeight={override.fontWeight}
+            letterSpacing={`${override.letterSpacingEm}em`}
+            fill={`url(#${gradientId})`}
+          >
+            {label}
+            <tspan dx="2" dy={-fontSize * 0.35} fontSize={tmFontSize} fontWeight="700">™</tspan>
+          </text>
+        </svg>
+      </span>
+    )
+  }
+
   const shadowShades = getLogoShadowShades(colorTheme)
 
   const fontSize = label.length > 10 ? 26 : label.length > 8 ? 30 : 34
