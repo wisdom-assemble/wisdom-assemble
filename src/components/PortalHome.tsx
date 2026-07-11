@@ -16,7 +16,24 @@ export default async function PortalHome() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-16 w-full">
       <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold tracking-tight mb-3">{t('title')}</h1>
+        <h1
+          className="mb-3"
+          style={{
+            display: 'inline-block',
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontWeight: 800,
+            fontSize: '32px',
+            letterSpacing: '0.20em',
+            textTransform: 'uppercase',
+            background: 'linear-gradient(90deg, #929292 50%, #606060 50%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          {t('title')}
+        </h1>
         <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 
