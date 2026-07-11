@@ -9,6 +9,12 @@ import SiteLogo from '@/components/SiteLogo'
 // に戻す想定。コンポーネント自体は src/components/PortalGenreGrid.tsx に残してある。
 const REVIEW_TENANT_IDS = ['debug', 'dtm']
 
+// DB取得が万一失敗した場合の保険（本来はtenants.color_themeが正）
+const FALLBACK_COLOR_THEME: Record<string, string> = {
+  debug: '#10B981',
+  dtm: '#2563EB',
+}
+
 function getAdminClient() {
   return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,17 +34,23 @@ export default async function PortalHome() {
   const t = await getTranslations('portalPage')
 
   const admin = getAdminClient()
-  const { data: tenants } = await admin
-    .from('tenants')
-    .select('id, name, color_theme')
-    .in('id', REVIEW_TENANT_IDS)
+  // page.tsxのタグライン取得と同じ .eq(...).single() の形に揃える
+  // （.in()での一括取得だと本番で稀に color_theme が取得できないことがあったため）
+  const results = await Promise.all(
+    REVIEW_TENANT_IDS.map((tenantId) =>
+      admin.from('tenants').select('id, name, color_theme').eq('id', tenantId).single()
+    )
+  )
 
-  const cards = REVIEW_TENANT_IDS.map((tenantId) => {
-    const tenant = tenants?.find((row) => row.id === tenantId)
+  const cards = REVIEW_TENANT_IDS.map((tenantId, i) => {
+    const { data: tenant, error } = results[i]
+    if (error) {
+      console.error(`[PortalHome] tenants fetch failed for ${tenantId}:`, error.message)
+    }
     return {
       tenantId,
       name: tenant?.name ?? tenantId,
-      colorTheme: tenant?.color_theme ?? undefined,
+      colorTheme: tenant?.color_theme ?? FALLBACK_COLOR_THEME[tenantId],
       href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
       tagline: t(tenantId === 'debug' ? 'debugCardTagline' : 'dtmCardTagline'),
     }
