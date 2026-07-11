@@ -2,6 +2,7 @@ import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
 import PortalTenantSearch from '@/components/PortalTenantSearch'
+import PortalLanguageSwitcher from '@/components/PortalLanguageSwitcher'
 
 // AdSense/Stripe Connect審査用バージョンでは、審査を混乱させないよう
 // 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
@@ -32,6 +33,7 @@ export default async function PortalHome() {
   const locale = await getLocale()
   setRequestLocale(locale)
   const t = await getTranslations('portalPage')
+  const tProfile = await getTranslations('profilePage')
 
   const admin = getAdminClient()
   // page.tsxのタグライン取得と同じ .eq(...).single() の形に揃える
@@ -109,6 +111,10 @@ export default async function PortalHome() {
         comingSoonLabel={t('comingSoon')}
         noResultsLabel={t('noResults')}
       />
+
+      <div className="mt-16 pt-10 border-t border-gray-100">
+        <PortalLanguageSwitcher currentLocale={locale} label={tProfile('languageLabel')} />
+      </div>
     </main>
   )
 }
