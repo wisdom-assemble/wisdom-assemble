@@ -14,7 +14,9 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
   if (override) {
     const fontSize = override.fontSizePx
     const tmFontSize = fontSize * 0.32
-    const svgWidth = label.length * (fontSize * 0.62) + tmFontSize * 2 + 10
+    // 実測値(Century Gothic/Futura, canvas measureText): 1文字あたり約0.70em
+    const letterSpacingPx = fontSize * override.letterSpacingEm
+    const svgWidth = label.length * (fontSize * 0.70) + (label.length - 1) * letterSpacingPx + tmFontSize * 1.3 + 5
     const svgHeight = fontSize + 10
     const gradientId = `logo-grad-${tenantId}`
 
@@ -35,9 +37,8 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
             </linearGradient>
           </defs>
           <text
-            x={svgWidth / 2}
+            x="0"
             y={fontSize - 1}
-            textAnchor="middle"
             fontFamily={override.fontFamily}
             fontSize={fontSize}
             fontWeight={override.fontWeight}
@@ -56,8 +57,8 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
 
   const fontSize = label.length > 10 ? 26 : label.length > 8 ? 30 : 34
   const tmFontSize = fontSize * 0.32
-  // 影が右下に5px分はみ出る＋TM表記ぶんの余白を確保
-  const svgWidth = label.length * (fontSize * 0.68) + tmFontSize * 2 + 10
+  // 実測値(Impact, canvas measureText): 1文字あたり約0.494em＋letterSpacing(1px)分
+  const svgWidth = label.length * (fontSize * 0.494) + (label.length - 1) * 1 + tmFontSize * 1.3 + 5
   const svgHeight = fontSize + 10
 
   return (
@@ -70,13 +71,12 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
         aria-label={name}
         style={{ maxWidth: '100%', height: 'auto' }}
       >
-        {/* 3D押し出し効果（影を右下方向に、テキストは中央揃え） */}
+        {/* 3D押し出し効果（影を右下方向に、メインテキストはx=0で左端揃え） */}
         {[5, 4, 3, 2, 1].map(i => (
           <text
             key={i}
-            x={svgWidth / 2 + i}
+            x={i}
             y={fontSize - 1 + i}
-            textAnchor="middle"
             fontFamily="'Impact', 'Arial Black', 'Haettenschweiler', sans-serif"
             fontSize={fontSize}
             fontWeight="900"
@@ -87,11 +87,10 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           </text>
         ))}
 
-        {/* メインテキスト（中央揃え）＋TM表記（tspanで実際の文字幅の直後に配置、影なし） */}
+        {/* メインテキスト（左端x=0、プライマリカラー）＋TM表記（tspanで実際の文字幅の直後に配置、影なし） */}
         <text
-          x={svgWidth / 2}
+          x="0"
           y={fontSize - 1}
-          textAnchor="middle"
           fontFamily="'Impact', 'Arial Black', 'Haettenschweiler', sans-serif"
           fontSize={fontSize}
           fontWeight="900"
