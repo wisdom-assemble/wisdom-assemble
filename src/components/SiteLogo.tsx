@@ -26,6 +26,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           xmlns="http://www.w3.org/2000/svg"
           aria-label={name}
+          style={{ maxWidth: '100%', height: 'auto' }}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
