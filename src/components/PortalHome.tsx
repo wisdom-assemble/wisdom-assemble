@@ -41,7 +41,7 @@ export default async function PortalHome() {
               fontSize: '11px',
               letterSpacing: 'normal',
               verticalAlign: 'super',
-              marginLeft: '-4px',
+              marginLeft: '-1px',
               color: '#929292',
               WebkitTextFillColor: '#929292',
               background: 'none',
