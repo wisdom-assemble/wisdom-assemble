@@ -19,7 +19,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
     const gradientId = `logo-grad-${tenantId}`
 
     return (
-      <span className="flex items-center select-none">
+      <span className="inline-flex items-center justify-center select-none">
         <svg
           width={svgWidth}
           height={svgHeight}
@@ -60,7 +60,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
   const svgHeight = fontSize + 10
 
   return (
-    <span className="flex items-center select-none">
+    <span className="inline-flex items-center justify-center select-none">
       <svg
         width={svgWidth}
         height={svgHeight}
