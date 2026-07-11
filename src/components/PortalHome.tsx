@@ -1,5 +1,6 @@
 import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
-import { TENANT_NAME_MAP, getPublicSubdomain, LIVE_TENANT_IDS } from '@/lib/tenantNames'
+import { TENANT_NAME_MAP, getPublicSubdomain, LIVE_TENANT_IDS, TENANT_SEARCH_TAGS } from '@/lib/tenantNames'
+import PortalGenreGrid from '@/components/PortalGenreGrid'
 
 // wisdomassemble.com（ルートドメイン）専用のポータルページ。
 // 各ジャンル別サブドメインへの入口。まだCloudflareのCustom Domain設定が
@@ -23,35 +24,22 @@ export default async function PortalHome() {
         {t('chooseGenre')}
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {Object.entries(TENANT_NAME_MAP).map(([tenantId, label]) => {
-          const isLive = LIVE_TENANT_IDS.includes(tenantId)
+      <PortalGenreGrid
+        tenants={Object.entries(TENANT_NAME_MAP).map(([tenantId, label]) => {
           const subdomain = getPublicSubdomain(tenantId)
-          const href = `https://${subdomain}.wisdomassemble.com`
-
-          if (!isLive) {
-            return (
-              <div
-                key={tenantId}
-                className="relative border border-gray-100 rounded-lg p-4 text-center bg-gray-50 text-gray-300 cursor-not-allowed select-none"
-              >
-                <span className="text-sm font-bold tracking-tight">{label}</span>
-                <span className="block text-[10px] mt-1 text-gray-300">{t('comingSoon')}</span>
-              </div>
-            )
+          const tags = [label.toLowerCase(), tenantId.toLowerCase(), ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase())]
+          return {
+            id: tenantId,
+            label,
+            href: `https://${subdomain}.wisdomassemble.com`,
+            isLive: LIVE_TENANT_IDS.includes(tenantId),
+            tags,
           }
-
-          return (
-            <a
-              key={tenantId}
-              href={href}
-              className="border border-gray-200 rounded-lg p-4 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-sm font-bold tracking-tight text-gray-800">{label}</span>
-            </a>
-          )
         })}
-      </div>
+        searchPlaceholder={t('searchPlaceholder')}
+        comingSoonLabel={t('comingSoon')}
+        noResultsLabel={t('noResults')}
+      />
 
       <div className="mt-16 pt-10 border-t border-gray-100">
         <h2 className="text-sm font-bold tracking-tight text-gray-800 mb-3">{t('aboutTitle')}</h2>

@@ -33,3 +33,17 @@ export function getPublicSubdomain(tenantId: string): string {
 
 // ルートポータルに掲載する、実際にサブドメインが稼働済みのテナントID
 export const LIVE_TENANT_IDS = ['debug', 'dtm']
+
+// ルートポータルのジャンル検索用タグ（表示名に加えて、関連キーワードで検索できるようにする）
+export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
+  debug: ['bug', 'debug', 'programming', 'code', 'engineer', 'プログラミング', 'デバッグ', 'コード', 'バグ', 'エンジニア'],
+  'tax-japan': ['tax', 'japan', 'finance', '税金', '確定申告', '日本'],
+  'australia-whv': ['work holiday', 'australia', 'visa', 'ワーホリ', 'ワーキングホリデー', 'オーストラリア', 'ビザ'],
+  bali: ['bali', 'indonesia', 'nomad', 'life', 'バリ', 'インドネシア', '移住', 'ノマド'],
+  chiangmai: ['chiang mai', 'thailand', 'nomad', 'チェンマイ', 'タイ', '移住', 'ノマド'],
+  portugal: ['portugal', 'europe', 'nomad', 'visa', 'ポルトガル', '移住', 'ビザ'],
+  dtm: ['music production', 'music', 'dtm', 'daw', 'ableton', 'mixing', 'mastering', '音楽', '作曲', 'ミキシング', 'マスタリング'],
+  keyboard: ['keyboard', 'mechanical keyboard', 'キーボード', '自作キーボード'],
+  philippines: ['philippines', 'study', 'english', 'フィリピン', '留学', '英語'],
+  canada: ['canada', 'study', 'カナダ', '留学'],
+}

@@ -372,6 +372,8 @@
     "chooseGenre": "Chọn một cộng đồng để bắt đầu",
     "comingSoon": "Sắp ra mắt",
     "aboutTitle": "Giới thiệu về Wisdom Assemble",
-    "aboutBody": "Wisdom Assemble là nền tảng đa ngôn ngữ vận hành một mạng lưới các cộng đồng Hỏi & Đáp theo từng thể loại. Khi một câu hỏi được đăng, AI sẽ cố gắng trả lời trước; khi AI không đủ tự tin, một chuyên gia con người thực sự sẽ tiếp nhận. Triết lý của chúng tôi rất đơn giản: để con người bổ khuyết những gì AI còn thiếu sót, giúp mọi người nhận được câu trả lời thực sự cho những vấn đề chuyên môn hoặc cá nhân mà AI chưa thể giải quyết trọn vẹn. Dự án hiện đang được vận hành bởi một nhà phát triển cá nhân và đang dần mở rộng sang các thể loại mới."
+    "aboutBody": "Wisdom Assemble là nền tảng đa ngôn ngữ vận hành một mạng lưới các cộng đồng Hỏi & Đáp theo từng thể loại. Khi một câu hỏi được đăng, AI sẽ cố gắng trả lời trước; khi AI không đủ tự tin, một chuyên gia con người thực sự sẽ tiếp nhận. Triết lý của chúng tôi rất đơn giản: để con người bổ khuyết những gì AI còn thiếu sót, giúp mọi người nhận được câu trả lời thực sự cho những vấn đề chuyên môn hoặc cá nhân mà AI chưa thể giải quyết trọn vẹn. Dự án hiện đang được vận hành bởi một nhà phát triển cá nhân và đang dần mở rộng sang các thể loại mới.",
+    "searchPlaceholder": "Tìm theo thể loại hoặc từ khóa...",
+    "noResults": "Không tìm thấy thể loại phù hợp."
   }
 }
