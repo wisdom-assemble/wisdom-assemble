@@ -7,12 +7,24 @@ import { getLogoShadowShades } from '@/lib/logoColor'
 export const size = { width: 32, height: 32 }
 export const contentType = 'image/png'
 
+// next/ogはシステムフォントを使えない（Satoriが実際のフォントデータを要求する）ため、
+// 明朝体で描画するにはGoogle Fontsから実データを取得して埋め込む必要がある
+async function loadMinchoFont() {
+  const cssUrl = 'https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@800&text=W'
+  const css = await (await fetch(cssUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })).text()
+  const match = css.match(/src: url\(([^)]+)\) format\('(?:opentype|truetype)'\)/)
+  if (!match) throw new Error('mincho font url not found in Google Fonts CSS')
+  const fontRes = await fetch(match[1])
+  return fontRes.arrayBuffer()
+}
+
 export default async function Icon() {
   const tenantId = await getTenantId()
 
   // ルートドメイン(wisdomassemble.com)専用のfavicon。トップロゴ(WISDOM ASSEMBLE)
-  // のグレー基調に合わせたフラットな「W」。他テナントの3D押し出し風とは別デザイン
+  // のグレー基調に合わせた明朝体の「W」。他テナントの3D押し出し風とは別デザイン
   if (tenantId === 'root') {
+    const minchoFont = await loadMinchoFont()
     return new ImageResponse(
       (
         <div
@@ -30,14 +42,14 @@ export default async function Icon() {
               fontSize: 26,
               fontWeight: 800,
               color: '#5B5B5B',
-              fontFamily: 'Georgia, serif',
+              fontFamily: 'Mincho Icon',
             }}
           >
             W
           </div>
         </div>
       ),
-      { ...size }
+      { ...size, fonts: [{ name: 'Mincho Icon', data: minchoFont, weight: 800, style: 'normal' }] }
     )
   }
 
