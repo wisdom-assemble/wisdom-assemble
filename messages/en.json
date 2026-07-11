@@ -376,6 +376,7 @@
     "searchPlaceholder": "Search by genre or keyword...",
     "noResults": "No genres match your search.",
     "debugCardTagline": "Coding bugs and technical questions, solved by AI first and real developers next.",
-    "dtmCardTagline": "Mixing, mastering, and DAW questions, solved by AI first and real producers next."
+    "dtmCardTagline": "Mixing, mastering, and DAW questions, solved by AI first and real producers next.",
+    "aboutLinkLabel": "About Wisdom Assemble"
   }
 }

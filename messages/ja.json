@@ -376,6 +376,7 @@
     "searchPlaceholder": "ジャンルやキーワードで検索...",
     "noResults": "該当するジャンルが見つかりませんでした。",
     "debugCardTagline": "コードのバグや技術的な質問に、AIがまず答え、足りなければ現役エンジニアが応える。",
-    "dtmCardTagline": "ミックスやマスタリング、DAWの質問に、AIがまず答え、足りなければ現役の制作者が応える。"
+    "dtmCardTagline": "ミックスやマスタリング、DAWの質問に、AIがまず答え、足りなければ現役の制作者が応える。",
+    "aboutLinkLabel": "Wisdom Assembleについて"
   }
 }

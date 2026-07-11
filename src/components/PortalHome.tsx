@@ -2,6 +2,7 @@ import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
 import PortalTenantSearch from '@/components/PortalTenantSearch'
+import PortalAboutFooter from '@/components/PortalAboutFooter'
 
 // AdSense/Stripe Connect審査用バージョンでは、審査を混乱させないよう
 // 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
@@ -96,7 +97,7 @@ export default async function PortalHome() {
             ™
           </span>
         </h1>
-        <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
+        <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 
       <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4 text-center">
@@ -110,10 +111,7 @@ export default async function PortalHome() {
         noResultsLabel={t('noResults')}
       />
 
-      <div className="mt-16 pt-10 border-t border-gray-100">
-        <h2 className="text-sm font-bold tracking-tight text-gray-800 mb-3">{t('aboutTitle')}</h2>
-        <p className="text-sm text-gray-500 leading-relaxed">{t('aboutBody')}</p>
-      </div>
+      <PortalAboutFooter linkLabel={t('aboutLinkLabel')} title={t('aboutTitle')} body={t('aboutBody')} />
     </main>
   )
 }

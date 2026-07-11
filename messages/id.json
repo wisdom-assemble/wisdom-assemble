@@ -376,6 +376,7 @@
     "searchPlaceholder": "Cari berdasarkan genre atau kata kunci...",
     "noResults": "Tidak ada genre yang cocok dengan pencarian Anda.",
     "debugCardTagline": "Bug kode dan pertanyaan teknis, dijawab AI lebih dulu, lalu developer sungguhan bila perlu.",
-    "dtmCardTagline": "Pertanyaan mixing, mastering, dan DAW, dijawab AI lebih dulu, lalu produser sungguhan bila perlu."
+    "dtmCardTagline": "Pertanyaan mixing, mastering, dan DAW, dijawab AI lebih dulu, lalu produser sungguhan bila perlu.",
+    "aboutLinkLabel": "Tentang Wisdom Assemble"
   }
 }

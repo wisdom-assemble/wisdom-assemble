@@ -376,6 +376,7 @@
     "searchPlaceholder": "Tìm theo thể loại hoặc từ khóa...",
     "noResults": "Không tìm thấy thể loại phù hợp.",
     "debugCardTagline": "Lỗi code và câu hỏi kỹ thuật, AI trả lời trước, chuyên gia thật vào cuộc khi cần.",
-    "dtmCardTagline": "Câu hỏi về mixing, mastering và DAW, AI trả lời trước, nhà sản xuất thật vào cuộc khi cần."
+    "dtmCardTagline": "Câu hỏi về mixing, mastering và DAW, AI trả lời trước, nhà sản xuất thật vào cuộc khi cần.",
+    "aboutLinkLabel": "Giới thiệu về Wisdom Assemble"
   }
 }

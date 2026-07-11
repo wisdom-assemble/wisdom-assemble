@@ -376,6 +376,7 @@
     "searchPlaceholder": "Buscar por género o palabra clave...",
     "noResults": "No se encontraron géneros que coincidan.",
     "debugCardTagline": "Bugs de código y preguntas técnicas, respondidas primero por IA y luego por developers reales.",
-    "dtmCardTagline": "Preguntas de mezcla, masterización y DAW, respondidas primero por IA y luego por productores reales."
+    "dtmCardTagline": "Preguntas de mezcla, masterización y DAW, respondidas primero por IA y luego por productores reales.",
+    "aboutLinkLabel": "Acerca de Wisdom Assemble"
   }
 }

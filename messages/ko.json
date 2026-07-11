@@ -376,6 +376,7 @@
     "searchPlaceholder": "장르나 키워드로 검색...",
     "noResults": "검색 결과에 해당하는 장르가 없습니다.",
     "debugCardTagline": "코드 버그와 기술적인 질문에 AI가 먼저 답하고, 부족하면 현직 개발자가 답합니다.",
-    "dtmCardTagline": "믹싱, 마스터링, DAW 관련 질문에 AI가 먼저 답하고, 부족하면 현직 프로듀서가 답합니다."
+    "dtmCardTagline": "믹싱, 마스터링, DAW 관련 질문에 AI가 먼저 답하고, 부족하면 현직 프로듀서가 답합니다.",
+    "aboutLinkLabel": "Wisdom Assemble 소개"
   }
 }
