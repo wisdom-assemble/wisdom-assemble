@@ -35,8 +35,9 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
             </linearGradient>
           </defs>
           <text
-            x="0"
+            x={svgWidth / 2}
             y={fontSize - 1}
+            textAnchor="middle"
             fontFamily={override.fontFamily}
             fontSize={fontSize}
             fontWeight={override.fontWeight}
@@ -69,12 +70,13 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
         aria-label={name}
         style={{ maxWidth: '100%', height: 'auto' }}
       >
-        {/* 3D押し出し効果（影を右下方向に、メインテキストはx=0で左端揃え） */}
+        {/* 3D押し出し効果（影を右下方向に、テキストは中央揃え） */}
         {[5, 4, 3, 2, 1].map(i => (
           <text
             key={i}
-            x={i}
+            x={svgWidth / 2 + i}
             y={fontSize - 1 + i}
+            textAnchor="middle"
             fontFamily="'Impact', 'Arial Black', 'Haettenschweiler', sans-serif"
             fontSize={fontSize}
             fontWeight="900"
@@ -85,10 +87,11 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           </text>
         ))}
 
-        {/* メインテキスト（左端x=0、プライマリカラー）＋TM表記（tspanで実際の文字幅の直後に配置、影なし） */}
+        {/* メインテキスト（中央揃え）＋TM表記（tspanで実際の文字幅の直後に配置、影なし） */}
         <text
-          x="0"
+          x={svgWidth / 2}
           y={fontSize - 1}
+          textAnchor="middle"
           fontFamily="'Impact', 'Arial Black', 'Haettenschweiler', sans-serif"
           fontSize={fontSize}
           fontWeight="900"
