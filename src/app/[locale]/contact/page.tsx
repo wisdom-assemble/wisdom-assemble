@@ -118,7 +118,7 @@ export default function ContactPage() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-sm font-medium text-gray-700">{t('senderLabel')}</label>
-                <button type="button" onClick={handleLogout} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                <button type="button" onClick={handleLogout} className="text-[10px] sm:text-xs text-gray-400 hover:text-gray-600 underline">
                   {tHeader('logout')}
                 </button>
               </div>
