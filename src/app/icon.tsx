@@ -9,6 +9,38 @@ export const contentType = 'image/png'
 
 export default async function Icon() {
   const tenantId = await getTenantId()
+
+  // ルートドメイン(wisdomassemble.com)専用のfavicon。トップロゴ(WISDOM ASSEMBLE)
+  // のグレー基調に合わせたフラットな「W」。他テナントの3D押し出し風とは別デザイン
+  if (tenantId === 'root') {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#FFFFFF',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 26,
+              fontWeight: 800,
+              color: '#5B5B5B',
+              fontFamily: 'Georgia, serif',
+            }}
+          >
+            W
+          </div>
+        </div>
+      ),
+      { ...size }
+    )
+  }
+
   const supabase = await createClient()
   const { data: tenant } = await supabase
     .from('tenants')
