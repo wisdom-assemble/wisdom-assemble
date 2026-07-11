@@ -39,6 +39,12 @@
 - **RLS回避が必要なAPI routeは必ずservice_roleクライアントを使う**
 - **高難度移行ボタンは2回目の回答者（matched_c）が存在 かつ 回答済みの場合のみ表示**（絶対ルール）
 
+## 本番デプロイ手順
+- **Cloudflare WorkersがGitHub連携（Workers Builds）で`main`ブランチを監視しており、`git push origin main`するだけで自動ビルド・自動デプロイされる**
+- `npm run deploy`（wrangler CLI直接デプロイ）は**使わない・使えない**。ローカルのwranglerはCloudflareにログインしておらず`CLOUDFLARE_API_TOKEN`も未設定のため、実行すると`wrangler login`を要求されて失敗する（2026-07-11に発生・原因判明済み）
+- 手順は常に: ①コード修正 → ②`git add`＋`git commit` → ③`git push origin main` → ④Cloudflareダッシュボード（Workers & Pages → wisdom-assemble → Deployments）で自動デプロイの進行を確認、これだけでよい
+- ユーザーから「基本、修正は本番環境にデプロイしていいですよ」と2026-07-11に明示的な標準許可を得ている。緊急性の低いUI微修正等は確認を挟まずcommit→pushしてよい（大規模な変更やDBスキーマ変更など影響範囲が大きいものは念のため一声かける）
+
 ## Notionドキュメント
 - バグトラック page_id: 38af5fa8-bcb9-802c-862b-dd515be9f586
 - 開発ログ page_id: 38af5fa8-bcb9-80d1-ac24-d3b3478d0fde
