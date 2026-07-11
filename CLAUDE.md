@@ -219,10 +219,49 @@
 
 **⭐今後の方針（2026-07-10確定・最重要）**: 「①AdSense・Stripe Connect申請用バージョン作成」と「②Stripe Connectの投げ銭機能の実装」は明確に別フェーズ。今はまだ①（申請用バージョンのクオリティを上げる段階）。②の投げ銭機能のコード実装は、Stripe Connectの審査が通ってから着手する。
 
+### ✅ ルートポータルのAdSense審査向け作り込み・ロゴ全面刷新（2026-07-11）
+
+**ルートポータルをAdSense審査用に簡素化**
+- 10ジャンル分の検索付きグリッドは審査の混乱を避けるため、実際に稼働中の2テナント（BUG DEBUG / MUSIC PRODUCTION）のみのカード表示に変更。残り8ジャンルはジャンル名を出さない汎用の「Coming soon」枠1つにまとめた
+- 各カードは実際のロゴ（`SiteLogo`、DBの`color_theme`をその場で取得）＋一言説明（`portalPage.debugCardTagline` / `dtmCardTagline`、8言語）を表示
+- 検索バー自体は`PortalTenantSearch`（新規、`PortalGenreGrid`は将来の再拡大用に未使用のまま残置）で維持。`TENANT_SEARCH_TAGS`（8言語ぶんのキーワード）で検索可能
+- 「Wisdom Assembleについて」を常時表示から、共通`Footer.tsx`の「利用規約」の左（アンダーラインなし）のリンク＋クリックでオーバーレイ表示に変更。`Footer`に`about`propを追加し、`layout.tsx`がテナントIDが`root`の時だけ内容を渡す
+- 「About」があった場所には、マイページと同じ見た目・並びの言語選択（`PortalLanguageSwitcher`、8言語ピルボタン、選択でフルリロード遷移）を設置
+- サブタイトルの文字サイズを一回り小さく（`text-sm`）
+
+**ルートサイト専用ロゴ（WISDOM ASSEMBLE）を新調**
+- Sample Logo builder（Artifactツールで作成した100種の見本カタログ＋組み合わせビルダー）でデザインを検討し、以下の仕様で確定：Georgia serif・Two-tone split（`#929292`→`#606060`グラデーション）・letter-spacing 0.20em・font-weight 800・TM（未登録商標）表記付き
+- `WisdomAssembleWordmark`コンポーネントとして切り出し、ルートポータルの見出しだけでなく**共通Header・ログインページでも使用**（後述のバグ修正参照）
+- ルート専用favicon（`src/app/icon.tsx`）も実装。当初フラットな「W」だったが、明朝体（Shippori Mincho）が良いとの指示でGoogle Fontsから実データを取得しImageResponseに埋め込む方式に変更（`next/og`はシステムフォントを描画できないため）
+
+**MUSIC PRODUCTIONテナント専用ロゴ**
+- `SiteLogo.tsx`にテナントごとのロゴスタイル上書き機構（`LOGO_STYLE_OVERRIDES`、`src/lib/tenantNames.ts`）を追加。dtmのみGeometric Modernフォント（Century Gothic/Futura）・`#74a7fe`→`#606060`グラデーション・letter-spacing -0.05emを適用（他テナントは既存の3D押し出しのまま）
+- dtmの`color_theme`を青系(`#2563EB`)に変更するSQLを用意（`scripts/seed/update_dtm_color_theme.sql`）。**まだ未実行**、Supabase SQL Editorでユーザーが実行する必要あり
+
+**全ロゴにTM表記追加**
+- `SiteLogo.tsx`にtspanで実際の文字幅の直後にTM表記を追加。共通コンポーネントなので既存・将来の全テナントに自動適用される
+
+**バグ修正の連鎖（ロゴ関連、教訓として重要）**
+1. ルートページでBUG DEBUGの色が正しく出ない → 原因はSiteLogoのメインテキストが`fill="var(--color-primary)"`という**ページ全体で1つしか値を持てないCSS変数**を参照していたため（各テナント自身のサブドメインでは偶然一致するので気づきにくい）。`colorTheme`プロパティを直接使うよう修正
+2. ロゴがカードからはみ出す → SVGの`width`を固定pxで指定していたため。`max-width:100%; height:auto`でレスポンシブに（ただし3D押し出し分岐にだけ付け忘れる再発あり、両分岐に適用して解決）
+3. センタリングされない → 外側の`<span>`が`flex`（block相当）で親の幅いっぱいに広がり中身が左寄せのままだった。`inline-flex`+`justify-center`に修正
+4. それでも中央に見えない → SVG内部のテキストは`x=0`の左端揃えのまま、文字数から概算した（実際より広い）viewBoxの中に描画されていたため、箱自体は中央でも文字が左に寄って見えていた。`text-anchor="middle"`で対処 →
+5. **しかしtext-anchor="middle"が3D押し出し6層の見た目を崩す（二重に見える）副作用があり、この方式は撤回**。最終的にはcanvas.measureTextで実測したフォント幅（Impact系: 約0.494em/文字、Century Gothic系: 約0.70em/文字）でviewBoxの幅を文字幅にきつく合わせることで、x=0の左端揃えのまま自然にセンタリングされるようにした
+6. `/terms` `/privacy` `/contact`等、ルートドメイン配下の全ページで使われる共通Headerとログインページ（`/auth/login`）が、テナント不在時にSiteLogoのデフォルト（3D押し出し・indigo色）にフォールバックしていた → 両方とも`WisdomAssembleWordmark`に切り替え。判定用に`TenantProvider`へ`useTenantId()`を追加（テナントDBレコードがnullになるケースと区別するため、生のtenantId文字列を別contextで持つ）
+7. ルートドメインには質問投稿・高難度・ログインといったテナント固有機能がないため、Headerのナビ（使い方/高難度/ログイン）もルートでは非表示にし、ロゴのみのシンプルなヘッダーにした
+
+**教訓**: ロゴ関連の見た目の変更は、ローカルでは`middleware.ts`が実行されないため`x-tenant-id`ヘッダーを直接付けたcurlや一時テストルートでの確認が必須（特に本番でのみ再現するCSS変数スコープの問題は、実際にルートテナント＝テナントレコードnullの状態で確認しないと気づけない）。
+
 **次にやること（確定）**:
 ①ルートサイト＋BUG＋MUSIC PRODUCTIONをAdSense・Stripe Connect申請用バージョンとして仕上げる（品質を上げる段階。ads.txtはAdSense登録後、重複データ削除はユーザー判断のタイミングで）
 ②Google AdSense・Stripe Connectを申請（ユーザーのアクション）
 ③Stripe Connect承認後に投げ銭（チップ）機能の実装に着手
+
+**次セッションでやること（2026-07-11時点でユーザーから指示済み）**:
+1. ルートページのスマホでのデザインズレを直す
+2. ルートページの文言整理
+3. 各テナント（BUG・MUSIC PRODUCTION）側の同様の修正・仕上げ
+4. AdSense申請のためのバージョンとしてレビューできる状態まで持っていく
 
 **リリース前必須**
 1. Googleログインのみに絞る（メールログイン削除・テストアカウント削除）
