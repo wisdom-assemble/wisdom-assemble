@@ -33,6 +33,22 @@ export default async function PortalHome() {
           }}
         >
           {t('title')}
+          <span
+            style={{
+              display: 'inline-block',
+              fontFamily: '-apple-system, sans-serif',
+              fontWeight: 400,
+              fontSize: '11px',
+              letterSpacing: 'normal',
+              verticalAlign: 'super',
+              marginLeft: '2px',
+              color: '#929292',
+              WebkitTextFillColor: '#929292',
+              background: 'none',
+            }}
+          >
+            ™
+          </span>
         </h1>
         <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>

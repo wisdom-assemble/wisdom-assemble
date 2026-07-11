@@ -12,8 +12,9 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
   const shadowShades = getLogoShadowShades(colorTheme)
 
   const fontSize = label.length > 10 ? 26 : label.length > 8 ? 30 : 34
-  // 影が右下に5px分はみ出るのでwidthに余裕を持たせる
-  const svgWidth = label.length * (fontSize * 0.68) + 10
+  const tmFontSize = fontSize * 0.32
+  // 影が右下に5px分はみ出る＋TM表記ぶんの余白を確保
+  const svgWidth = label.length * (fontSize * 0.68) + tmFontSize * 2 + 10
   const svgHeight = fontSize + 10
 
   return (
@@ -41,7 +42,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           </text>
         ))}
 
-        {/* メインテキスト（左端x=0、プライマリカラー） */}
+        {/* メインテキスト（左端x=0、プライマリカラー）＋TM表記（tspanで実際の文字幅の直後に配置、影なし） */}
         <text
           x="0"
           y={fontSize - 1}
@@ -52,6 +53,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           fill="var(--color-primary)"
         >
           {label}
+          <tspan dx="2" dy={-fontSize * 0.35} fontSize={tmFontSize} fontWeight="700">™</tspan>
         </text>
       </svg>
     </span>
