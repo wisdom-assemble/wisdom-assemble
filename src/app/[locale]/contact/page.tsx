@@ -142,7 +142,7 @@ export default function ContactPage() {
               type="submit"
               disabled={submitting || subject.trim().length < 10 || body.trim().length < 20}
               className="w-full py-2.5 rounded font-medium text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              style={{ backgroundColor: isRoot ? '#000000' : 'var(--color-primary)' }}
             >
               {submitting ? t('submitting') : t('submit')}
             </button>
