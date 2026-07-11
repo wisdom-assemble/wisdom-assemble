@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function ContactPage() {
   const t = useTranslations('contactPage')
   const tCommon = useTranslations('common')
+  const tHeader = useTranslations('header')
   const [user, setUser] = useState<any>(null)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -47,6 +48,11 @@ export default function ContactPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleLogout() {
+    await createClient().auth.signOut()
+    window.location.reload()
   }
 
   if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400 text-sm">{tCommon('loading')}</div></>
@@ -110,7 +116,12 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('senderLabel')}</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-gray-700">{t('senderLabel')}</label>
+                <button type="button" onClick={handleLogout} className="text-xs text-gray-400 hover:text-gray-600 underline">
+                  {tHeader('logout')}
+                </button>
+              </div>
               <input
                 type="text"
                 value={user.email}
