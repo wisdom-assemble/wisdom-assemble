@@ -1,12 +1,12 @@
 import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { getPublicSubdomain } from '@/lib/tenantNames'
-import SiteLogo from '@/components/SiteLogo'
+import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
+import PortalTenantSearch from '@/components/PortalTenantSearch'
 
 // AdSense/Stripe Connect審査用バージョンでは、審査を混乱させないよう
 // 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
-// 審査通過後、残りのテナントを追加していく段階で PortalGenreGrid（検索付きグリッド）
-// に戻す想定。コンポーネント自体は src/components/PortalGenreGrid.tsx に残してある。
+// 検索バー自体はPortalTenantSearchで維持しつつ、対象を2テナントに絞っている。
+// 審査通過後、残りのテナントを追加していく際はこの配列に追加していくだけでよい。
 const REVIEW_TENANT_IDS = ['debug', 'dtm']
 
 // DB取得が万一失敗した場合の保険（本来はtenants.color_themeが正）
@@ -47,12 +47,15 @@ export default async function PortalHome() {
     if (error) {
       console.error(`[PortalHome] tenants fetch failed for ${tenantId}:`, error.message)
     }
+    const label = TENANT_NAME_MAP[tenantId] ?? tenantId
+    const tags = [label.toLowerCase(), tenantId.toLowerCase(), ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase())]
     return {
       tenantId,
       name: tenant?.name ?? tenantId,
       colorTheme: tenant?.color_theme ?? FALLBACK_COLOR_THEME[tenantId],
       href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
       tagline: t(tenantId === 'debug' ? 'debugCardTagline' : 'dtmCardTagline'),
+      tags,
     }
   })
 
@@ -100,22 +103,12 @@ export default async function PortalHome() {
         {t('chooseGenre')}
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {cards.map((card) => (
-          <a
-            key={card.tenantId}
-            href={card.href}
-            className="flex flex-col items-center justify-center gap-2 border border-gray-200 rounded-lg px-4 py-8 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors"
-          >
-            <SiteLogo name={card.name} tenantId={card.tenantId} colorTheme={card.colorTheme} />
-            <span className="text-xs text-gray-500 leading-relaxed">{card.tagline}</span>
-          </a>
-        ))}
-
-        <div className="flex items-center justify-center border border-gray-100 rounded-lg px-4 py-8 text-center bg-gray-50 text-gray-300 select-none">
-          <span className="text-sm font-medium">{t('comingSoon')}</span>
-        </div>
-      </div>
+      <PortalTenantSearch
+        tenants={cards}
+        searchPlaceholder={t('searchPlaceholder')}
+        comingSoonLabel={t('comingSoon')}
+        noResultsLabel={t('noResults')}
+      />
 
       <div className="mt-16 pt-10 border-t border-gray-100">
         <h2 className="text-sm font-bold tracking-tight text-gray-800 mb-3">{t('aboutTitle')}</h2>

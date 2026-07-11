@@ -92,7 +92,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           fontSize={fontSize}
           fontWeight="900"
           letterSpacing="1"
-          fill="var(--color-primary)"
+          fill={colorTheme}
         >
           {label}
           <tspan dx="2" dy={-fontSize * 0.35} fontSize={tmFontSize} fontWeight="700">™</tspan>
