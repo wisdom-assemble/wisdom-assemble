@@ -40,12 +40,12 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, comingS
       {visibleTenants.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-8">{noResultsLabel}</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {visibleTenants.map((tenant) => (
             <a
               key={tenant.tenantId}
               href={tenant.href}
-              className="flex flex-col items-center justify-center gap-2 border border-gray-200 rounded-lg px-4 py-8 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors"
+              className="aspect-square sm:aspect-auto flex flex-col items-center justify-center gap-2 border border-gray-200 rounded-lg px-3 py-4 sm:px-4 sm:py-8 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors"
             >
               <SiteLogo name={tenant.name} tenantId={tenant.tenantId} colorTheme={tenant.colorTheme} />
               <span className="text-xs text-gray-500 leading-relaxed">{tenant.tagline}</span>
@@ -53,7 +53,7 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, comingS
           ))}
 
           {!normalizedQuery && (
-            <div className="flex items-center justify-center border border-gray-100 rounded-lg px-4 py-8 text-center bg-gray-50 text-gray-300 select-none">
+            <div className="aspect-square sm:aspect-auto flex items-center justify-center border border-gray-100 rounded-lg px-3 py-4 sm:px-4 sm:py-8 text-center bg-gray-50 text-gray-300 select-none">
               <span className="text-sm font-medium">{comingSoonLabel}</span>
             </div>
           )}

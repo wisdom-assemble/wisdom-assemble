@@ -63,8 +63,8 @@ export default async function PortalHome() {
   })
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-16 w-full">
-      <div className="text-center mb-12">
+    <main className="max-w-3xl mx-auto px-4 pt-5 pb-16 sm:py-16 w-full">
+      <div className="text-center mb-8 sm:mb-12">
         <h1 className="mb-3">
           <WisdomAssembleWordmark fontSize={32} />
         </h1>

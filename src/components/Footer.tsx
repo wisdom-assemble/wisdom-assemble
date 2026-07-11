@@ -16,7 +16,7 @@ export default function Footer({ about }: Props) {
   return (
     <>
       <footer className="mt-auto border-t border-gray-100 py-6 text-center text-xs text-gray-400">
-        <div className="flex justify-center gap-6 flex-wrap">
+        <div className="flex justify-center gap-x-6 gap-y-2 flex-wrap">
           {about && (
             <button type="button" onClick={() => setAboutOpen(true)} className="hover:text-gray-600 transition-colors">
               {about.linkLabel}
