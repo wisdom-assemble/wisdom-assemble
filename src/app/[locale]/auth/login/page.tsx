@@ -4,13 +4,18 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useTenant } from '@/components/TenantProvider'
+import { useTenant, useTenantId } from '@/components/TenantProvider'
 import SiteLogo from '@/components/SiteLogo'
+import WisdomAssembleWordmark from '@/components/WisdomAssembleWordmark'
+
+const ROOT_TENANT_ID = 'root'
 
 export default function LoginPage() {
   const t = useTranslations('loginPage')
   const tCommon = useTranslations('common')
   const tenant = useTenant()
+  const tenantId = useTenantId()
+  const isRoot = tenantId === ROOT_TENANT_ID
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -48,7 +53,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-lg border border-gray-200 p-8">
         <div className="mb-8 pl-1">
-          <a href="/"><SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} /></a>
+          <a href="/">
+            {isRoot ? (
+              <WisdomAssembleWordmark fontSize={22} />
+            ) : (
+              <SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} />
+            )}
+          </a>
         </div>
 
         {error && (
