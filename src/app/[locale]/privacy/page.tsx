@@ -26,6 +26,7 @@ export default async function PrivacyPage({ params }: Props) {
               <li>{t('section1Item4')}</li>
             </ul>
             <p>{t('section1Outro')}</p>
+            <p>{t('section1AiNote')}</p>
           </Section>
 
           <Section title={t('section2Title')}>
@@ -56,6 +57,7 @@ export default async function PrivacyPage({ params }: Props) {
                 {t('section3AdsLink')}
               </a>
             </p>
+            <p>{t('section3EeaConsent')}</p>
           </Section>
 
           <Section title={t('section4Title')}>
@@ -75,10 +77,15 @@ export default async function PrivacyPage({ params }: Props) {
           </Section>
 
           <Section title={t('section8Title')}>
+            <p>{t('section8Body1')}</p>
+            <p>{t('section8Body2')}</p>
+          </Section>
+
+          <Section title={t('section9Title')}>
             <p>
-              {t('section8ContactPrefix')}{' '}
-              <Link href="/contact" className="underline text-gray-900 hover:opacity-70">{t('section8ContactLink')}</Link>
-              {t('section8ContactSuffix')}
+              {t('section9ContactPrefix')}{' '}
+              <Link href="/contact" className="underline text-gray-900 hover:opacity-70">{t('section9ContactLink')}</Link>
+              {t('section9ContactSuffix')}
             </p>
           </Section>
         </div>
