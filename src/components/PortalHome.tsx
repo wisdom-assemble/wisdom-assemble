@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
 import PortalTenantSearch from '@/components/PortalTenantSearch'
 import PortalLanguageSwitcher from '@/components/PortalLanguageSwitcher'
+import WisdomAssembleWordmark from '@/components/WisdomAssembleWordmark'
 
 // AdSense/Stripe Connect審査用バージョンでは、審査を混乱させないよう
 // 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
@@ -64,39 +65,8 @@ export default async function PortalHome() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-16 w-full">
       <div className="text-center mb-12">
-        <h1
-          className="mb-3"
-          style={{
-            display: 'inline-block',
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontWeight: 800,
-            fontSize: '32px',
-            letterSpacing: '0.20em',
-            textTransform: 'uppercase',
-            background: 'linear-gradient(90deg, #929292 50%, #606060 50%)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            color: 'transparent',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          {t('title')}
-          <span
-            style={{
-              display: 'inline-block',
-              fontFamily: '-apple-system, sans-serif',
-              fontWeight: 400,
-              fontSize: '11px',
-              letterSpacing: 'normal',
-              verticalAlign: 'super',
-              marginLeft: '-1px',
-              color: '#929292',
-              WebkitTextFillColor: '#929292',
-              background: 'none',
-            }}
-          >
-            ™
-          </span>
+        <h1 className="mb-3">
+          <WisdomAssembleWordmark fontSize={32} />
         </h1>
         <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>

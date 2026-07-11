@@ -4,14 +4,18 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useTenant } from './TenantProvider'
+import { useTenant, useTenantId } from './TenantProvider'
 import SiteLogo from './SiteLogo'
+import WisdomAssembleWordmark from './WisdomAssembleWordmark'
 
 const ADMIN_EMAIL = 'wisdomassemble@gmail.com'
+const ROOT_TENANT_ID = 'root'
 
 export default function Header() {
   const t = useTranslations('header')
   const tenant = useTenant()
+  const tenantId = useTenantId()
+  const isRoot = tenantId === ROOT_TENANT_ID
   const [user, setUser] = useState<any>(null)
   const [taskCount, setTaskCount] = useState(0)
   const [reviewCount, setReviewCount] = useState(0)
@@ -93,6 +97,20 @@ export default function Header() {
   }
 
   const badge = taskCount + reviewCount
+
+  // ルートドメイン(wisdomassemble.com)には質問投稿・高難度・ログインといった
+  // テナント固有の機能がないため、ロゴだけのシンプルなヘッダーにする
+  if (isRoot) {
+    return (
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center">
+          <Link prefetch={false} href="/">
+            <WisdomAssembleWordmark fontSize={20} />
+          </Link>
+        </div>
+      </header>
+    )
+  }
 
   return (
     <header className="border-b border-gray-200 bg-white sticky top-0 z-10">

@@ -105,7 +105,7 @@ export default async function RootLayout({
     <html lang={locale} className={geist.variable}>
       <body className="min-h-full flex flex-col antialiased">
         <NextIntlClientProvider messages={messages}>
-          <TenantProvider tenant={tenant}>
+          <TenantProvider tenant={tenant} tenantId={tenantId}>
             {children}
             <Footer about={about} />
           </TenantProvider>
