@@ -2,7 +2,6 @@ import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
 import PortalTenantSearch from '@/components/PortalTenantSearch'
-import PortalAboutFooter from '@/components/PortalAboutFooter'
 
 // AdSense/Stripe Connect審査用バージョンでは、審査を混乱させないよう
 // 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
@@ -110,8 +109,6 @@ export default async function PortalHome() {
         comingSoonLabel={t('comingSoon')}
         noResultsLabel={t('noResults')}
       />
-
-      <PortalAboutFooter linkLabel={t('aboutLinkLabel')} title={t('aboutTitle')} body={t('aboutBody')} />
     </main>
   )
 }

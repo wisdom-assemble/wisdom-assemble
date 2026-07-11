@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
-import { getMessages, setRequestLocale } from 'next-intl/server'
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import { Geist } from 'next/font/google'
 import '../globals.css'
 import { routing } from '@/i18n/routing'
@@ -12,6 +12,10 @@ import Footer from '@/components/Footer'
 import { getTenantDisplayName } from '@/lib/tenantNames'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
+
+// middleware.tsのROOT_TENANT_IDと一致。ルートドメイン(wisdomassemble.com)
+// でのみフッターに「About Wisdom Assemble」オーバーレイを表示する
+const ROOT_TENANT_ID = 'root'
 
 const OG_LOCALE_MAP: Record<string, string> = {
   en: 'en_US', ja: 'ja_JP', zh: 'zh_CN', id: 'id_ID',
@@ -87,13 +91,23 @@ export default async function RootLayout({
     getMessages(),
   ])
 
+  let about: { linkLabel: string; title: string; body: string } | undefined
+  if (tenantId === ROOT_TENANT_ID) {
+    const tPortal = await getTranslations('portalPage')
+    about = {
+      linkLabel: tPortal('aboutLinkLabel'),
+      title: tPortal('aboutTitle'),
+      body: tPortal('aboutBody'),
+    }
+  }
+
   return (
     <html lang={locale} className={geist.variable}>
       <body className="min-h-full flex flex-col antialiased">
         <NextIntlClientProvider messages={messages}>
           <TenantProvider tenant={tenant}>
             {children}
-            <Footer />
+            <Footer about={about} />
           </TenantProvider>
         </NextIntlClientProvider>
       </body>
