@@ -1,6 +1,20 @@
 import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
-import { TENANT_NAME_MAP, getPublicSubdomain, LIVE_TENANT_IDS, TENANT_SEARCH_TAGS } from '@/lib/tenantNames'
-import PortalGenreGrid from '@/components/PortalGenreGrid'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getPublicSubdomain } from '@/lib/tenantNames'
+import SiteLogo from '@/components/SiteLogo'
+
+// AdSense/Stripe Connect審査用バージョンでは、審査を混乱させないよう
+// 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
+// 審査通過後、残りのテナントを追加していく段階で PortalGenreGrid（検索付きグリッド）
+// に戻す想定。コンポーネント自体は src/components/PortalGenreGrid.tsx に残してある。
+const REVIEW_TENANT_IDS = ['debug', 'dtm']
+
+function getAdminClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // wisdomassemble.com（ルートドメイン）専用のポータルページ。
 // 各ジャンル別サブドメインへの入口。まだCloudflareのCustom Domain設定が
@@ -12,6 +26,23 @@ export default async function PortalHome() {
   const locale = await getLocale()
   setRequestLocale(locale)
   const t = await getTranslations('portalPage')
+
+  const admin = getAdminClient()
+  const { data: tenants } = await admin
+    .from('tenants')
+    .select('id, name, color_theme')
+    .in('id', REVIEW_TENANT_IDS)
+
+  const cards = REVIEW_TENANT_IDS.map((tenantId) => {
+    const tenant = tenants?.find((row) => row.id === tenantId)
+    return {
+      tenantId,
+      name: tenant?.name ?? tenantId,
+      colorTheme: tenant?.color_theme ?? undefined,
+      href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
+      tagline: t(tenantId === 'debug' ? 'debugCardTagline' : 'dtmCardTagline'),
+    }
+  })
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-16 w-full">
@@ -57,22 +88,22 @@ export default async function PortalHome() {
         {t('chooseGenre')}
       </p>
 
-      <PortalGenreGrid
-        tenants={Object.entries(TENANT_NAME_MAP).map(([tenantId, label]) => {
-          const subdomain = getPublicSubdomain(tenantId)
-          const tags = [label.toLowerCase(), tenantId.toLowerCase(), ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase())]
-          return {
-            id: tenantId,
-            label,
-            href: `https://${subdomain}.wisdomassemble.com`,
-            isLive: LIVE_TENANT_IDS.includes(tenantId),
-            tags,
-          }
-        })}
-        searchPlaceholder={t('searchPlaceholder')}
-        comingSoonLabel={t('comingSoon')}
-        noResultsLabel={t('noResults')}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {cards.map((card) => (
+          <a
+            key={card.tenantId}
+            href={card.href}
+            className="flex flex-col items-center justify-center gap-2 border border-gray-200 rounded-lg px-4 py-8 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors"
+          >
+            <SiteLogo name={card.name} tenantId={card.tenantId} colorTheme={card.colorTheme} />
+            <span className="text-xs text-gray-500 leading-relaxed">{card.tagline}</span>
+          </a>
+        ))}
+
+        <div className="flex items-center justify-center border border-gray-100 rounded-lg px-4 py-8 text-center bg-gray-50 text-gray-300 select-none">
+          <span className="text-sm font-medium">{t('comingSoon')}</span>
+        </div>
+      </div>
 
       <div className="mt-16 pt-10 border-t border-gray-100">
         <h2 className="text-sm font-bold tracking-tight text-gray-800 mb-3">{t('aboutTitle')}</h2>

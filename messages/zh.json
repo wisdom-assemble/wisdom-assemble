@@ -374,6 +374,8 @@
     "aboutTitle": "关于 Wisdom Assemble",
     "aboutBody": "Wisdom Assemble是一个多语言平台，运营着多个按类型划分的问答社区。提交问题后，AI会先尝试作答；当AI没有把握时，真正的人类专家会接手回答。我们的理念很简单：让人类填补AI的不足，帮助大家针对AI无法完全解决的专业或个人问题获得真实的答案。该项目目前由个人开发者运营，正逐步扩展到新的领域。",
     "searchPlaceholder": "按类型或关键词搜索...",
-    "noResults": "没有找到符合条件的类别。"
+    "noResults": "没有找到符合条件的类别。",
+    "debugCardTagline": "代码错误和技术问题，先由AI解答，AI不够时由真正的工程师补充。",
+    "dtmCardTagline": "混音、母带和DAW相关问题，先由AI解答，AI不够时由真正的制作人补充。"
   }
 }

@@ -374,6 +374,8 @@
     "aboutTitle": "Sobre o Wisdom Assemble",
     "aboutBody": "O Wisdom Assemble é uma plataforma multilíngue que opera uma rede de comunidades de perguntas e respostas por gênero. Quando uma pergunta é publicada, a IA tenta responder primeiro; quando a IA não tem confiança suficiente, um especialista humano real assume. Nossa filosofia é simples: deixar que humanos preencham onde a IA não é suficiente, para que as pessoas obtenham respostas reais a perguntas especializadas ou pessoais que a IA não consegue resolver completamente. O projeto é atualmente administrado por um desenvolvedor individual e está se expandindo gradualmente para novos gêneros.",
     "searchPlaceholder": "Pesquisar por gênero ou palavra-chave...",
-    "noResults": "Nenhum gênero corresponde à sua pesquisa."
+    "noResults": "Nenhum gênero corresponde à sua pesquisa.",
+    "debugCardTagline": "Bugs de código e perguntas técnicas, respondidas primeiro pela IA e depois por devs reais.",
+    "dtmCardTagline": "Perguntas de mixagem, masterização e DAW, respondidas primeiro pela IA e depois por produtores reais."
   }
 }
