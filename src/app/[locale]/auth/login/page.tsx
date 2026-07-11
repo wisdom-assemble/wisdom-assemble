@@ -55,7 +55,7 @@ export default function LoginPage() {
         <div className="mb-8 pl-1">
           <a href="/">
             {isRoot ? (
-              <WisdomAssembleWordmark fontSize={22} />
+              <WisdomAssembleWordmark fontSize={17} />
             ) : (
               <SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} />
             )}

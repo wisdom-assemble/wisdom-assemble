@@ -4,10 +4,14 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
+import { useTenantId } from '@/components/TenantProvider'
+
+const ROOT_TENANT_ID = 'root'
 
 export default function ContactPage() {
   const t = useTranslations('contactPage')
   const tCommon = useTranslations('common')
+  const isRoot = useTenantId() === ROOT_TENANT_ID
   const [user, setUser] = useState<any>(null)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -71,7 +75,7 @@ export default function ContactPage() {
             <a
               href="/auth/login?next=/contact"
               className="inline-block px-4 py-2 rounded text-sm font-medium text-white"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              style={{ backgroundColor: isRoot ? '#000000' : 'var(--color-primary)' }}
             >
               {t('googleLogin')}
             </a>
