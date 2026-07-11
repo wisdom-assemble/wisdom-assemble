@@ -4,14 +4,10 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
-import { useTenantId } from '@/components/TenantProvider'
-
-const ROOT_TENANT_ID = 'root'
 
 export default function ContactPage() {
   const t = useTranslations('contactPage')
   const tCommon = useTranslations('common')
-  const isRoot = useTenantId() === ROOT_TENANT_ID
   const [user, setUser] = useState<any>(null)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -75,7 +71,7 @@ export default function ContactPage() {
             <a
               href="/auth/login?next=/contact"
               className="inline-block px-4 py-2 rounded text-sm font-medium text-white"
-              style={{ backgroundColor: isRoot ? '#000000' : 'var(--color-primary)' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {t('googleLogin')}
             </a>
@@ -142,7 +138,7 @@ export default function ContactPage() {
               type="submit"
               disabled={submitting || subject.trim().length < 10 || body.trim().length < 20}
               className="w-full py-2.5 rounded font-medium text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: isRoot ? '#000000' : 'var(--color-primary)' }}
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {submitting ? t('submitting') : t('submit')}
             </button>

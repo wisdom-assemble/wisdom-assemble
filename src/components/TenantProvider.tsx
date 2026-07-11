@@ -23,7 +23,7 @@ export function TenantProvider({
         {/* テナントのカラーテーマをCSS変数で注入 */}
         <style>{`
           :root {
-            --color-primary: ${tenant?.color_theme ?? '#4F46E5'};
+            --color-primary: ${tenantId === 'root' ? '#000000' : (tenant?.color_theme ?? '#4F46E5')};
           }
         `}</style>
         {children}
