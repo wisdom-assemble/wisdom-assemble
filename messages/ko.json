@@ -112,7 +112,8 @@
     "tryButton": "질문해 보기",
     "listButton": "질문 목록으로",
     "supportText": "본 사이트는 자원봉사로 운영되고 있습니다. 괜찮으시다면 운영을 응원해 주세요.",
-    "supportButton": "후원하기"
+    "supportButton": "후원하기",
+    "translationNote": "질문과 답변 내용은 AI에 의해 자동으로 다른 언어로 번역되며 오류가 포함될 수 있습니다. 또한 제목과 본문의 글자 수 제한은 언어에 따라 다릅니다."
   },
   "answerForm": {
     "heading": "답변 게시하기",
@@ -302,7 +303,8 @@
     "section8Title": "제8조（문의）",
     "section8ContactPrefix": "의견은",
     "section8ContactLink": "문의 양식",
-    "section8ContactSuffix": "으로 보내주세요."
+    "section8ContactSuffix": "으로 보내주세요.",
+    "translationDisclaimer": "게시된 질문과 답변은 AI에 의해 자동으로 다른 언어로 번역됩니다. 번역의 정확성은 보장되지 않으며, 번역 오류로 인한 오해나 손해에 대해 운영자는 책임을 지지 않습니다."
   },
   "privacyPage": {
     "title": "개인정보처리방침",
@@ -343,7 +345,8 @@
     "section8Title": "8. 이용 가능 연령 및 사용자 권리",
     "section8Body1": "본 서비스는 만 13세 미만 아동을 대상으로 하지 않습니다. 만 13세 미만인 경우 보호자의 동의 없이 본 서비스를 이용하지 마십시오. 운영자는 만 13세 미만 사용자로부터 고의로 개인정보를 수집하지 않습니다.",
     "section8Body2": "사용자는 운영자가 보유한 자신의 개인정보에 대해 열람·정정·삭제를 요청할 수 있습니다. 희망하시는 경우 문의 양식을 통해 연락해 주시기 바랍니다. 합리적인 범위 내에서 대응합니다.",
-    "section9Title": "9. 문의"
+    "section9Title": "9. 문의",
+    "operatorNotice": "본 서비스는 \"Wisdom Assemble\"이라는 이름으로 운영됩니다."
   },
   "titles": {
     "answer_1": "견습 답변자",

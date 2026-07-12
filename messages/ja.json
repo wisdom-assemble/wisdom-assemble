@@ -112,7 +112,8 @@
     "tryButton": "質問してみる",
     "listButton": "質問一覧へ",
     "supportText": "本サイトは有志で運営しています。よろしければ運営の応援をお願いします。",
-    "supportButton": "応援する"
+    "supportButton": "応援する",
+    "translationNote": "質問・回答の内容はAIによって自動的に他言語へ翻訳されます。翻訳に誤りが含まれる場合があります。また、タイトル・本文の文字数制限は言語によって異なります。"
   },
   "answerForm": {
     "heading": "回答を投稿する",
@@ -302,7 +303,8 @@
     "section8Title": "第8条（お問い合わせ）",
     "section8ContactPrefix": "ご意見は",
     "section8ContactLink": "お問い合わせフォーム",
-    "section8ContactSuffix": "へ。"
+    "section8ContactSuffix": "へ。",
+    "translationDisclaimer": "投稿された質問・回答は、AIによって自動的に他言語へ翻訳されます。翻訳の正確性は保証されず、翻訳に起因する誤解・損害について運営者は責任を負いません。"
   },
   "privacyPage": {
     "title": "プライバシーポリシー",
@@ -343,7 +345,8 @@
     "section8Title": "8. ご利用対象年齢・ユーザーの権利",
     "section8Body1": "本サービスは13歳未満のお子様を対象としていません。13歳未満の方は保護者の同意なく本サービスを利用しないでください。運営が13歳未満のユーザーから意図的に個人情報を取得することはありません。",
     "section8Body2": "ユーザーは、運営が保有する自己の個人情報について開示・訂正・削除を求めることができます。ご希望の場合はお問い合わせフォームよりご連絡ください。合理的な範囲で対応します。",
-    "section9Title": "9. お問い合わせ"
+    "section9Title": "9. お問い合わせ",
+    "operatorNotice": "本サービスは「Wisdom Assemble」として運営しています。"
   },
   "titles": {
     "answer_1": "見習い解答者",

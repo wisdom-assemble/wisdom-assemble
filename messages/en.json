@@ -112,7 +112,8 @@
     "tryButton": "Try asking a question",
     "listButton": "Go to question list",
     "supportText": "This site is run by volunteers. If you'd like, please consider supporting us.",
-    "supportButton": "Support Us"
+    "supportButton": "Support Us",
+    "translationNote": "Question and answer content is automatically translated into other languages by AI and may contain errors. Character limits for the title and body also vary by language."
   },
   "answerForm": {
     "heading": "Post an answer",
@@ -302,7 +303,8 @@
     "section8Title": "Article 8 (Contact)",
     "section8ContactPrefix": "For inquiries, please use the",
     "section8ContactLink": "contact form",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "translationDisclaimer": "Posted questions and answers are automatically translated into other languages by AI. We do not guarantee the accuracy of these translations and are not liable for any misunderstanding or damage arising from translation errors."
   },
   "privacyPage": {
     "title": "Privacy Policy",
@@ -343,7 +345,8 @@
     "section8Title": "8. Eligibility and User Rights",
     "section8Body1": "The Service is not intended for children under the age of 13. If you are under 13, please do not use the Service without parental consent. We do not knowingly collect personal information from users under 13.",
     "section8Body2": "Users may request access to, correction of, or deletion of their personal information held by the operator. Please contact us via the contact form; we will accommodate such requests to the extent reasonably possible.",
-    "section9Title": "9. Contact"
+    "section9Title": "9. Contact",
+    "operatorNotice": "This Service is operated as \"Wisdom Assemble.\""
   },
   "titles": {
     "answer_1": "Novice Answerer",

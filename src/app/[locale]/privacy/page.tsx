@@ -14,6 +14,7 @@ export default async function PrivacyPage({ params }: Props) {
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
         <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
+        <p className="text-xs text-gray-400 mb-1">{t('operatorNotice')}</p>
         <p className="text-xs text-gray-400 mb-6">{t('disclaimerNotice')}</p>
 
         <div className="prose prose-sm max-w-none text-gray-700 space-y-8">

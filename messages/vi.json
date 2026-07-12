@@ -112,7 +112,8 @@
     "tryButton": "Thử đặt câu hỏi",
     "listButton": "Xem danh sách câu hỏi",
     "supportText": "Trang web này được vận hành bởi các tình nguyện viên. Nếu bạn muốn, hãy ủng hộ chúng tôi.",
-    "supportButton": "Ủng hộ chúng tôi"
+    "supportButton": "Ủng hộ chúng tôi",
+    "translationNote": "Nội dung câu hỏi và câu trả lời được AI tự động dịch sang các ngôn ngữ khác và có thể chứa lỗi. Giới hạn số ký tự cho tiêu đề và nội dung cũng khác nhau tùy theo ngôn ngữ."
   },
   "answerForm": {
     "heading": "Đăng câu trả lời",
@@ -302,7 +303,8 @@
     "section8Title": "Điều 8 (Liên hệ)",
     "section8ContactPrefix": "Để biết thêm thông tin, vui lòng sử dụng",
     "section8ContactLink": "biểu mẫu liên hệ",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "translationDisclaimer": "Các câu hỏi và câu trả lời đã đăng sẽ được AI tự động dịch sang các ngôn ngữ khác. Chúng tôi không đảm bảo độ chính xác của bản dịch và không chịu trách nhiệm về bất kỳ hiểu lầm hoặc thiệt hại nào phát sinh từ lỗi dịch thuật."
   },
   "privacyPage": {
     "title": "Chính sách bảo mật",
@@ -343,7 +345,8 @@
     "section8Title": "8. Độ tuổi sử dụng và quyền của người dùng",
     "section8Body1": "Dịch vụ này không dành cho trẻ em dưới 13 tuổi. Nếu bạn dưới 13 tuổi, vui lòng không sử dụng Dịch vụ khi chưa có sự đồng ý của phụ huynh. Chúng tôi không cố ý thu thập thông tin cá nhân từ người dùng dưới 13 tuổi.",
     "section8Body2": "Người dùng có thể yêu cầu truy cập, chỉnh sửa hoặc xóa thông tin cá nhân của mình do đơn vị vận hành lưu giữ. Vui lòng liên hệ với chúng tôi qua biểu mẫu liên hệ; chúng tôi sẽ đáp ứng các yêu cầu này trong phạm vi hợp lý có thể.",
-    "section9Title": "9. Liên hệ"
+    "section9Title": "9. Liên hệ",
+    "operatorNotice": "Dịch vụ này được vận hành dưới tên \"Wisdom Assemble\"."
   },
   "titles": {
     "answer_1": "Người Trả Lời Mới",

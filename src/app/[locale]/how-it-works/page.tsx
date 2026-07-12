@@ -20,7 +20,8 @@ export default async function HowItWorksPage({ params }: Props) {
         <p className="text-gray-500 text-sm mb-2">
           {t('intro2')}
         </p>
-        <p className="text-xs text-gray-400 mb-10">{t('loginNote')}</p>
+        <p className="text-xs text-gray-400 mb-1">{t('loginNote')}</p>
+        <p className="text-xs text-gray-400 mb-10">{t('translationNote')}</p>
 
         <div className="space-y-10">
           <Step number={1} title={t('step1Title')} description={t('step1Description')} icon="●" />

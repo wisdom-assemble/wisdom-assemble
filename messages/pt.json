@@ -112,7 +112,8 @@
     "tryButton": "Tentar fazer uma pergunta",
     "listButton": "Ver lista de perguntas",
     "supportText": "Este site é mantido por voluntários. Se desejar, considere nos apoiar.",
-    "supportButton": "Apoie-nos"
+    "supportButton": "Apoie-nos",
+    "translationNote": "O conteúdo de perguntas e respostas é traduzido automaticamente para outros idiomas por IA e pode conter erros. Os limites de caracteres do título e do corpo também variam de acordo com o idioma."
   },
   "answerForm": {
     "heading": "Publicar uma resposta",
@@ -302,7 +303,8 @@
     "section8Title": "Artigo 8 (Contato)",
     "section8ContactPrefix": "Para dúvidas, utilize o",
     "section8ContactLink": "formulário de contato",
-    "section8ContactSuffix": "."
+    "section8ContactSuffix": ".",
+    "translationDisclaimer": "As perguntas e respostas publicadas são traduzidas automaticamente para outros idiomas por IA. Não garantimos a precisão dessas traduções e não nos responsabilizamos por mal-entendidos ou danos decorrentes de erros de tradução."
   },
   "privacyPage": {
     "title": "Política de Privacidade",
@@ -343,7 +345,8 @@
     "section8Title": "8. Idade mínima e direitos do usuário",
     "section8Body1": "O Serviço não é destinado a crianças menores de 13 anos. Se você tiver menos de 13 anos, não use o Serviço sem o consentimento dos pais ou responsáveis. Não coletamos intencionalmente informações pessoais de usuários menores de 13 anos.",
     "section8Body2": "Os usuários podem solicitar acesso, correção ou exclusão de suas informações pessoais mantidas pelo operador. Entre em contato conosco através do formulário de contato; atenderemos essas solicitações na medida razoavelmente possível.",
-    "section9Title": "9. Contato"
+    "section9Title": "9. Contato",
+    "operatorNotice": "Este Serviço é operado sob o nome \"Wisdom Assemble\"."
   },
   "titles": {
     "answer_1": "Respondedor Novato",

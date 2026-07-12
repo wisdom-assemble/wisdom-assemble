@@ -96,23 +96,13 @@ export default async function RootLayout({
     getMessages(),
   ])
 
-  let about: { linkLabel: string; title: string; body: string } | undefined
-  if (tenantId === ROOT_TENANT_ID) {
-    const tPortal = await getTranslations('portalPage')
-    about = {
-      linkLabel: tPortal('aboutLinkLabel'),
-      title: tPortal('aboutTitle'),
-      body: tPortal('aboutBody'),
-    }
-  }
-
   return (
     <html lang={locale} className={geist.variable}>
       <body className="min-h-full flex flex-col antialiased">
         <NextIntlClientProvider messages={messages}>
           <TenantProvider tenant={tenant} tenantId={tenantId}>
             {children}
-            <Footer about={about} />
+            <Footer />
             <CookieConsentBanner />
           </TenantProvider>
         </NextIntlClientProvider>

@@ -112,7 +112,8 @@
     "tryButton": "试着提问",
     "listButton": "查看问题列表",
     "supportText": "本站由志愿者运营。如果可以的话，欢迎支持我们。",
-    "supportButton": "支持我们"
+    "supportButton": "支持我们",
+    "translationNote": "问题和回答内容会由AI自动翻译成其他语言，翻译可能存在错误。此外，标题和正文的字数限制因语言而异。"
   },
   "answerForm": {
     "heading": "发布回答",
@@ -302,7 +303,8 @@
     "section8Title": "第8条（联系方式）",
     "section8ContactPrefix": "如有意见，请通过",
     "section8ContactLink": "联系表单",
-    "section8ContactSuffix": "与我们联系。"
+    "section8ContactSuffix": "与我们联系。",
+    "translationDisclaimer": "发布的问题和回答会由AI自动翻译成其他语言。我们不保证翻译的准确性，对因翻译错误引起的误解或损失不承担责任。"
   },
   "privacyPage": {
     "title": "隐私政策",
@@ -343,7 +345,8 @@
     "section8Title": "8. 使用年龄限制与用户权利",
     "section8Body1": "本服务不面向13岁以下的儿童。若您未满13岁，请勿在未经监护人同意的情况下使用本服务。我们不会故意收集13岁以下用户的个人信息。",
     "section8Body2": "用户可要求查阅、更正或删除运营方所持有的其个人信息。如有需要，请通过联系表单与我们联系，我们将在合理范围内予以配合。",
-    "section9Title": "9. 联系方式"
+    "section9Title": "9. 联系方式",
+    "operatorNotice": "本服务由「Wisdom Assemble」运营。"
   },
   "titles": {
     "answer_1": "初级解答者",

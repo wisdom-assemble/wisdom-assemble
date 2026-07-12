@@ -23,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 静的ページ（ルートポータルには質問投稿・使い方・高難度などテナント固有ページがないため、
   // トップ＋利用規約・プライバシーポリシー・お問い合わせの共通ページのみに絞る）
-  const staticPaths = tenantId === 'root' ? ['', '/terms', '/privacy', '/contact'] : STATIC_PATHS
+  const staticPaths = tenantId === 'root' ? ['', '/about', '/terms', '/privacy', '/contact'] : STATIC_PATHS
   for (const path of staticPaths) {
     for (const locale of routing.locales) {
       entries.push({
