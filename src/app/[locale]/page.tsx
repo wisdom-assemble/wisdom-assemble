@@ -1,4 +1,4 @@
-import { getTranslations, getLocale } from 'next-intl/server'
+import { getTranslations, getLocale, getMessages } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
@@ -36,6 +36,8 @@ export default async function HomePage({
 
   const t = await getTranslations('home')
   const locale = await getLocale()
+  const messages = await getMessages() as { skillTags?: Record<string, string> }
+  const skillLabel = (skill: string) => messages.skillTags?.[skill] ?? skill
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -88,7 +90,7 @@ export default async function HomePage({
                 href={`/?q=${encodeURIComponent(keyword)}`}
                 className="px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
-                {keyword}
+                {skillLabel(keyword)}
               </Link>
             ))}
           </div>

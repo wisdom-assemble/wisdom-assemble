@@ -390,5 +390,16 @@
     "privacyLink": "Chính sách bảo mật",
     "accept": "Đồng ý",
     "reject": "Từ chối không thiết yếu"
+  },
+  "skillTags": {
+    "ミキシング": "Trộn âm (Mixing)",
+    "マスタリング": "Mastering",
+    "シンセサイザー": "Synthesizer",
+    "サンプリング": "Sampling",
+    "レコーディング": "Thu âm",
+    "音楽理論": "Lý thuyết âm nhạc",
+    "作曲": "Sáng tác",
+    "編曲": "Phối khí",
+    "セキュリティ": "Bảo mật"
   }
 }

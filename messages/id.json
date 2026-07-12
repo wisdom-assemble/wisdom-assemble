@@ -390,5 +390,16 @@
     "privacyLink": "Kebijakan Privasi",
     "accept": "Terima",
     "reject": "Tolak yang tidak penting"
+  },
+  "skillTags": {
+    "ミキシング": "Mixing",
+    "マスタリング": "Mastering",
+    "シンセサイザー": "Synthesizer",
+    "サンプリング": "Sampling",
+    "レコーディング": "Perekaman",
+    "音楽理論": "Teori musik",
+    "作曲": "Komposisi",
+    "編曲": "Aransemen",
+    "セキュリティ": "Keamanan"
   }
 }

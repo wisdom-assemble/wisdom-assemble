@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations, useLocale, useMessages } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
@@ -32,6 +32,8 @@ export default function ProfilePage() {
   const router = useRouter()
   const tenantId = useTenantId()
   const SKILL_OPTIONS = getSkillOptions(tenantId)
+  const messages = useMessages() as { skillTags?: Record<string, string> }
+  const skillLabel = (skill: string) => messages.skillTags?.[skill] ?? skill
 
   const STATUS_MAP: Record<string, { label: string; className: string }> = {
     open:        { label: t('statusOpen'),        className: 'bg-blue-50 text-blue-700' },
@@ -352,7 +354,7 @@ export default function ProfilePage() {
                         : 'bg-white border-gray-300 text-gray-600 hover:border-gray-500'
                     }`}
                   >
-                    {skill}
+                    {skillLabel(skill)}
                   </button>
                 ))}
               </div>

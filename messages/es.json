@@ -390,5 +390,16 @@
     "privacyLink": "Política de privacidad",
     "accept": "Aceptar",
     "reject": "Rechazar no esenciales"
+  },
+  "skillTags": {
+    "ミキシング": "Mezcla",
+    "マスタリング": "Masterización",
+    "シンセサイザー": "Sintetizador",
+    "サンプリング": "Muestreo",
+    "レコーディング": "Grabación",
+    "音楽理論": "Teoría musical",
+    "作曲": "Composición",
+    "編曲": "Arreglos",
+    "セキュリティ": "Seguridad"
   }
 }
