@@ -14,7 +14,7 @@ const REVIEW_TENANT_IDS = ['debug', 'dtm']
 // DB取得が万一失敗した場合の保険（本来はtenants.color_themeが正）
 const FALLBACK_COLOR_THEME: Record<string, string> = {
   debug: '#10B981',
-  dtm: '#2563EB',
+  dtm: '#4A90E2',
 }
 
 function getAdminClient() {
