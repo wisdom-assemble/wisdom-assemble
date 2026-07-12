@@ -61,7 +61,7 @@ export default function HardQuestionList({
           <li key={q.id}>
             <Link
               href={`/questions/${q.slug}`}
-              className="block py-4 hover:bg-gray-50 -mx-2 px-2 rounded"
+              className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -76,7 +76,7 @@ export default function HardQuestionList({
                         NEW
                       </span>
                     )}
-                    <p className="font-medium text-gray-900 truncate">{q.title}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{q.title}</p>
                   </div>
                   <p className="text-xs text-gray-400">
                     {q.profiles?.display_name ?? q.profiles?.username} ·{' '}

@@ -424,7 +424,7 @@ export default function ProfilePage() {
                     <li key={q.id}>
                       <Link
                         href={`/questions/${q.slug}`}
-                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                        className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <p className="text-sm font-medium text-gray-900 flex-1">{q.title}</p>
@@ -458,7 +458,7 @@ export default function ProfilePage() {
                     <li key={q.id}>
                       <Link
                         href={`/questions/${q.slug}`}
-                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                        className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
@@ -493,7 +493,7 @@ export default function ProfilePage() {
                     <li key={a.id}>
                       <Link
                         href={`/questions/${q.slug}`}
-                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                        className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
                         <p className="text-sm font-medium text-gray-900">{q.title}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
@@ -525,7 +525,7 @@ export default function ProfilePage() {
                     <li key={q.id}>
                       <Link
                         href={`/questions/${q.slug}`}
-                        className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded"
+                        className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <p className="text-sm font-medium text-gray-900 truncate flex-1">{q.title}</p>
