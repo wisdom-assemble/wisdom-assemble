@@ -7,7 +7,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import SearchForm from '@/components/SearchForm'
-import { getSkillOptions } from '@/lib/skillTags'
+import { getSuggestedKeywords } from '@/lib/skillTags'
 
 const ROOT_TENANT_ID = 'root'
 
@@ -80,13 +80,13 @@ export default async function HomePage({
         </div>
 
         {!q && (
-          <div className="flex flex-wrap items-center gap-2 mb-6 text-sm">
+          <div className="flex flex-wrap items-center gap-1.5 mb-6 text-xs">
             <span className="text-gray-400 shrink-0">{t('suggestedKeywords')}</span>
-            {getSkillOptions(tenantId).map((keyword) => (
+            {getSuggestedKeywords(tenantId).map((keyword) => (
               <Link
                 key={keyword}
                 href={`/?q=${encodeURIComponent(keyword)}`}
-                className="px-2.5 py-1 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                className="px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
                 {keyword}
               </Link>
