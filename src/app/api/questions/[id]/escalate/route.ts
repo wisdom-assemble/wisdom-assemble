@@ -4,6 +4,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { notifyMatchedUser } from '@/lib/email'
+import { getApiErrors } from '@/lib/apiErrors'
 
 // 回答者がギブアップ → B→C→高難度クエストへエスカレーション
 export async function POST(
@@ -15,9 +16,10 @@ export async function POST(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+  const apiErrors = await getApiErrors()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: apiErrors.loginRequired }, { status: 401 })
 
   const headersList = await headers()
   const tenantId = headersList.get('x-tenant-id') ?? 'debug'
@@ -30,14 +32,14 @@ export async function POST(
     .eq('tenant_id', tenantId)
     .maybeSingle()
 
-  if (!question) return NextResponse.json({ error: '質問が見つかりません' }, { status: 404 })
+  if (!question) return NextResponse.json({ error: apiErrors.questionNotFound }, { status: 404 })
 
   // 呼び出し可能: 質問者本人 OR マッチングされた回答者
   const isOwner = question.user_id === user.id
   const isMatchedAnswerer =
     question.matched_b_id === user.id || question.matched_c_id === user.id
   if (!isOwner && !isMatchedAnswerer) {
-    return NextResponse.json({ error: '権限がありません' }, { status: 403 })
+    return NextResponse.json({ error: apiErrors.notPermitted }, { status: 403 })
   }
 
   // 質問者が直接 hard に移行したい場合
@@ -80,6 +82,6 @@ export async function POST(
     return NextResponse.json({ ok: true, nextStatus: 'hard' })
 
   } else {
-    return NextResponse.json({ error: 'このステータスではエスカレーションできません' }, { status: 400 })
+    return NextResponse.json({ error: apiErrors.cannotEscalate }, { status: 400 })
   }
 }

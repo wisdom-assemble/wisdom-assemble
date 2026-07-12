@@ -41,25 +41,21 @@ const SPAM_PATTERNS = [
   /investment\s+opportunity/i,
 ]
 
+// reasonCodeはmessages/*.jsonのapiErrors配下のキー名と対応させ、
+// 呼び出し側(APIルート)でロケールに応じたメッセージへ変換する。
 export type FilterResult =
   | { ok: true }
-  | { ok: false; reason: string }
+  | { ok: false; reasonCode: 'contactInfoNotAllowed' | 'spamNotAllowed' }
 
 export function checkContent(text: string): FilterResult {
   for (const pattern of CONTACT_PATTERNS) {
     if (pattern.test(text)) {
-      return {
-        ok: false,
-        reason: '個人の連絡先情報（メールアドレス・電話番号・SNSアカウント等）は投稿できません。',
-      }
+      return { ok: false, reasonCode: 'contactInfoNotAllowed' }
     }
   }
   for (const pattern of SPAM_PATTERNS) {
     if (pattern.test(text)) {
-      return {
-        ok: false,
-        reason: '広告・勧誘目的の投稿はできません。',
-      }
+      return { ok: false, reasonCode: 'spamNotAllowed' }
     }
   }
   return { ok: true }

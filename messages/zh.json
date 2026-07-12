@@ -401,5 +401,28 @@
     "作曲": "作曲",
     "編曲": "编曲",
     "セキュリティ": "安全"
+  },
+  "apiErrors": {
+    "loginRequired": "需要登录",
+    "titleAndBodyRequired": "标题和详情为必填项",
+    "titleTooShort": "标题至少需要5个字符",
+    "bodyTooShort": "详情至少需要30个字符",
+    "postFailed": "发布失败",
+    "answerRequired": "回答内容为必填项",
+    "answerTooShort": "回答至少需要30个字符",
+    "questionNotFound": "未找到该问题",
+    "alreadyAnswered": "您已经回答过此问题",
+    "subjectAndBodyRequired": "主题和内容为必填项",
+    "subjectTooShort": "主题至少需要10个字符",
+    "contactBodyTooShort": "内容至少需要20个字符",
+    "sendFailed": "发送失败",
+    "missingParams": "缺少参数",
+    "answerNotFound": "未找到该回答",
+    "onlyRequesterCanAccept": "只有提问者可以选择",
+    "alreadySolved": "该问题已解决",
+    "notPermitted": "没有权限",
+    "cannotEscalate": "该状态无法升级",
+    "contactInfoNotAllowed": "不能发布个人联系方式（邮箱、电话号码、社交账号等）。",
+    "spamNotAllowed": "不允许发布广告或招揽性质的内容。"
   }
 }

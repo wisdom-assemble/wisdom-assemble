@@ -391,5 +391,28 @@
     "accept": "同意する",
     "reject": "必須以外を拒否"
   },
-  "skillTags": {}
+  "skillTags": {},
+  "apiErrors": {
+    "loginRequired": "ログインが必要です",
+    "titleAndBodyRequired": "タイトルと詳細は必須です",
+    "titleTooShort": "タイトルは5文字以上入力してください",
+    "bodyTooShort": "詳細は30文字以上入力してください",
+    "postFailed": "投稿に失敗しました",
+    "answerRequired": "回答内容は必須です",
+    "answerTooShort": "回答は30文字以上入力してください",
+    "questionNotFound": "質問が見つかりません",
+    "alreadyAnswered": "すでにこの質問に回答しています",
+    "subjectAndBodyRequired": "件名と内容は必須です",
+    "subjectTooShort": "件名は10文字以上入力してください",
+    "contactBodyTooShort": "内容は20文字以上入力してください",
+    "sendFailed": "送信に失敗しました",
+    "missingParams": "パラメータ不足",
+    "answerNotFound": "回答が見つかりません",
+    "onlyRequesterCanAccept": "質問者のみ選択できます",
+    "alreadySolved": "すでに解決済みです",
+    "notPermitted": "権限がありません",
+    "cannotEscalate": "このステータスではエスカレーションできません",
+    "contactInfoNotAllowed": "個人の連絡先情報（メールアドレス・電話番号・SNSアカウント等）は投稿できません。",
+    "spamNotAllowed": "広告・勧誘目的の投稿はできません。"
+  }
 }

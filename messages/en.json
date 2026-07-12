@@ -401,5 +401,28 @@
     "作曲": "Composition",
     "編曲": "Arrangement",
     "セキュリティ": "Security"
+  },
+  "apiErrors": {
+    "loginRequired": "Login required",
+    "titleAndBodyRequired": "Title and details are required",
+    "titleTooShort": "Title must be at least 5 characters",
+    "bodyTooShort": "Details must be at least 30 characters",
+    "postFailed": "Failed to post",
+    "answerRequired": "Answer content is required",
+    "answerTooShort": "Answer must be at least 30 characters",
+    "questionNotFound": "Question not found",
+    "alreadyAnswered": "You have already answered this question",
+    "subjectAndBodyRequired": "Subject and message are required",
+    "subjectTooShort": "Subject must be at least 10 characters",
+    "contactBodyTooShort": "Message must be at least 20 characters",
+    "sendFailed": "Failed to send",
+    "missingParams": "Missing parameters",
+    "answerNotFound": "Answer not found",
+    "onlyRequesterCanAccept": "Only the question author can select this",
+    "alreadySolved": "This question is already solved",
+    "notPermitted": "You don't have permission to do this",
+    "cannotEscalate": "This status can't be escalated",
+    "contactInfoNotAllowed": "Personal contact information (email, phone number, social media accounts, etc.) cannot be posted.",
+    "spamNotAllowed": "Advertising or solicitation posts are not allowed."
   }
 }

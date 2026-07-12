@@ -6,6 +6,7 @@ import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser } from '@/lib/email'
 import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
+import { getApiErrors } from '@/lib/apiErrors'
 
 function toSlug(text: string): string {
   return text
@@ -19,10 +20,11 @@ function toSlug(text: string): string {
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
+  const apiErrors = await getApiErrors()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+    return NextResponse.json({ error: apiErrors.loginRequired }, { status: 401 })
   }
 
   const headersList = await headers()
@@ -46,18 +48,18 @@ export async function POST(request: NextRequest) {
   const sourceLocale = (SUPPORTED_LOCALES as readonly string[]).includes(locale) ? locale : 'ja'
 
   if (!title?.trim() || !body?.trim()) {
-    return NextResponse.json({ error: 'タイトルと詳細は必須です' }, { status: 400 })
+    return NextResponse.json({ error: apiErrors.titleAndBodyRequired }, { status: 400 })
   }
   if (title.trim().length < 5) {
-    return NextResponse.json({ error: 'タイトルは5文字以上入力してください' }, { status: 400 })
+    return NextResponse.json({ error: apiErrors.titleTooShort }, { status: 400 })
   }
   if (body.trim().length < 30) {
-    return NextResponse.json({ error: '詳細は30文字以上入力してください' }, { status: 400 })
+    return NextResponse.json({ error: apiErrors.bodyTooShort }, { status: 400 })
   }
 
   const filterResult = checkContent(`${title} ${body}`)
   if (!filterResult.ok) {
-    return NextResponse.json({ error: filterResult.reason }, { status: 422 })
+    return NextResponse.json({ error: apiErrors[filterResult.reasonCode] }, { status: 422 })
   }
 
   // ① 保存前にジャンル判定（OKなら保存、NGなら即拒否）
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('Question insert error:', error)
-    return NextResponse.json({ error: '投稿に失敗しました' }, { status: 500 })
+    return NextResponse.json({ error: apiErrors.postFailed }, { status: 500 })
   }
 
   // ①.5 対応8言語へ自動翻訳（投稿時に静的な多言語ページとして存在させるためSEO優位）

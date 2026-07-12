@@ -401,5 +401,28 @@
     "作曲": "Sáng tác",
     "編曲": "Phối khí",
     "セキュリティ": "Bảo mật"
+  },
+  "apiErrors": {
+    "loginRequired": "Cần đăng nhập",
+    "titleAndBodyRequired": "Tiêu đề và chi tiết là bắt buộc",
+    "titleTooShort": "Tiêu đề phải có ít nhất 5 ký tự",
+    "bodyTooShort": "Chi tiết phải có ít nhất 30 ký tự",
+    "postFailed": "Đăng bài thất bại",
+    "answerRequired": "Nội dung câu trả lời là bắt buộc",
+    "answerTooShort": "Câu trả lời phải có ít nhất 30 ký tự",
+    "questionNotFound": "Không tìm thấy câu hỏi",
+    "alreadyAnswered": "Bạn đã trả lời câu hỏi này rồi",
+    "subjectAndBodyRequired": "Chủ đề và nội dung là bắt buộc",
+    "subjectTooShort": "Chủ đề phải có ít nhất 10 ký tự",
+    "contactBodyTooShort": "Nội dung phải có ít nhất 20 ký tự",
+    "sendFailed": "Gửi thất bại",
+    "missingParams": "Thiếu tham số",
+    "answerNotFound": "Không tìm thấy câu trả lời",
+    "onlyRequesterCanAccept": "Chỉ người hỏi mới có thể chọn",
+    "alreadySolved": "Câu hỏi này đã được giải quyết",
+    "notPermitted": "Bạn không có quyền thực hiện việc này",
+    "cannotEscalate": "Không thể chuyển cấp ở trạng thái này",
+    "contactInfoNotAllowed": "Không được đăng thông tin liên hệ cá nhân (email, số điện thoại, tài khoản mạng xã hội, v.v.).",
+    "spamNotAllowed": "Không được đăng nội dung quảng cáo hoặc mời chào."
   }
 }

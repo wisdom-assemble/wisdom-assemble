@@ -401,5 +401,28 @@
     "作曲": "작곡",
     "編曲": "편곡",
     "セキュリティ": "보안"
+  },
+  "apiErrors": {
+    "loginRequired": "로그인이 필요합니다",
+    "titleAndBodyRequired": "제목과 상세 내용은 필수입니다",
+    "titleTooShort": "제목은 5자 이상 입력해주세요",
+    "bodyTooShort": "상세 내용은 30자 이상 입력해주세요",
+    "postFailed": "게시에 실패했습니다",
+    "answerRequired": "답변 내용은 필수입니다",
+    "answerTooShort": "답변은 30자 이상 입력해주세요",
+    "questionNotFound": "질문을 찾을 수 없습니다",
+    "alreadyAnswered": "이미 이 질문에 답변하셨습니다",
+    "subjectAndBodyRequired": "제목과 내용은 필수입니다",
+    "subjectTooShort": "제목은 10자 이상 입력해주세요",
+    "contactBodyTooShort": "내용은 20자 이상 입력해주세요",
+    "sendFailed": "전송에 실패했습니다",
+    "missingParams": "파라미터가 부족합니다",
+    "answerNotFound": "답변을 찾을 수 없습니다",
+    "onlyRequesterCanAccept": "질문자만 선택할 수 있습니다",
+    "alreadySolved": "이미 해결된 질문입니다",
+    "notPermitted": "권한이 없습니다",
+    "cannotEscalate": "이 상태에서는 에스컬레이션할 수 없습니다",
+    "contactInfoNotAllowed": "개인 연락처 정보(이메일, 전화번호, SNS 계정 등)는 게시할 수 없습니다.",
+    "spamNotAllowed": "광고 또는 권유 목적의 게시물은 허용되지 않습니다."
   }
 }

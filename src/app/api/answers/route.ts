@@ -3,13 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { checkContent } from '@/lib/contentFilter'
 import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
+import { getApiErrors } from '@/lib/apiErrors'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
+  const apiErrors = await getApiErrors()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+    return NextResponse.json({ error: apiErrors.loginRequired }, { status: 401 })
   }
 
   const headersList = await headers()
@@ -19,15 +21,15 @@ export async function POST(request: NextRequest) {
   const sourceLocale = (SUPPORTED_LOCALES as readonly string[]).includes(locale) ? locale : 'ja'
 
   if (!questionId || !body?.trim()) {
-    return NextResponse.json({ error: '回答内容は必須です' }, { status: 400 })
+    return NextResponse.json({ error: apiErrors.answerRequired }, { status: 400 })
   }
   if (body.trim().length < 30) {
-    return NextResponse.json({ error: '回答は30文字以上入力してください' }, { status: 400 })
+    return NextResponse.json({ error: apiErrors.answerTooShort }, { status: 400 })
   }
 
   const filterResult = checkContent(body)
   if (!filterResult.ok) {
-    return NextResponse.json({ error: filterResult.reason }, { status: 422 })
+    return NextResponse.json({ error: apiErrors[filterResult.reasonCode] }, { status: 422 })
   }
 
   // 質問の存在確認
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (!question) {
-    return NextResponse.json({ error: '質問が見つかりません' }, { status: 404 })
+    return NextResponse.json({ error: apiErrors.questionNotFound }, { status: 404 })
   }
 
   // 同一ユーザーの重複回答チェック
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (existing) {
-    return NextResponse.json({ error: 'すでにこの質問に回答しています' }, { status: 409 })
+    return NextResponse.json({ error: apiErrors.alreadyAnswered }, { status: 409 })
   }
 
   const { data: answer, error } = await supabase
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('Answer insert error:', error)
-    return NextResponse.json({ error: '投稿に失敗しました' }, { status: 500 })
+    return NextResponse.json({ error: apiErrors.postFailed }, { status: 500 })
   }
 
   // 対応8言語へ自動翻訳して保存（Cloudflare Workers対策のため必ずawaitする）

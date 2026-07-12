@@ -401,5 +401,28 @@
     "作曲": "Komposisi",
     "編曲": "Aransemen",
     "セキュリティ": "Keamanan"
+  },
+  "apiErrors": {
+    "loginRequired": "Diperlukan login",
+    "titleAndBodyRequired": "Judul dan detail wajib diisi",
+    "titleTooShort": "Judul minimal 5 karakter",
+    "bodyTooShort": "Detail minimal 30 karakter",
+    "postFailed": "Gagal memposting",
+    "answerRequired": "Isi jawaban wajib diisi",
+    "answerTooShort": "Jawaban minimal 30 karakter",
+    "questionNotFound": "Pertanyaan tidak ditemukan",
+    "alreadyAnswered": "Anda sudah menjawab pertanyaan ini",
+    "subjectAndBodyRequired": "Subjek dan isi pesan wajib diisi",
+    "subjectTooShort": "Subjek minimal 10 karakter",
+    "contactBodyTooShort": "Isi pesan minimal 20 karakter",
+    "sendFailed": "Gagal mengirim",
+    "missingParams": "Parameter tidak lengkap",
+    "answerNotFound": "Jawaban tidak ditemukan",
+    "onlyRequesterCanAccept": "Hanya penanya yang dapat memilih ini",
+    "alreadySolved": "Pertanyaan ini sudah terselesaikan",
+    "notPermitted": "Anda tidak memiliki izin",
+    "cannotEscalate": "Status ini tidak dapat dieskalasi",
+    "contactInfoNotAllowed": "Informasi kontak pribadi (email, nomor telepon, akun media sosial, dll.) tidak boleh diposting.",
+    "spamNotAllowed": "Postingan iklan atau ajakan tidak diperbolehkan."
   }
 }

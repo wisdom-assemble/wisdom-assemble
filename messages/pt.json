@@ -401,5 +401,28 @@
     "作曲": "Composição",
     "編曲": "Arranjo",
     "セキュリティ": "Segurança"
+  },
+  "apiErrors": {
+    "loginRequired": "Login necessário",
+    "titleAndBodyRequired": "Título e detalhes são obrigatórios",
+    "titleTooShort": "O título deve ter pelo menos 5 caracteres",
+    "bodyTooShort": "Os detalhes devem ter pelo menos 30 caracteres",
+    "postFailed": "Falha ao publicar",
+    "answerRequired": "O conteúdo da resposta é obrigatório",
+    "answerTooShort": "A resposta deve ter pelo menos 30 caracteres",
+    "questionNotFound": "Pergunta não encontrada",
+    "alreadyAnswered": "Você já respondeu a esta pergunta",
+    "subjectAndBodyRequired": "Assunto e mensagem são obrigatórios",
+    "subjectTooShort": "O assunto deve ter pelo menos 10 caracteres",
+    "contactBodyTooShort": "A mensagem deve ter pelo menos 20 caracteres",
+    "sendFailed": "Falha ao enviar",
+    "missingParams": "Parâmetros ausentes",
+    "answerNotFound": "Resposta não encontrada",
+    "onlyRequesterCanAccept": "Somente o autor da pergunta pode selecionar isso",
+    "alreadySolved": "Esta pergunta já foi resolvida",
+    "notPermitted": "Você não tem permissão para fazer isso",
+    "cannotEscalate": "Este status não pode ser escalado",
+    "contactInfoNotAllowed": "Informações de contato pessoais (e-mail, número de telefone, contas de redes sociais, etc.) não podem ser publicadas.",
+    "spamNotAllowed": "Não são permitidas publicações de publicidade ou solicitação."
   }
 }
