@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import { useTenantId } from './TenantProvider'
+
+const ROOT_TENANT_ID = 'root'
 
 type Props = {
   // ルートドメイン(wisdomassemble.com)でのみ渡される。他テナントでは常にundefined
@@ -12,6 +15,7 @@ type Props = {
 export default function Footer({ about }: Props) {
   const t = useTranslations('footer')
   const [aboutOpen, setAboutOpen] = useState(false)
+  const isRoot = useTenantId() === ROOT_TENANT_ID
 
   return (
     <>
@@ -25,6 +29,9 @@ export default function Footer({ about }: Props) {
           <Link prefetch={false} href="/terms" className="hover:text-gray-600 transition-colors">{t('terms')}</Link>
           <Link prefetch={false} href="/privacy" className="hover:text-gray-600 transition-colors">{t('privacy')}</Link>
           <Link prefetch={false} href="/contact" className="hover:text-gray-600 transition-colors">{t('contact')}</Link>
+          {!isRoot && (
+            <a href="https://wisdomassemble.com" className="hover:text-gray-600 transition-colors">Wisdom Assemble</a>
+          )}
         </div>
       </footer>
 
