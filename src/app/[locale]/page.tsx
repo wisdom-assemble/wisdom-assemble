@@ -110,14 +110,14 @@ export default async function HomePage({
                 <li key={q.id}>
                   <Link
                     href={`/questions/${q.slug}`}
-                    className="block py-4 hover:bg-gray-50 -mx-2 px-2 rounded"
+                    className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate">
                           {(q.title_i18n as Record<string, string> | null)?.[locale] ?? q.title}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-gray-400">
                           {(q.profiles as any)?.display_name ?? (q.profiles as any)?.username} ·{' '}
                           {new Date(q.created_at).toLocaleDateString(locale)}
                         </p>
