@@ -189,7 +189,7 @@
     "solvedHardQuestions": "已解决的高难度问题",
     "postedQuestions": "已发布的问题",
     "titlesEarned": "获得的称号",
-    "titlesHint": "点击称号可以选择要显示的称号",
+    "titlesHint": "点击称号可以选择要显示的称号，其他用户也能看到",
     "titleClickToUnselect": "点击取消",
     "titleClickToSelect": "点击显示",
     "noTitlesYet": "回答问题后，你的成就“称号”将显示在这里",

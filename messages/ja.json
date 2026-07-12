@@ -189,7 +189,7 @@
     "solvedHardQuestions": "解決した高難度質問",
     "postedQuestions": "投稿した質問",
     "titlesEarned": "獲得した称号",
-    "titlesHint": "クリックで表示する称号を選べます",
+    "titlesHint": "クリックで表示する称号を選べます。選んだ称号は他のユーザーにも見えます",
     "titleClickToUnselect": "クリックで解除",
     "titleClickToSelect": "クリックで表示",
     "noTitlesYet": "回答するとここにあなたの実績「称号」が表示されます",
