@@ -13,6 +13,37 @@ import type { Metadata } from 'next'
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result?: string }> }
 
+// Google推奨のQAPage構造化データ(schema.org)を生成する。
+// XSS対策として`<`をエスケープし、ユーザー投稿文に`</script>`等が
+// 含まれていてもタグを閉じてしまわないようにする。
+function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster: any): string {
+  const answerAuthorName = (a: any) => a.profiles?.display_name ?? a.profiles?.username ?? 'Anonymous'
+  const toAnswer = (a: any) => ({
+    '@type': 'Answer',
+    text: a.body_i18n?.[locale] ?? a.body,
+    dateCreated: a.created_at,
+    author: { '@type': 'Person', name: answerAuthorName(a) },
+  })
+  const accepted = answers.find((a) => a.is_accepted)
+  const others = answers.filter((a) => !a.is_accepted)
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: question.title_i18n?.[locale] ?? question.title,
+      text: question.body_i18n?.[locale] ?? question.body,
+      answerCount: answers.length,
+      dateCreated: question.created_at,
+      author: { '@type': 'Person', name: poster?.display_name ?? poster?.username ?? 'Anonymous' },
+      ...(accepted ? { acceptedAnswer: toAnswer(accepted) } : {}),
+      ...(others.length > 0 ? { suggestedAnswer: others.map(toAnswer) } : {}),
+    },
+  }
+  return JSON.stringify(schema).replace(/</g, '\\u003c')
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug: rawSlug } = await params
   const slug = decodeURIComponent(rawSlug)
@@ -133,6 +164,12 @@ export default async function QuestionPage({ params, searchParams }: Props) {
 
   return (
     <>
+      {hasAnswers && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: buildQAPageJsonLd(question, answers ?? [], locale, poster) }}
+        />
+      )}
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
 
