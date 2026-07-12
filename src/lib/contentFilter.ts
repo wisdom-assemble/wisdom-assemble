@@ -5,8 +5,9 @@ const CONTACT_PATTERNS = [
   /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/,
   // 電話番号（日本・国際）
   /(\+?[\d\-\.\(\)\s]{10,15})/,
-  // LINE ID
-  /line\s*(id\s*)?[:：]?\s*[@＠]?[\w\-.]+/i,
+  // LINE ID（"Linear"等、lineを含む単語との誤マッチを避けるため単語境界必須。
+  // 記号(:／＠)を伴わない裸の"line"はDAW用語(offline, timeline等)と衝突しやすいため対象外）
+  /\bline\b\s*(\bid\b\s*)?[:：@＠]\s*[\w\-.]+/i,
   /[@＠][\w\-.]{3,}/,
   // WhatsApp
   /whatsapp\s*([:：]|id\s*[:：]?)\s*[\d\+\s\-]+/i,
