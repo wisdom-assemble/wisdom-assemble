@@ -18,7 +18,7 @@ function getAdminClient() {
   )
 }
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 25
 
 export default async function HomePage({
   searchParams,
