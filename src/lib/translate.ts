@@ -16,8 +16,8 @@ const LOCALE_NAMES: Record<string, string> = {
   pt: 'Portuguese',
 }
 
-// 429(レート制限)の時だけ1回だけ間隔を空けてリトライする。それ以外のエラーは即座に投げる。
-async function callGroqTranslate(text: string, targetLanguageName: string, retried = false): Promise<string> {
+// 429(レート制限)の時は間隔を空けて最大2回リトライする。それ以外のエラーは即座に投げる。
+async function callGroqJson(systemPrompt: string, userText: string, attempt = 0): Promise<string> {
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -27,65 +27,45 @@ async function callGroqTranslate(text: string, targetLanguageName: string, retri
     body: JSON.stringify({
       model: TRANSLATE_MODEL,
       messages: [
-        {
-          role: 'system',
-          content: `You are a professional translator. Translate the user's text into ${targetLanguageName}. Preserve Markdown formatting exactly (headings, code blocks, lists, links). Output ONLY the translated text with no explanations, no quotes, and no preamble.`,
-        },
-        { role: 'user', content: text },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userText },
       ],
-      max_tokens: 2048,
+      response_format: { type: 'json_object' },
+      max_tokens: 4096,
     }),
   })
-  if (res.status === 429 && !retried) {
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    return callGroqTranslate(text, targetLanguageName, true)
+  if (res.status === 429 && attempt < 2) {
+    await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)))
+    return callGroqJson(systemPrompt, userText, attempt + 1)
   }
   if (!res.ok) throw new Error(`Groq translate API error: ${res.status}`)
   const json = await res.json()
   return (json.choices?.[0]?.message?.content ?? '').trim()
 }
 
-// 一度に投げるGroqリクエスト数の上限。タイトル・本文それぞれ最大7言語=14件を
-// 全部同時に投げるとGroqのレート制限(429)にほぼ確実に引っかかっていたため、
-// ロケール単位（タイトル+本文の2件ずつ）でこの数だけ並行実行する。
-const CONCURRENCY = 2
-
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<R>
-): Promise<R[]> {
-  const results: R[] = new Array(items.length)
-  let cursor = 0
-  async function run(): Promise<void> {
-    while (cursor < items.length) {
-      const i = cursor++
-      results[i] = await worker(items[i])
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, run))
-  return results
-}
-
 // sourceLocaleを除く対応言語へ翻訳し、{locale: 翻訳文} のオブジェクトを返す。
-// 個別の翻訳が失敗してもそのロケールだけスキップし、他の翻訳は継続する。
+// 言語ごとに個別リクエストするとGroqのレート制限(429)にほぼ確実に引っかかるため、
+// 全ターゲット言語分を1回のGroq呼び出しにまとめてJSONで受け取る。
 export async function translateToLocales(
   text: string,
   sourceLocale: string
 ): Promise<Record<string, string>> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
-  const entries = await mapWithConcurrency(targets, CONCURRENCY, async (locale): Promise<[string, string] | null> => {
-    try {
-      const translated = await callGroqTranslate(text, LOCALE_NAMES[locale])
-      return [locale, translated]
-    } catch (e) {
-      console.error(`translateToLocales: failed for locale=${locale}`, e)
-      return null
+  const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
+  const systemPrompt = `You are a professional translator. Translate the user's text into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}) and whose values are the translated text for that locale. No explanations, no extra keys.`
+
+  try {
+    const content = await callGroqJson(systemPrompt, text)
+    const parsed = JSON.parse(content) as Record<string, string>
+    const result: Record<string, string> = {}
+    for (const locale of targets) {
+      if (typeof parsed[locale] === 'string' && parsed[locale].trim()) {
+        result[locale] = parsed[locale].trim()
+      }
     }
-  })
-  const result: Record<string, string> = {}
-  for (const entry of entries) {
-    if (entry) result[entry[0]] = entry[1]
+    return result
+  } catch (e) {
+    console.error('translateToLocales: batch translation failed', e)
+    return {}
   }
-  return result
 }
