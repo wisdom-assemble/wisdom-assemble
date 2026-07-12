@@ -373,11 +373,11 @@
   },
   "portalPage": {
     "title": "Wisdom Assemble",
-    "subtitle": "A network of Q&A communities where AI answers first, and real human experts step in where AI falls short.",
+    "subtitle": "AI answers first, and when it can't confidently answer, a human expert takes over — a platform of Q&A services.",
     "chooseGenre": "Choose a community to get started",
     "comingSoon": "Coming soon",
     "aboutTitle": "About Wisdom Assemble",
-    "aboutBody": "Wisdom Assemble is a multi-language platform running a network of genre-specific Q&A communities. When a question is posted, AI attempts to answer first; when AI isn't confident, a real human expert steps in. Our philosophy is simple: let humans fill in where AI falls short, so people can get real answers to specialized or personal questions AI can't fully resolve. The project is currently run by an individual developer and is gradually expanding to new genres.",
+    "aboutBody": "Wisdom Assemble is a multi-language platform for a set of genre-specific Q&A services. When a question is posted, AI attempts to answer first; when AI isn't confident, a real human expert takes over. It's the second opinion service AI can't provide, built for the AI era. For specialized or personal concerns AI alone can't fully resolve, we aim to help by drawing on real human knowledge. We're steadily building out development and operations, adding new genres over time.",
     "searchPlaceholder": "Search by genre or keyword...",
     "noResults": "No genres match your search.",
     "debugCardTagline": "Coding bugs and technical questions, solved by AI first and real developers next.",

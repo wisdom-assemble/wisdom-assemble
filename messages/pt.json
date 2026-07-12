@@ -373,11 +373,11 @@
   },
   "portalPage": {
     "title": "Wisdom Assemble",
-    "subtitle": "Uma rede de comunidades de perguntas e respostas onde a IA responde primeiro, e especialistas humanos reais entram quando a IA não é suficiente.",
+    "subtitle": "A IA responde primeiro, e quando não consegue responder com confiança, um especialista humano assume — uma plataforma de serviços de perguntas e respostas.",
     "chooseGenre": "Escolha uma comunidade para começar",
     "comingSoon": "Em breve",
     "aboutTitle": "Sobre o Wisdom Assemble",
-    "aboutBody": "O Wisdom Assemble é uma plataforma multilíngue que opera uma rede de comunidades de perguntas e respostas por gênero. Quando uma pergunta é publicada, a IA tenta responder primeiro; quando a IA não tem confiança suficiente, um especialista humano real assume. Nossa filosofia é simples: deixar que humanos preencham onde a IA não é suficiente, para que as pessoas obtenham respostas reais a perguntas especializadas ou pessoais que a IA não consegue resolver completamente. O projeto é atualmente administrado por um desenvolvedor individual e está se expandindo gradualmente para novos gêneros.",
+    "aboutBody": "O Wisdom Assemble é uma plataforma multilíngue para um conjunto de serviços de perguntas e respostas por gênero. Quando uma pergunta é publicada, a IA tenta responder primeiro; quando a IA não tem confiança suficiente, um especialista humano real assume. É o serviço de segunda opinião que a IA não pode oferecer, pensado para a era da IA. Para dúvidas especializadas ou pessoais que a IA não consegue resolver completamente, buscamos ajudar com conhecimento humano real. Estamos avançando de forma constante no desenvolvimento e na operação, adicionando novos gêneros ao longo do tempo.",
     "searchPlaceholder": "Pesquisar por gênero ou palavra-chave...",
     "noResults": "Nenhum gênero corresponde à sua pesquisa.",
     "debugCardTagline": "Bugs de código e perguntas técnicas, respondidas primeiro pela IA e depois por devs reais.",
