@@ -46,7 +46,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     ? 'https://wisdomassemble.com'
     : `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`
   const fallbackDescription = FALLBACK_DESCRIPTION_MAP[locale] ?? FALLBACK_DESCRIPTION_MAP.en
-  const description = tenant?.description_i18n?.[locale] ?? tenant?.description ?? fallbackDescription
+  const description = tenantId === ROOT_TENANT_ID
+    ? (await getTranslations('portalPage')).raw('subtitle')
+    : (tenant?.description_i18n?.[locale] ?? tenant?.description ?? fallbackDescription)
   // タブタイトル・OGPはロゴ表記に合わせて常に英語表記（DBのnameは日本語の場合があるため）
   const displayName = getTenantDisplayName(tenantId, tenant?.name ?? 'Wisdom Assemble')
   return {
