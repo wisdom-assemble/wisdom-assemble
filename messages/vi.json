@@ -49,7 +49,8 @@
     "statusMatchedC": "Chuyên gia #2 đang xử lý",
     "statusSolved": "Đã giải quyết",
     "statusHard": "Khó",
-    "assignedToYou": "Được giao cho bạn"
+    "assignedToYou": "Được giao cho bạn",
+    "suggestedKeywords": "Từ khóa phổ biến:"
   },
   "hardPage": {
     "title": "Câu hỏi khó",

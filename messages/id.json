@@ -49,7 +49,8 @@
     "statusMatchedC": "Ahli #2 sedang menangani",
     "statusSolved": "Terselesaikan",
     "statusHard": "Sulit",
-    "assignedToYou": "Ditugaskan untukmu"
+    "assignedToYou": "Ditugaskan untukmu",
+    "suggestedKeywords": "Kata kunci populer:"
   },
   "hardPage": {
     "title": "Pertanyaan sulit",

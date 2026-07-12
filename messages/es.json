@@ -49,7 +49,8 @@
     "statusMatchedC": "Experto #2 trabajando en ello",
     "statusSolved": "Resuelta",
     "statusHard": "Difícil",
-    "assignedToYou": "Asignada a ti"
+    "assignedToYou": "Asignada a ti",
+    "suggestedKeywords": "Palabras clave populares:"
   },
   "hardPage": {
     "title": "Preguntas difíciles",

@@ -49,7 +49,8 @@
     "statusMatchedC": "전문가②가 대응 중",
     "statusSolved": "해결됨",
     "statusHard": "고난도",
-    "assignedToYou": "당신에게 요청됨"
+    "assignedToYou": "당신에게 요청됨",
+    "suggestedKeywords": "많이 찾는 키워드:"
   },
   "hardPage": {
     "title": "고난도 질문 목록",

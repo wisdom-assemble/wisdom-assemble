@@ -49,7 +49,8 @@
     "statusMatchedC": "Especialista nº2 trabalhando nisso",
     "statusSolved": "Resolvida",
     "statusHard": "Difícil",
-    "assignedToYou": "Atribuída a você"
+    "assignedToYou": "Atribuída a você",
+    "suggestedKeywords": "Palavras-chave populares:"
   },
   "hardPage": {
     "title": "Perguntas difíceis",

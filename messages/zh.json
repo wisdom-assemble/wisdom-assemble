@@ -49,7 +49,8 @@
     "statusMatchedC": "专家②处理中",
     "statusSolved": "已解决",
     "statusHard": "高难度",
-    "assignedToYou": "指派给你"
+    "assignedToYou": "指派给你",
+    "suggestedKeywords": "热门关键词："
   },
   "hardPage": {
     "title": "高难度问题列表",

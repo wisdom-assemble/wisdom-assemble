@@ -49,7 +49,8 @@
     "statusMatchedC": "Expert #2 working on it",
     "statusSolved": "Solved",
     "statusHard": "Hard",
-    "assignedToYou": "Assigned to you"
+    "assignedToYou": "Assigned to you",
+    "suggestedKeywords": "Popular keywords:"
   },
   "hardPage": {
     "title": "Hard questions",

@@ -6,12 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
-
-const SKILL_OPTIONS = [
-  'React', 'Next.js', 'TypeScript', 'JavaScript', 'CSS',
-  'Node.js', 'Python', 'SQL', 'PostgreSQL', 'Docker',
-  'AWS', 'Supabase', 'Git', 'Linux', 'セキュリティ',
-]
+import { useTenantId } from '@/components/TenantProvider'
+import { getSkillOptions } from '@/lib/skillTags'
 
 // ロケールコードのアルファベット順（一般的な言語切替UIの並び順）
 const LANGUAGE_OPTIONS = [
@@ -34,6 +30,8 @@ export default function ProfilePage() {
   const locale = useLocale()
   const supabase = createClient()
   const router = useRouter()
+  const tenantId = useTenantId()
+  const SKILL_OPTIONS = getSkillOptions(tenantId)
 
   const STATUS_MAP: Record<string, { label: string; className: string }> = {
     open:        { label: t('statusOpen'),        className: 'bg-blue-50 text-blue-700' },

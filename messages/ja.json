@@ -49,7 +49,8 @@
     "statusMatchedC": "専門家②が対応中",
     "statusSolved": "解決済み",
     "statusHard": "高難度",
-    "assignedToYou": "あなたに依頼"
+    "assignedToYou": "あなたに依頼",
+    "suggestedKeywords": "検索されそうなキーワード:"
   },
   "hardPage": {
     "title": "高難度質問一覧",
