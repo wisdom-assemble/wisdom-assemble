@@ -384,5 +384,11 @@
     "debugCardTagline": "コードのバグや技術的な質問に、AIがまず答え、足りなければ現役エンジニアが応える。",
     "dtmCardTagline": "ミックスやマスタリング、DAWの質問に、AIがまず答え、足りなければ現役の制作者が応える。",
     "aboutLinkLabel": "Wisdom Assembleについて"
+  },
+  "cookieConsent": {
+    "message": "本サービスでは、ログイン状態の維持やサービス改善のためにCookieを使用しています。詳細は",
+    "privacyLink": "プライバシーポリシー",
+    "accept": "同意する",
+    "reject": "必須以外を拒否"
   }
 }

@@ -9,6 +9,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { TenantProvider } from '@/components/TenantProvider'
 import Footer from '@/components/Footer'
+import CookieConsentBanner from '@/components/CookieConsentBanner'
 import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -112,6 +113,7 @@ export default async function RootLayout({
           <TenantProvider tenant={tenant} tenantId={tenantId}>
             {children}
             <Footer about={about} />
+            <CookieConsentBanner />
           </TenantProvider>
         </NextIntlClientProvider>
       </body>

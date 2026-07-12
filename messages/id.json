@@ -384,5 +384,11 @@
     "debugCardTagline": "Bug kode dan pertanyaan teknis, dijawab AI lebih dulu, lalu developer sungguhan bila perlu.",
     "dtmCardTagline": "Pertanyaan mixing, mastering, dan DAW, dijawab AI lebih dulu, lalu produser sungguhan bila perlu.",
     "aboutLinkLabel": "Tentang Wisdom Assemble"
+  },
+  "cookieConsent": {
+    "message": "Kami menggunakan cookie untuk menjaga sesi login Anda dan meningkatkan Layanan. Lihat",
+    "privacyLink": "Kebijakan Privasi",
+    "accept": "Terima",
+    "reject": "Tolak yang tidak penting"
   }
 }

@@ -384,5 +384,11 @@
     "debugCardTagline": "Coding bugs and technical questions, solved by AI first and real developers next.",
     "dtmCardTagline": "Mixing, mastering, and DAW questions, solved by AI first and real producers next.",
     "aboutLinkLabel": "About Wisdom Assemble"
+  },
+  "cookieConsent": {
+    "message": "We use cookies to keep you signed in and to improve the Service. See our",
+    "privacyLink": "Privacy Policy",
+    "accept": "Accept",
+    "reject": "Reject non-essential"
   }
 }

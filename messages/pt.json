@@ -384,5 +384,11 @@
     "debugCardTagline": "Bugs de código e perguntas técnicas, respondidas primeiro pela IA e depois por devs reais.",
     "dtmCardTagline": "Perguntas de mixagem, masterização e DAW, respondidas primeiro pela IA e depois por produtores reais.",
     "aboutLinkLabel": "Sobre o Wisdom Assemble"
+  },
+  "cookieConsent": {
+    "message": "Usamos cookies para manter sua sessão ativa e melhorar o Serviço. Veja nossa",
+    "privacyLink": "Política de privacidade",
+    "accept": "Aceitar",
+    "reject": "Rejeitar não essenciais"
   }
 }

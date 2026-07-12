@@ -384,5 +384,11 @@
     "debugCardTagline": "代码错误和技术问题，先由AI解答，AI不够时由真正的工程师补充。",
     "dtmCardTagline": "混音、母带和DAW相关问题，先由AI解答，AI不够时由真正的制作人补充。",
     "aboutLinkLabel": "关于Wisdom Assemble"
+  },
+  "cookieConsent": {
+    "message": "本服务使用Cookie来保持您的登录状态并改善服务。详情请见",
+    "privacyLink": "隐私政策",
+    "accept": "同意",
+    "reject": "拒绝非必要项"
   }
 }

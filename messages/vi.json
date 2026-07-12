@@ -384,5 +384,11 @@
     "debugCardTagline": "Lỗi code và câu hỏi kỹ thuật, AI trả lời trước, chuyên gia thật vào cuộc khi cần.",
     "dtmCardTagline": "Câu hỏi về mixing, mastering và DAW, AI trả lời trước, nhà sản xuất thật vào cuộc khi cần.",
     "aboutLinkLabel": "Giới thiệu về Wisdom Assemble"
+  },
+  "cookieConsent": {
+    "message": "Chúng tôi sử dụng cookie để duy trì đăng nhập và cải thiện Dịch vụ. Xem",
+    "privacyLink": "Chính sách bảo mật",
+    "accept": "Đồng ý",
+    "reject": "Từ chối không thiết yếu"
   }
 }
