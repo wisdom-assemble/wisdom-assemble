@@ -16,7 +16,8 @@ const LOCALE_NAMES: Record<string, string> = {
   pt: 'Portuguese',
 }
 
-async function callGroqTranslate(text: string, targetLanguageName: string): Promise<string> {
+// 429(レート制限)の時だけ1回だけ間隔を空けてリトライする。それ以外のエラーは即座に投げる。
+async function callGroqTranslate(text: string, targetLanguageName: string, retried = false): Promise<string> {
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -35,9 +36,35 @@ async function callGroqTranslate(text: string, targetLanguageName: string): Prom
       max_tokens: 2048,
     }),
   })
+  if (res.status === 429 && !retried) {
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    return callGroqTranslate(text, targetLanguageName, true)
+  }
   if (!res.ok) throw new Error(`Groq translate API error: ${res.status}`)
   const json = await res.json()
   return (json.choices?.[0]?.message?.content ?? '').trim()
+}
+
+// 一度に投げるGroqリクエスト数の上限。タイトル・本文それぞれ最大7言語=14件を
+// 全部同時に投げるとGroqのレート制限(429)にほぼ確実に引っかかっていたため、
+// ロケール単位（タイトル+本文の2件ずつ）でこの数だけ並行実行する。
+const CONCURRENCY = 2
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let cursor = 0
+  async function run(): Promise<void> {
+    while (cursor < items.length) {
+      const i = cursor++
+      results[i] = await worker(items[i])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, run))
+  return results
 }
 
 // sourceLocaleを除く対応言語へ翻訳し、{locale: 翻訳文} のオブジェクトを返す。
@@ -47,17 +74,15 @@ export async function translateToLocales(
   sourceLocale: string
 ): Promise<Record<string, string>> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
-  const entries = await Promise.all(
-    targets.map(async (locale): Promise<[string, string] | null> => {
-      try {
-        const translated = await callGroqTranslate(text, LOCALE_NAMES[locale])
-        return [locale, translated]
-      } catch (e) {
-        console.error(`translateToLocales: failed for locale=${locale}`, e)
-        return null
-      }
-    })
-  )
+  const entries = await mapWithConcurrency(targets, CONCURRENCY, async (locale): Promise<[string, string] | null> => {
+    try {
+      const translated = await callGroqTranslate(text, LOCALE_NAMES[locale])
+      return [locale, translated]
+    } catch (e) {
+      console.error(`translateToLocales: failed for locale=${locale}`, e)
+      return null
+    }
+  })
   const result: Record<string, string> = {}
   for (const entry of entries) {
     if (entry) result[entry[0]] = entry[1]
