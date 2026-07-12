@@ -9,7 +9,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { TenantProvider } from '@/components/TenantProvider'
 import Footer from '@/components/Footer'
-import { getTenantDisplayName } from '@/lib/tenantNames'
+import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
@@ -42,7 +42,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     .select('name, description, description_i18n')
     .eq('id', tenantId)
     .single()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://debug.wisdomassemble.com'
+  const siteUrl = tenantId === ROOT_TENANT_ID
+    ? 'https://wisdomassemble.com'
+    : `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`
   const fallbackDescription = FALLBACK_DESCRIPTION_MAP[locale] ?? FALLBACK_DESCRIPTION_MAP.en
   const description = tenant?.description_i18n?.[locale] ?? tenant?.description ?? fallbackDescription
   // タブタイトル・OGPはロゴ表記に合わせて常に英語表記（DBのnameは日本語の場合があるため）

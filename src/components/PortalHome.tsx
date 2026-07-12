@@ -78,7 +78,6 @@ export default async function PortalHome() {
       <PortalTenantSearch
         tenants={cards}
         searchPlaceholder={t('searchPlaceholder')}
-        comingSoonLabel={t('comingSoon')}
         noResultsLabel={t('noResults')}
       />
 

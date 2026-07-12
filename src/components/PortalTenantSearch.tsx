@@ -15,11 +15,10 @@ type Tenant = {
 type Props = {
   tenants: Tenant[]
   searchPlaceholder: string
-  comingSoonLabel: string
   noResultsLabel: string
 }
 
-export default function PortalTenantSearch({ tenants, searchPlaceholder, comingSoonLabel, noResultsLabel }: Props) {
+export default function PortalTenantSearch({ tenants, searchPlaceholder, noResultsLabel }: Props) {
   const [query, setQuery] = useState('')
   const normalizedQuery = query.trim().toLowerCase()
 
@@ -51,12 +50,6 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, comingS
               <span className="text-xs text-gray-500 leading-relaxed">{tenant.tagline}</span>
             </a>
           ))}
-
-          {!normalizedQuery && (
-            <div className="aspect-square sm:aspect-auto flex items-center justify-center border border-gray-100 rounded-lg px-3 py-4 sm:px-4 sm:py-8 text-center bg-gray-50 text-gray-300 select-none">
-              <span className="text-sm font-medium">{comingSoonLabel}</span>
-            </div>
-          )}
         </div>
       )}
     </div>
