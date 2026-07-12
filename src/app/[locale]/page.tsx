@@ -41,7 +41,7 @@ export default async function HomePage({
 
   let query = supabase
     .from('questions')
-    .select('id, title, slug, status, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
+    .select('id, title, title_i18n, slug, status, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
@@ -114,7 +114,9 @@ export default async function HomePage({
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{q.title}</p>
+                        <p className="font-medium text-gray-900 truncate">
+                          {(q.title_i18n as Record<string, string> | null)?.[locale] ?? q.title}
+                        </p>
                         <p className="text-xs text-gray-400 mt-1">
                           {(q.profiles as any)?.display_name ?? (q.profiles as any)?.username} ·{' '}
                           {new Date(q.created_at).toLocaleDateString(locale)}
