@@ -194,22 +194,22 @@ function Pagination({ currentPage, totalPages, q, t }: { currentPage: number; to
   }
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-8">
+    <div className="flex items-center justify-center gap-2 mt-4">
       {currentPage > 1 && (
         <Link
           href={params(currentPage - 1)}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
         >
           {t('prevPage')}
         </Link>
       )}
-      <span className="text-sm text-gray-500">
+      <span className="text-xs text-gray-500">
         {currentPage} / {totalPages}
       </span>
       {currentPage < totalPages && (
         <Link
           href={params(currentPage + 1)}
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
         >
           {t('nextPage')}
         </Link>
