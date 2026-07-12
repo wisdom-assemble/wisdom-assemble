@@ -120,10 +120,10 @@ export default function Header() {
         </Link>
 
         {/* PC nav */}
-        <nav style={{ display: isMobile ? 'none' : 'flex' }} className="items-center gap-4 text-sm">
+        <nav style={{ display: isMobile ? 'none' : 'flex' }} className="items-center gap-4 text-xs">
           <Link prefetch={false} href="/how-it-works" className="text-gray-500 hover:text-gray-800">{t('howItWorks')}</Link>
           <Link prefetch={false} href="/hard" className="relative text-gray-500 hover:text-gray-800">
-            <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">{t('hard')}</span>
+            <span className="border border-gray-400 rounded px-2 py-0.5 text-xs font-medium">{t('hard')}</span>
             {hardCount > 0 && (
               <span className="absolute -top-1.5 -right-4 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
                 {hardCount}
@@ -146,7 +146,7 @@ export default function Header() {
               <button onClick={handleLogout} className="text-gray-500 hover:text-gray-800">{t('logout')}</button>
             </>
           ) : (
-            <Link prefetch={false} href="/auth/login" className="px-3 py-1.5 rounded text-white text-sm font-medium" style={{ backgroundColor: 'var(--color-primary)' }}>
+            <Link prefetch={false} href="/auth/login" className="px-3 py-1.5 rounded text-white text-xs font-medium" style={{ backgroundColor: 'var(--color-primary)' }}>
               {t('login')}
             </Link>
           )}
@@ -172,10 +172,10 @@ export default function Header() {
       {menuOpen && isMobile && (
         <>
           <div className="fixed inset-0 bg-black/30 z-20" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-full w-56 bg-white border border-gray-200 rounded-bl-lg shadow-lg z-30 px-4 py-3 flex flex-col gap-4 text-sm">
+          <div className="absolute right-0 top-full w-56 bg-white border border-gray-200 rounded-bl-lg shadow-lg z-30 px-4 py-3 flex flex-col gap-4 text-xs">
             <Link prefetch={false} href="/how-it-works" className="text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>{t('howItWorks')}</Link>
             <Link prefetch={false} href="/hard" className="flex items-center gap-1 text-gray-600 hover:text-gray-900" onClick={() => setMenuOpen(false)}>
-              <span className="border border-gray-400 rounded px-2 py-0.5 text-sm font-medium">{t('hard')}</span>
+              <span className="border border-gray-400 rounded px-2 py-0.5 text-xs font-medium">{t('hard')}</span>
               {hardCount > 0 && (
                 <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
                   {hardCount}
