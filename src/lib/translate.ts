@@ -38,7 +38,10 @@ async function callGroqJson(systemPrompt: string, userText: string, attempt = 0)
     await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)))
     return callGroqJson(systemPrompt, userText, attempt + 1)
   }
-  if (!res.ok) throw new Error(`Groq translate API error: ${res.status}`)
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '')
+    throw new Error(`Groq translate API error: ${res.status} ${bodyText}`)
+  }
   const json = await res.json()
   return (json.choices?.[0]?.message?.content ?? '').trim()
 }
