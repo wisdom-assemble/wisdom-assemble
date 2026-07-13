@@ -16,7 +16,7 @@ const LOCALE_NAMES: Record<string, string> = {
   pt: 'Portuguese',
 }
 
-// 429(レート制限)の時は間隔を空けて最大2回リトライする。それ以外のエラーは即座に投げる。
+// 429(レート制限)の時は間隔を空けて最大4回リトライする。それ以外のエラーは即座に投げる。
 async function callGroqJson(systemPrompt: string, userText: string, attempt = 0): Promise<string> {
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
@@ -34,8 +34,8 @@ async function callGroqJson(systemPrompt: string, userText: string, attempt = 0)
       max_tokens: 4096,
     }),
   })
-  if (res.status === 429 && attempt < 2) {
-    await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)))
+  if (res.status === 429 && attempt < 4) {
+    await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
     return callGroqJson(systemPrompt, userText, attempt + 1)
   }
   if (!res.ok) {
