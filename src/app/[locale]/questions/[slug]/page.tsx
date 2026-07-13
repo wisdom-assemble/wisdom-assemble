@@ -179,7 +179,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             {t('breadcrumbHome')}
           </Link>
           <span className="mx-1.5">/</span>
-          <span className="text-gray-500">{question.title}</span>
+          <span className="text-gray-500">{question.title_i18n?.[locale] ?? question.title}</span>
         </nav>
 
         {/* オーナーが訪問したら既読マーク */}
