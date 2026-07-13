@@ -31,7 +31,7 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = createClient(tenantId)
     supabase.auth.getUser().then(async ({ data: authData }) => {
       const uid = authData.user?.id ?? 'anonymous'
       const { data } = await supabase
@@ -50,7 +50,7 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = createClient(tenantId)
     supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user)
       if (data.user) {
@@ -94,7 +94,7 @@ export default function Header() {
   }, [])
 
   async function handleLogout() {
-    const supabase = createClient()
+    const supabase = createClient(tenantId)
     await supabase.auth.signOut()
     window.location.href = '/'
   }

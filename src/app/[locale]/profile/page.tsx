@@ -28,9 +28,9 @@ export default function ProfilePage() {
   const tCommon = useTranslations('common')
   const tTitles = useTranslations('titles')
   const locale = useLocale()
-  const supabase = createClient()
   const router = useRouter()
   const tenantId = useTenantId()
+  const supabase = createClient(tenantId)
   const SKILL_OPTIONS = getSkillOptions(tenantId)
   const messages = useMessages() as { skillTags?: Record<string, string> }
   const skillLabel = (skill: string) => messages.skillTags?.[skill] ?? skill
