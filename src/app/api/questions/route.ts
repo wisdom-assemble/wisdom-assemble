@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
             userId: matchedB,
             tenantId,
             questionTitle: title.trim(),
+            questionTitleTranslations: await titleTranslationPromise,
             questionSlug: question.slug,
           })
         } catch (e) {
@@ -175,6 +176,7 @@ export async function POST(request: NextRequest) {
               userId: matchedC,
               tenantId,
               questionTitle: title.trim(),
+              questionTitleTranslations: await titleTranslationPromise,
               questionSlug: question.slug,
             })
           } catch (e) {

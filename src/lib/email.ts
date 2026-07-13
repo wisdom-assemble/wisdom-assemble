@@ -91,6 +91,7 @@ export async function notifyMatchedUser(params: {
   userId: string
   tenantId: string
   questionTitle: string
+  questionTitleTranslations?: Record<string, string>
   questionSlug: string
 }): Promise<void> {
   const admin = createServiceClient(
@@ -122,10 +123,12 @@ export async function notifyMatchedUser(params: {
   const url = `https://${subdomain}.${SITE_URL}/questions/${encodeURIComponent(params.questionSlug)}`
   const templateLocale = tenant?.language === 'en' ? 'en' : 'ja'
   const template = MATCH_NOTIFY_TEMPLATES[templateLocale]
+  // テナントの言語に翻訳済みのタイトルがあればそちらを使う（未翻訳の言語混在はスパム判定リスクがあるため）
+  const questionTitle = params.questionTitleTranslations?.[templateLocale] ?? params.questionTitle
 
   await sendEmail({
     to: email,
     subject: template.subject(siteName),
-    htmlContent: template.body({ questionTitle: params.questionTitle, url, siteName }),
+    htmlContent: template.body({ questionTitle, url, siteName }),
   })
 }

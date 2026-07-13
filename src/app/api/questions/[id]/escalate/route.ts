@@ -27,7 +27,7 @@ export async function POST(
 
   const { data: question } = await supabase
     .from('questions')
-    .select('id, status, user_id, matched_b_id, matched_c_id, title, slug')
+    .select('id, status, user_id, matched_b_id, matched_c_id, title, title_i18n, slug')
     .eq('id', questionId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
@@ -64,6 +64,7 @@ export async function POST(
           userId: matchedC,
           tenantId,
           questionTitle: question.title,
+          questionTitleTranslations: question.title_i18n ?? undefined,
           questionSlug: question.slug,
         })
       } catch (e) {
