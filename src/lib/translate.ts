@@ -75,6 +75,9 @@ export async function translateToLocales(
 
 // タイトルと本文をまとめて1回のGroq呼び出しで翻訳する（title/bodyを別々に呼ぶと8b-instantモデルへの
 // リクエスト数が倍になり429が起きやすくなるため統合）。
+// キーはネストせずフラット(title_en, body_en, ...)にする。ネストしたJSONだとタイトルに引用符等が
+// 含まれる場合にモデルがエスケープを誤り400 json_validate_failedになりやすいため。
+// それでも失敗した場合は従来の個別呼び出し(2回)にフォールバックする。
 export async function translateQuestionToLocales(
   title: string,
   body: string,
@@ -82,23 +85,28 @@ export async function translateQuestionToLocales(
 ): Promise<{ title_i18n: Record<string, string>; body_i18n: Record<string, string> }> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
   const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
-  const systemPrompt = `You are a professional translator. You will receive a JSON object with "title" and "body" fields. Translate BOTH fields into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly in the body (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}), and whose values are objects of the form {"title": "...", "body": "..."} containing the translation for that locale. No explanations, no extra keys.`
+  const keyList = targets.flatMap((locale) => [`title_${locale}`, `body_${locale}`]).join(', ')
+  const systemPrompt = `You are a professional translator. You will receive a JSON object with "title" and "body" fields. Translate BOTH fields into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly in the body (headings, code blocks, lists, links). Respond with ONLY a flat JSON object (no nested objects) with exactly these keys: ${keyList}. Each key's value is the translated text for that field/locale. No explanations, no extra keys.`
   const userText = JSON.stringify({ title, body })
 
-  const empty = { title_i18n: {}, body_i18n: {} }
   try {
     const content = await callGroqJson(systemPrompt, userText)
-    const parsed = JSON.parse(content) as Record<string, { title?: string; body?: string }>
+    const parsed = JSON.parse(content) as Record<string, string>
     const title_i18n: Record<string, string> = {}
     const body_i18n: Record<string, string> = {}
     for (const locale of targets) {
-      const entry = parsed[locale]
-      if (entry?.title?.trim()) title_i18n[locale] = entry.title.trim()
-      if (entry?.body?.trim()) body_i18n[locale] = entry.body.trim()
+      const t = parsed[`title_${locale}`]
+      const b = parsed[`body_${locale}`]
+      if (typeof t === 'string' && t.trim()) title_i18n[locale] = t.trim()
+      if (typeof b === 'string' && b.trim()) body_i18n[locale] = b.trim()
     }
     return { title_i18n, body_i18n }
   } catch (e) {
-    console.error('translateQuestionToLocales: batch translation failed', e)
-    return empty
+    console.error('translateQuestionToLocales: batch translation failed, falling back to separate calls', e)
+    const [title_i18n, body_i18n] = await Promise.all([
+      translateToLocales(title, sourceLocale),
+      translateToLocales(body, sourceLocale),
+    ])
+    return { title_i18n, body_i18n }
   }
 }
