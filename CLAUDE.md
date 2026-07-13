@@ -374,6 +374,38 @@
 1. 各テナント25問以上のSEO対策済み質問を新規作成・投稿する（既存25問のseedデータは全て日本語のみ・投稿者が全員同じ・日付が均等間隔でAI生成感が強いため、新規作成時にまとめて全削除の予定。既存データのtitle_i18n/body_i18n多言語化backfillは新規作成後の作業に統合）
 2. 上記が完了したら、Google AdSense・Stripe Connectへ申請（ユーザーのアクション）
 
+### ✅ テナント間データ漏洩の重大バグ修正・スケルトンローディング実装（2026-07-14）
+
+**発端**: ユーザーからの指摘「称号・マッチング・マイページ・通知メールがテナントを跨いで共有されていないか」の確認依頼から、実際に複数の重大なテナント分離バグが見つかった。
+
+**称号・実績・マッチング候補・スキルタグ等がテナント間で完全に共有されていた重大バグ（修正済み）**
+- `profiles`テーブルが「ユーザー×テナント」ではなく「ユーザー」単位の1行構成だったため、`display_name`/`username`/`skill_tags`/`answered_tags`/`is_available`/`email_notify`/`answer_count`/`hard_quest_count`/`question_count`/`solved_question_count`/`active_title_id`が全テナント共通になっていた
+- 実害が一番大きかったのは`src/lib/matching.ts`の`findMatch()`: マッチング候補をテナントで絞り込まずグローバルの`profiles`から選んでいたため、**無関係なテナントの人が回答依頼メールを受け取る**バグがあった
+- 新設した`tenant_profiles`テーブル（`tenant_id, user_id`複合キー）に上記カラムを移行。既存データは`questions`/`answers`の`tenant_id`から正確に再集計してバックフィル（`hard_quest_count`のみ、hard状態の判定条件が履歴に残っていないため近似値）。マイグレーション: `20260713000002_tenant_scoped_profiles.sql`
+- `user_titles`にも`tenant_id`を追加し複合キー化。`increment_*`系RPC・`check_and_award_titles()`もテナント引数つきでオーバーロード追加（旧シグネチャは後方互換のため残置）
+- マイページ（`profile/page.tsx`）・質問詳細ページの称号バッジ・ヘッダーの通知バッジ（担当タスク数・高難度NEW・レビュー待ち）の全クエリにテナント絞り込み(`tenant_id`)を追加。以前はこれらも全テナント横断で混ざって表示されていた
+- 管理者ページ（`/admin`）だけは運営者が全テナント横断管理する内部ツールという位置づけのため、意図的にそのまま（全テナント串刺し表示）
+
+**RLS安全網の追加中に発生した重大インシデント（原因判明・解決済み）**
+- 上記の是正に加え、「アプリ側がテナント絞り込みを書き忘れても大丈夫なように」`questions`/`answers`/`tenant_profiles`/`user_titles`のRLSにテナント制約（`current_tenant_id()`、PostgRESTの`request.headers`のx-tenant-idヘッダーを参照）を追加
+- 追加直後、**両テナントで質問投稿が一切マッチングされず即座に高難度になる重大な回帰**が発生。RLSを一旦フェイルオープンにロールバックしても直らず、実際の原因は別にあった
+- 真因: 新設した`tenant_profiles`テーブルに対して`anon`/`authenticated`ロールへの**GRANT（SELECT/INSERT/UPDATE/DELETE権限）を付与し忘れていた**ため、RLSの判定以前にPostgRESTから権限エラー（`42501 insufficient_privilege`）で弾かれていた。Cloudflare Workers Observabilityのログで`[findMatch] candidates fetch error: {"code":"42501",...}`を確認して特定
+- `grant select, insert, update, delete on tenant_profiles to anon, authenticated;`で解決。原因究明後、RLSのテナント制約は安全に再有効化した（マイグレーション`20260713000003`→ロールバック→`20260713000004`で再有効化）
+- **教訓**: 新規テーブルを作るマイグレーションでは、RLSポリシーだけでなく`anon`/`authenticated`へのGRANTも必ずセットで書くこと。既存テーブル（`questions`等）は初期スキーマ時にGRANT済みだったため今まで気づかなかった
+
+**通知メールのテナント名・リンクURL修正＋多言語化**
+- `notifyMatchedUser()`が`tenants.name`（リネーム前の古い日本語名）と`tenants.subdomain`（内部ID、公開URLの`bug.`/`music-prod.`とは別物）をそのまま使っていたため、メールの件名が「バグ・デバッグ」等の古い表記になり、リンクも`debug.wisdomassemble.com`のような存在しないサブドメインを指していた。`TENANT_NAME_MAP`・`PUBLIC_SUBDOMAIN_MAP`（`tenantNames.ts`）を使うよう修正
+- メール本文は当初「テナントの言語」（`tenants.language`）で出し分けていたが、ユーザー指摘により**「マッチされた本人がマイページで選んでいる表示言語（`profiles.language`）」を見る仕様に修正**（8言語フルテンプレート化）。質問タイトルも既存の自動翻訳結果（`title_i18n`）から受信者の言語に対応するものを選ぶようにし、テンプレートと本文の言語が混在しないようにした（優先順位: 受信者の言語 → テナント言語 → 英語）
+
+**スケルトンローディングの実装**
+- `QuestionListSkeleton.tsx`は以前から存在したが、どこからも呼ばれていない未配線のデッドコードだった
+- トップの質問一覧は`Suspense`でリスト部分を切り出しフォールバックに設定。高難度一覧・質問詳細ページはroute-level`loading.tsx`を追加
+
+**次回やること**
+1. Claude.aiセッションでのペルソナ・新規質問作成（BUG DEBUG 3問＋MUSIC PRODUCTION 5問、Notion「質問作成用」ページに詳細記載済み）に戻る
+2. 新規質問が固まり次第、既存の未使用データ（ダミー回答・重複等）を削除するSQLを用意
+3. 今回のGRANT忘れの教訓を踏まえ、今後新規テーブルを作る際はGRANT文をマイグレーションのチェックリストに含める
+
 ## マッチングフロー
 ```
 質問投稿
@@ -439,7 +471,10 @@ GRANT SELECT ON public.tenants TO service_role;
 - `isExpiredMatchedB = user?.id === question.matched_b_id && isOpen && !!bExpired`（期限切れ専門家向けUI表示用）
 - `bExpired/cExpired` の宣言は `canRematch` より前に置くこと（temporal dead zone回避）
 - DB更新系APIは全てservice_role使用（RLS回避）
-- `findMatch`の除外フィルター: `.not('id', 'in', \`(${excludeUserIds.join(',')})\`)` （引用符なし）
+- `findMatch`の除外フィルター: `tenant_profiles`に対して`.not('user_id', 'in', \`(${excludeUserIds.join(',')})\`)` （引用符なし。2026-07-14にテナント分離のため`profiles`→`tenant_profiles`へ変更、カラム名も`id`→`user_id`）
+- **新規テーブルを作るマイグレーションでは、RLSポリシーだけでなく`anon`/`authenticated`へのGRANTも必ずセットで書くこと**（2026-07-14の教訓。`grant select, insert, update, delete on <table> to anon, authenticated;`。既存テーブルは初期スキーマ作成時にGRANT済みだが、新設テーブルはRLSポリシーを設定してもGRANT自体がないとPostgRESTから`42501 insufficient_privilege`で弾かれ、RLSの設定ミスと誤認しやすいので要注意）
+- テナント別プロフィール情報（表示名・スキルタグ・稼働状態・通知設定・実績カウント・称号）は`profiles`ではなく`tenant_profiles`（`tenant_id, user_id`複合キー）を参照すること。`profiles`には認証まわり（`id`/`is_banned`/`created_at`/`language`）だけが残っている
+- 通知メール（`notifyMatchedUser`）の言語判定は`tenants.language`ではなく、受信者本人の`profiles.language`を優先すること（マッチされた本人がマイページで選んでいる表示言語に合わせるのが正しい仕様）
 
 ## ディレクトリ構成
 ```
