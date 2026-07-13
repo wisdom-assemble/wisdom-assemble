@@ -30,12 +30,13 @@ export async function findMatch(
   const supabase = await createClient()
 
   // 質問のカテゴリキーワードを取得
-  const { data: question } = await supabase
+  const { data: question, error: questionError } = await supabase
     .from('questions')
     .select('title, body')
     .eq('id', questionId)
     .single()
 
+  if (questionError) console.error('[findMatch] question fetch error:', JSON.stringify(questionError))
   if (!question) return null
 
   // 回答可能なユーザー一覧を取得（除外リスト以外）
@@ -43,12 +44,15 @@ export async function findMatch(
     ? excludeUserIds.join(',')
     : '00000000-0000-0000-0000-000000000000' // ダミーUUID（除外なし時のworkaround）
 
-  const { data: candidates } = await supabase
+  const { data: candidates, error: candidatesError } = await supabase
     .from('tenant_profiles')
     .select('user_id, skill_tags, answered_tags, answer_count')
     .eq('tenant_id', tenantId)
     .eq('is_available', true)
     .not('user_id', 'in', `(${excludeFilter})`)
+
+  if (candidatesError) console.error('[findMatch] candidates fetch error:', JSON.stringify(candidatesError))
+  console.log(`[findMatch] tenant=${tenantId} exclude=${excludeFilter} candidatesFound=${candidates?.length ?? 'null'}`)
 
   if (!candidates || candidates.length === 0) return null
 
