@@ -72,3 +72,33 @@ export async function translateToLocales(
     return {}
   }
 }
+
+// タイトルと本文をまとめて1回のGroq呼び出しで翻訳する（title/bodyを別々に呼ぶと8b-instantモデルへの
+// リクエスト数が倍になり429が起きやすくなるため統合）。
+export async function translateQuestionToLocales(
+  title: string,
+  body: string,
+  sourceLocale: string
+): Promise<{ title_i18n: Record<string, string>; body_i18n: Record<string, string> }> {
+  const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
+  const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
+  const systemPrompt = `You are a professional translator. You will receive a JSON object with "title" and "body" fields. Translate BOTH fields into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly in the body (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}), and whose values are objects of the form {"title": "...", "body": "..."} containing the translation for that locale. No explanations, no extra keys.`
+  const userText = JSON.stringify({ title, body })
+
+  const empty = { title_i18n: {}, body_i18n: {} }
+  try {
+    const content = await callGroqJson(systemPrompt, userText)
+    const parsed = JSON.parse(content) as Record<string, { title?: string; body?: string }>
+    const title_i18n: Record<string, string> = {}
+    const body_i18n: Record<string, string> = {}
+    for (const locale of targets) {
+      const entry = parsed[locale]
+      if (entry?.title?.trim()) title_i18n[locale] = entry.title.trim()
+      if (entry?.body?.trim()) body_i18n[locale] = entry.body.trim()
+    }
+    return { title_i18n, body_i18n }
+  } catch (e) {
+    console.error('translateQuestionToLocales: batch translation failed', e)
+    return empty
+  }
+}

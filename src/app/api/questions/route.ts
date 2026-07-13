@@ -5,7 +5,7 @@ import { askWithScore, checkInScope } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser } from '@/lib/email'
-import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
+import { translateQuestionToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
 function toSlug(text: string): string {
@@ -109,14 +109,11 @@ export async function POST(request: NextRequest) {
   // AI回答・マッチング処理と並行実行するため、ここではPromiseを開始するだけで待たない。
   // Cloudflare Workersはレスポンスを返すと未完了のfire-and-forget処理を打ち切るため、
   // 必ずレスポンス返却前にawaitする（下部参照）。
-  const titleTranslationPromise = translateToLocales(title.trim(), sourceLocale).catch((e) => {
-    console.error('title translation error:', e)
-    return {}
+  const translationPromise = translateQuestionToLocales(title.trim(), body.trim(), sourceLocale).catch((e) => {
+    console.error('question translation error:', e)
+    return { title_i18n: {}, body_i18n: {} }
   })
-  const bodyTranslationPromise = translateToLocales(body.trim(), sourceLocale).catch((e) => {
-    console.error('body translation error:', e)
-    return {}
-  })
+  const titleTranslationPromise = translationPromise.then((r) => r.title_i18n)
 
   // ② ジャンル内確定なのでスコア付き回答を生成
   let resultType: 'ai' | 'matched' | 'pending' = 'pending'
@@ -204,7 +201,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 翻訳結果を保存（Cloudflare Workersがレスポンス返却後に処理を打ち切るため必ずawaitする）
-  const [title_i18n, body_i18n] = await Promise.all([titleTranslationPromise, bodyTranslationPromise])
+  const { title_i18n, body_i18n } = await translationPromise
   await supabase.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
 
   return NextResponse.json({ slug: question.slug, result: resultType })
