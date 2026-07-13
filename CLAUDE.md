@@ -397,6 +397,11 @@
 - `notifyMatchedUser()`が`tenants.name`（リネーム前の古い日本語名）と`tenants.subdomain`（内部ID、公開URLの`bug.`/`music-prod.`とは別物）をそのまま使っていたため、メールの件名が「バグ・デバッグ」等の古い表記になり、リンクも`debug.wisdomassemble.com`のような存在しないサブドメインを指していた。`TENANT_NAME_MAP`・`PUBLIC_SUBDOMAIN_MAP`（`tenantNames.ts`）を使うよう修正
 - メール本文は当初「テナントの言語」（`tenants.language`）で出し分けていたが、ユーザー指摘により**「マッチされた本人がマイページで選んでいる表示言語（`profiles.language`）」を見る仕様に修正**（8言語フルテンプレート化）。質問タイトルも既存の自動翻訳結果（`title_i18n`）から受信者の言語に対応するものを選ぶようにし、テンプレートと本文の言語が混在しないようにした（優先順位: 受信者の言語 → テナント言語 → 英語）
 
+**質問投稿ごとのGroq API呼び出し最適化＋翻訳エラー修正**
+- 1回の質問投稿で`checkInScope`＋`askWithScore`（70bモデル）、タイトル翻訳＋本文翻訳（8b-instantモデル）の計4回Groqを呼んでいたことが判明。タイトル・本文の翻訳を1回のGroq呼び出しに統合し、8b-instantモデルへの呼び出しを2回→1回に削減（`translateQuestionToLocales`、`src/lib/translate.ts`）
+- 統合直後、通知メールの質問タイトル翻訳が反映されない不具合が発生。原因は2段階：①連続テスト投稿によるGroqの429レート制限、②統合時にネストしたJSON構造（`{"en":{"title":..,"body":..}}`）を要求していたため、タイトルに含まれる引用符（「」）のエスケープにAIが失敗し`400 json_validate_failed`が発生
+- JSONのキーをフラット化（`title_en`, `body_en`など）し、それでも失敗した場合は従来の個別呼び出し方式（`translateToLocales`を2回）に自動フォールバックする実装に変更。本番で英語メールのタイトル翻訳が正しく反映されることを確認済み
+
 **スケルトンローディングの実装**
 - `QuestionListSkeleton.tsx`は以前から存在したが、どこからも呼ばれていない未配線のデッドコードだった
 - トップの質問一覧は`Suspense`でリスト部分を切り出しフォールバックに設定。高難度一覧・質問詳細ページはroute-level`loading.tsx`を追加
