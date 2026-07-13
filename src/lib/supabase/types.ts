@@ -17,12 +17,26 @@ export interface Tenant {
 
 export interface Profile {
   id: string
-  username: string
+  is_banned: boolean
+  language: string
+  created_at: string
+}
+
+// テナントごとに独立した表示名・実績・称号（ユーザー×テナントで1行）
+export interface TenantProfile {
+  tenant_id: string
+  user_id: string
   display_name: string | null
+  username: string | null
+  skill_tags: string[]
+  answered_tags: string[]
+  is_available: boolean
+  email_notify: boolean
   answer_count: number
   hard_quest_count: number
+  question_count: number
+  solved_question_count: number
   active_title_id: string | null
-  language: string
   created_at: string
 }
 
@@ -79,9 +93,9 @@ export interface Donation {
 
 // Joined types for UI
 export interface QuestionWithProfile extends Question {
-  profiles: Pick<Profile, 'id' | 'username' | 'display_name' | 'active_title_id'>
+  profiles: Pick<TenantProfile, 'user_id' | 'username' | 'display_name' | 'active_title_id'>
 }
 
 export interface AnswerWithProfile extends Answer {
-  profiles: Pick<Profile, 'id' | 'username' | 'display_name' | 'active_title_id'> | null
+  profiles: Pick<TenantProfile, 'user_id' | 'username' | 'display_name' | 'active_title_id'> | null
 }

@@ -44,10 +44,11 @@ export async function findMatch(
     : '00000000-0000-0000-0000-000000000000' // ダミーUUID（除外なし時のworkaround）
 
   const { data: candidates } = await supabase
-    .from('profiles')
-    .select('id, skill_tags, answered_tags, answer_count')
+    .from('tenant_profiles')
+    .select('user_id, skill_tags, answered_tags, answer_count')
+    .eq('tenant_id', tenantId)
     .eq('is_available', true)
-    .not('id', 'in', `(${excludeFilter})`)
+    .not('user_id', 'in', `(${excludeFilter})`)
 
   if (!candidates || candidates.length === 0) return null
 
@@ -74,7 +75,7 @@ export async function findMatch(
       answeredMatch * SCORE.ANSWERED_TAG_MATCH +
       (c.answer_count ?? 0) * SCORE.ANSWER_COUNT_RATE
 
-    return { id: c.id, score }
+    return { id: c.user_id, score }
   })
 
   return weightedRandom(scored)

@@ -62,41 +62,39 @@ export async function POST(request: NextRequest) {
   // 人間の回答者なら実績加算 + タグ蓄積 + 称号チェック
   if (!answer.is_ai && answer.user_id) {
     // answer_countをインクリメント
-    await admin.rpc('increment_answer_count', { uid: answer.user_id })
+    await admin.rpc('increment_answer_count', { uid: answer.user_id, p_tenant_id: tenantId })
 
     // 高難度クエストの解決数をインクリメント
     if (question.status === 'hard') {
-      await admin.rpc('increment_hard_quest_count', { uid: answer.user_id })
+      await admin.rpc('increment_hard_quest_count', { uid: answer.user_id, p_tenant_id: tenantId })
     }
 
     // 回答実績タグに質問タグを追加（No.27）
     const questionTags: string[] = question.tags ?? []
     if (questionTags.length > 0) {
-      // 既存のanswered_tagsを取得
-      const { data: profile } = await admin
-        .from('profiles')
+      // 既存のanswered_tagsを取得（テナント別）
+      const { data: tenantProfile } = await admin
+        .from('tenant_profiles')
         .select('answered_tags')
-        .eq('id', answer.user_id)
-        .single()
+        .eq('tenant_id', tenantId)
+        .eq('user_id', answer.user_id)
+        .maybeSingle()
 
-      if (profile) {
-        const existing: string[] = profile.answered_tags ?? []
-        // タイトルキーワードも追加（質問タグが空の場合のフォールバック）
-        const merged = Array.from(new Set([...existing, ...questionTags]))
-        await admin
-          .from('profiles')
-          .update({ answered_tags: merged })
-          .eq('id', answer.user_id)
-      }
+      const existing: string[] = tenantProfile?.answered_tags ?? []
+      // タイトルキーワードも追加（質問タグが空の場合のフォールバック）
+      const merged = Array.from(new Set([...existing, ...questionTags]))
+      await admin
+        .from('tenant_profiles')
+        .upsert({ tenant_id: tenantId, user_id: answer.user_id, answered_tags: merged }, { onConflict: 'tenant_id,user_id' })
     }
 
     // 称号チェック（回答者）
-    await admin.rpc('check_and_award_titles', { p_user_id: answer.user_id })
+    await admin.rpc('check_and_award_titles', { p_user_id: answer.user_id, p_tenant_id: tenantId })
   }
 
   // 質問者の解決済みカウント＋称号チェック
-  await admin.rpc('increment_solved_question_count', { uid: question.user_id })
-  await admin.rpc('check_and_award_titles', { p_user_id: question.user_id })
+  await admin.rpc('increment_solved_question_count', { uid: question.user_id, p_tenant_id: tenantId })
+  await admin.rpc('check_and_award_titles', { p_user_id: question.user_id, p_tenant_id: tenantId })
 
   return NextResponse.json({ ok: true })
 }

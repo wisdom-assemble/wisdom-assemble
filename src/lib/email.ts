@@ -1,7 +1,34 @@
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 const SITE_URL = 'wisdomassemble.com'
+
+const MATCH_NOTIFY_TEMPLATES: Record<'en' | 'ja', {
+  subject: (siteName: string) => string
+  body: (params: { questionTitle: string; url: string; siteName: string }) => string
+}> = {
+  ja: {
+    subject: (siteName) => `【${siteName}】あなたに回答依頼が届いています`,
+    body: ({ questionTitle, url, siteName }) => `
+      <p>こんにちは。</p>
+      <p>あなたにマッチした質問があります。</p>
+      <p style="font-weight:bold;">${escapeHtml(questionTitle)}</p>
+      <p><a href="${url}">質問を見て回答する</a></p>
+      <p style="color:#888;font-size:12px;">このメールは ${escapeHtml(siteName)} からの自動送信です。マイページの設定からメール通知をオフにできます。</p>
+    `,
+  },
+  en: {
+    subject: (siteName) => `[${siteName}] You have a new question to answer`,
+    body: ({ questionTitle, url, siteName }) => `
+      <p>Hello,</p>
+      <p>A question has been matched to you.</p>
+      <p style="font-weight:bold;">${escapeHtml(questionTitle)}</p>
+      <p><a href="${url}">View and answer the question</a></p>
+      <p style="color:#888;font-size:12px;">This is an automated email from ${escapeHtml(siteName)}. You can turn off email notifications in your account settings.</p>
+    `,
+  },
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -71,13 +98,14 @@ export async function notifyMatchedUser(params: {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: profile } = await admin
-    .from('profiles')
+  const { data: tenantProfile } = await admin
+    .from('tenant_profiles')
     .select('email_notify')
-    .eq('id', params.userId)
+    .eq('tenant_id', params.tenantId)
+    .eq('user_id', params.userId)
     .maybeSingle()
 
-  if (profile?.email_notify === false) return
+  if (tenantProfile?.email_notify === false) return
 
   const { data: authData } = await admin.auth.admin.getUserById(params.userId)
   const email = authData?.user?.email
@@ -85,23 +113,19 @@ export async function notifyMatchedUser(params: {
 
   const { data: tenant } = await admin
     .from('tenants')
-    .select('subdomain, name')
+    .select('name, language')
     .eq('id', params.tenantId)
     .maybeSingle()
 
-  const subdomain = tenant?.subdomain ?? params.tenantId
-  const siteName = tenant?.name ?? 'Wisdom Assemble'
+  const siteName = getTenantDisplayName(params.tenantId, tenant?.name ?? params.tenantId)
+  const subdomain = getPublicSubdomain(params.tenantId)
   const url = `https://${subdomain}.${SITE_URL}/questions/${encodeURIComponent(params.questionSlug)}`
+  const templateLocale = tenant?.language === 'en' ? 'en' : 'ja'
+  const template = MATCH_NOTIFY_TEMPLATES[templateLocale]
 
   await sendEmail({
     to: email,
-    subject: `【${siteName}】あなたに回答依頼が届いています`,
-    htmlContent: `
-      <p>こんにちは。</p>
-      <p>あなたにマッチした質問があります。</p>
-      <p style="font-weight:bold;">${escapeHtml(params.questionTitle)}</p>
-      <p><a href="${url}">質問を見て回答する</a></p>
-      <p style="color:#888;font-size:12px;">このメールは ${siteName} からの自動送信です。マイページの設定からメール通知をオフにできます。</p>
-    `,
+    subject: template.subject(siteName),
+    htmlContent: template.body({ questionTitle: params.questionTitle, url, siteName }),
   })
 }

@@ -85,21 +85,31 @@ export default async function QuestionPage({ params, searchParams }: Props) {
 
   const { data: answers } = await supabase
     .from('answers')
-    .select('*, profiles(username, display_name, active_title_id)')
+    .select('*, profiles(username, display_name)')
     .eq('question_id', question.id)
     .order('created_at', { ascending: true })
 
-  // 回答者のアクティブ称号を取得
-  const activeTitleIds = [...new Set(
-    (answers ?? []).map((a: any) => a.profiles?.active_title_id).filter(Boolean)
-  )]
+  // 回答者のアクティブ称号を取得（このテナントでの称号のみ）
+  const answererIds = [...new Set((answers ?? []).map((a: any) => a.user_id).filter(Boolean))]
+  const activeTitleByUser: Record<string, string> = {}
   const titleMap: Record<string, string> = {}
-  if (activeTitleIds.length > 0) {
-    const { data: titleRows } = await supabase
-      .from('titles')
-      .select('id, name')
-      .in('id', activeTitleIds)
-    for (const row of titleRows ?? []) titleMap[row.id] = tTitles.has(row.id) ? tTitles(row.id) : row.name
+  if (answererIds.length > 0) {
+    const { data: tenantProfileRows } = await supabase
+      .from('tenant_profiles')
+      .select('user_id, active_title_id')
+      .eq('tenant_id', tenantId)
+      .in('user_id', answererIds)
+    for (const row of tenantProfileRows ?? []) {
+      if (row.active_title_id) activeTitleByUser[row.user_id] = row.active_title_id
+    }
+    const activeTitleIds = [...new Set(Object.values(activeTitleByUser))]
+    if (activeTitleIds.length > 0) {
+      const { data: titleRows } = await supabase
+        .from('titles')
+        .select('id, name')
+        .in('id', activeTitleIds)
+      for (const row of titleRows ?? []) titleMap[row.id] = tTitles.has(row.id) ? tTitles(row.id) : row.name
+    }
   }
 
   // ビュー数インクリメント（fire and forget）
@@ -294,9 +304,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                           <span className="font-medium text-gray-700">
                             {responder?.display_name ?? responder?.username}
                           </span>
-                          {responder?.active_title_id && titleMap[responder.active_title_id] && (
+                          {activeTitleByUser[a.user_id] && titleMap[activeTitleByUser[a.user_id]] && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                              {titleMap[responder.active_title_id]}
+                              {titleMap[activeTitleByUser[a.user_id]]}
                             </span>
                           )}
                         </>

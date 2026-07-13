@@ -37,6 +37,7 @@ export default function Header() {
       const { data } = await supabase
         .from('questions')
         .select('id, created_at')
+        .eq('tenant_id', tenantId)
         .eq('status', 'hard')
         .order('created_at', { ascending: false })
       if (!data?.length) return
@@ -57,12 +58,13 @@ export default function Header() {
           .from('answers')
           .select('question_id')
           .eq('user_id', data.user.id)
+          .eq('tenant_id', tenantId)
           .eq('is_ai', false)
         const answeredIds = (answered ?? []).map((a: any) => a.question_id)
 
         const [{ data: bTasks }, { data: cTasks }] = await Promise.all([
-          supabase.from('questions').select('id, matched_b_deadline').eq('matched_b_id', data.user.id).eq('status', 'open'),
-          supabase.from('questions').select('id, matched_c_deadline').eq('matched_c_id', data.user.id).eq('status', 'matched_c'),
+          supabase.from('questions').select('id, matched_b_deadline').eq('tenant_id', tenantId).eq('matched_b_id', data.user.id).eq('status', 'open'),
+          supabase.from('questions').select('id, matched_c_deadline').eq('tenant_id', tenantId).eq('matched_c_id', data.user.id).eq('status', 'matched_c'),
         ])
         const now = new Date()
         const bPending = (bTasks ?? []).filter(q => !q.matched_b_deadline || new Date(q.matched_b_deadline) > now)
@@ -73,6 +75,7 @@ export default function Header() {
         const { data: myQuestions } = await supabase
           .from('questions')
           .select('id, owner_reviewed_at, answers(id, created_at)')
+          .eq('tenant_id', tenantId)
           .eq('user_id', data.user.id)
           .not('status', 'in', '("solved","hard")')
         const unreviewed = (myQuestions ?? []).filter((q: any) => {

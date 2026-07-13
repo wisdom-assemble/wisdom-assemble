@@ -68,43 +68,55 @@ export default function ProfilePage() {
       if (!user) { router.push('/auth/login?next=/profile'); return }
       setUserEmail(user.email ?? '')
 
-      const [{ data: profile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }, { data: userTitles }, { data: solvedAnswerRows }] = await Promise.all([
+      const [{ data: profile }, { data: tenantProfile }, { data: questions }, { data: bTasks }, { data: cTasks }, { data: reviewQuestions }, { data: userTitles }, { data: solvedAnswerRows }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify, active_title_id, language')
+          .select('language')
           .eq('id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('tenant_profiles')
+          .select('display_name, skill_tags, is_available, answer_count, hard_quest_count, email_notify, active_title_id')
+          .eq('tenant_id', tenantId)
+          .eq('user_id', user.id)
           .maybeSingle(),
         supabase
           .from('questions')
           .select('id, title, slug, status, created_at')
+          .eq('tenant_id', tenantId)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('questions')
           .select('id, title, slug, status, created_at, matched_b_deadline')
+          .eq('tenant_id', tenantId)
           .eq('matched_b_id', user.id)
           .eq('status', 'open')
           .order('created_at', { ascending: false }),
         supabase
           .from('questions')
           .select('id, title, slug, status, created_at, matched_c_deadline')
+          .eq('tenant_id', tenantId)
           .eq('matched_c_id', user.id)
           .eq('status', 'matched_c')
           .order('created_at', { ascending: false }),
         supabase
           .from('questions')
           .select('id, title, slug, status, created_at, owner_reviewed_at, answers(id, created_at)')
+          .eq('tenant_id', tenantId)
           .eq('user_id', user.id)
           .not('status', 'in', '("solved","hard")')
           .order('created_at', { ascending: false }),
         supabase
           .from('user_titles')
           .select('title_id')
+          .eq('tenant_id', tenantId)
           .eq('user_id', user.id),
         supabase
           .from('answers')
           .select('id, created_at, questions(id, title, slug)')
+          .eq('tenant_id', tenantId)
           .eq('user_id', user.id)
           .eq('is_accepted', true)
           .eq('is_ai', false)
@@ -112,15 +124,15 @@ export default function ProfilePage() {
           .limit(100),
       ])
 
-      if (profile) {
-        setDisplayName(profile.display_name ?? '')
-        setSkills(profile.skill_tags ?? [])
-        setIsAvailable(profile.is_available ?? true)
-        setEmailNotify(profile.email_notify ?? true)
-        setStats({ answerCount: profile.answer_count ?? 0, hardQuestCount: profile.hard_quest_count ?? 0 })
-        setActiveTitle(profile.active_title_id ?? null)
-        if (profile.language) setLanguage(profile.language)
+      if (tenantProfile) {
+        setDisplayName(tenantProfile.display_name ?? '')
+        setSkills(tenantProfile.skill_tags ?? [])
+        setIsAvailable(tenantProfile.is_available ?? true)
+        setEmailNotify(tenantProfile.email_notify ?? true)
+        setStats({ answerCount: tenantProfile.answer_count ?? 0, hardQuestCount: tenantProfile.hard_quest_count ?? 0 })
+        setActiveTitle(tenantProfile.active_title_id ?? null)
       }
+      if (profile?.language) setLanguage(profile.language)
       if (userTitles && userTitles.length > 0) {
         const titleIds = userTitles.map((ut: any) => ut.title_id)
         const { data: titleData } = await supabase
@@ -133,6 +145,7 @@ export default function ProfilePage() {
       const { data: myAnswers } = await supabase
         .from('answers')
         .select('question_id')
+        .eq('tenant_id', tenantId)
         .eq('user_id', user.id)
         .eq('is_ai', false)
       const answeredQIds = new Set((myAnswers ?? []).map((a: any) => a.question_id))
@@ -160,7 +173,9 @@ export default function ProfilePage() {
     if (!user) return
     const newActive = activeTitle === titleId ? null : titleId
     setActiveTitle(newActive)
-    await supabase.from('profiles').update({ active_title_id: newActive }).eq('id', user.id)
+    await supabase
+      .from('tenant_profiles')
+      .upsert({ tenant_id: tenantId, user_id: user.id, active_title_id: newActive }, { onConflict: 'tenant_id,user_id' })
   }
 
   function toggleSkill(skill: string) {
@@ -197,9 +212,18 @@ export default function ProfilePage() {
     }
 
     const { error } = await supabase
-      .from('profiles')
-      .update({ display_name: displayName.trim() || null, skill_tags: skills, is_available: isAvailable, email_notify: emailNotify })
-      .eq('id', user.id)
+      .from('tenant_profiles')
+      .upsert(
+        {
+          tenant_id: tenantId,
+          user_id: user.id,
+          display_name: displayName.trim() || null,
+          skill_tags: skills,
+          is_available: isAvailable,
+          email_notify: emailNotify,
+        },
+        { onConflict: 'tenant_id,user_id' }
+      )
 
     setSaving(false)
     if (error) console.error('profile save error:', JSON.stringify(error))

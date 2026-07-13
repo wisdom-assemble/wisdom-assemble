@@ -195,8 +195,8 @@ export async function POST(request: NextRequest) {
 
   // 質問投稿数カウント＋称号チェック
   try {
-    await supabase.rpc('increment_question_count', { uid: user.id })
-    await supabase.rpc('check_and_award_titles', { p_user_id: user.id })
+    await supabase.rpc('increment_question_count', { uid: user.id, p_tenant_id: tenantId })
+    await supabase.rpc('check_and_award_titles', { p_user_id: user.id, p_tenant_id: tenantId })
   } catch (e) {
     console.error('question title award error:', e)
   }
