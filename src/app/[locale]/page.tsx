@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import { getTranslations, getLocale, getMessages } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
 import PortalHome from '@/components/PortalHome'
+import QuestionListSkeleton from '@/components/QuestionListSkeleton'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -27,7 +29,6 @@ export default async function HomePage({
 }) {
   const { q = '', page: pageStr = '1' } = await searchParams
   const page = Math.max(1, parseInt(pageStr) || 1)
-  const offset = (page - 1) * PAGE_SIZE
 
   const tenantId = await getTenantId()
   if (tenantId === ROOT_TENANT_ID) {
@@ -38,27 +39,14 @@ export default async function HomePage({
   const locale = await getLocale()
   const messages = await getMessages() as { skillTags?: Record<string, string> }
   const skillLabel = (skill: string) => messages.skillTags?.[skill] ?? skill
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  let query = supabase
-    .from('questions')
-    .select('id, title, title_i18n, slug, status, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
-    .eq('tenant_id', tenantId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + PAGE_SIZE - 1)
-
-  if (q.trim()) {
-    query = query.or(`title.ilike.%${q.trim()}%,body.ilike.%${q.trim()}%`)
-  }
 
   const admin = getAdminClient()
-  const [{ data: questions, count }, { data: tenant }] = await Promise.all([
-    query,
-    admin.from('tenants').select('name, description, description_i18n').eq('id', tenantId).single(),
-  ])
+  const { data: tenant } = await admin
+    .from('tenants')
+    .select('name, description, description_i18n')
+    .eq('id', tenantId)
+    .single()
 
-  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
   const tagline = tenant?.description_i18n?.[locale] ?? tenant?.description
 
   return (
@@ -96,58 +84,98 @@ export default async function HomePage({
           </div>
         )}
 
-        {q && (
-          <p className="text-sm text-gray-500 mb-4">
-            {t('searchResult', { query: q, count: count ?? 0 })}
-            <Link href="/" className="ml-2 underline text-gray-400 hover:text-gray-600 text-xs">
-              {t('clear')}
-            </Link>
-          </p>
-        )}
-
-        {questions && questions.length > 0 ? (
-          <>
-            <ul className="divide-y divide-gray-100">
-              {questions.map((q) => (
-                <li key={q.id}>
-                  <Link
-                    href={`/questions/${q.slug}`}
-                    className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {(q.title_i18n as Record<string, string> | null)?.[locale] ?? q.title}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {(q.profiles as any)?.display_name ?? (q.profiles as any)?.username} ·{' '}
-                          {new Date(q.created_at).toLocaleDateString(locale)}
-                        </p>
-                      </div>
-                      <StatusBadge status={q.status} matchedBId={(q as any).matched_b_id} myId={user?.id} matchedCId={(q as any).matched_c_id} t={t} />
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            {totalPages > 1 && (
-              <Pagination currentPage={page} totalPages={totalPages} q={q} t={t} />
-            )}
-          </>
-        ) : (
-          <div className="text-center py-16 text-gray-400">
-            {q ? (
-              <p>{t('noMatch', { query: q })}</p>
-            ) : (
-              <>
-                <p>{t('noQuestions')}</p>
-                <p className="text-sm mt-1">{t('postFirstQuestion')}</p>
-              </>
-            )}
-          </div>
-        )}
+        <Suspense key={`${tenantId}-${q}-${page}`} fallback={<QuestionListSkeleton />}>
+          <QuestionResults tenantId={tenantId} q={q} page={page} locale={locale} t={t} />
+        </Suspense>
       </main>
+    </>
+  )
+}
+
+async function QuestionResults({
+  tenantId,
+  q,
+  page,
+  locale,
+  t,
+}: {
+  tenantId: string
+  q: string
+  page: number
+  locale: string
+  t: Awaited<ReturnType<typeof getTranslations>>
+}) {
+  const offset = (page - 1) * PAGE_SIZE
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let query = supabase
+    .from('questions')
+    .select('id, title, title_i18n, slug, status, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1)
+
+  if (q.trim()) {
+    query = query.or(`title.ilike.%${q.trim()}%,body.ilike.%${q.trim()}%`)
+  }
+
+  const { data: questions, count } = await query
+  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
+
+  return (
+    <>
+      {q && (
+        <p className="text-sm text-gray-500 mb-4">
+          {t('searchResult', { query: q, count: count ?? 0 })}
+          <Link href="/" className="ml-2 underline text-gray-400 hover:text-gray-600 text-xs">
+            {t('clear')}
+          </Link>
+        </p>
+      )}
+
+      {questions && questions.length > 0 ? (
+        <>
+          <ul className="divide-y divide-gray-100">
+            {questions.map((question) => (
+              <li key={question.id}>
+                <Link
+                  href={`/questions/${question.slug}`}
+                  className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {(question.title_i18n as Record<string, string> | null)?.[locale] ?? question.title}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {(question.profiles as any)?.display_name ?? (question.profiles as any)?.username} ·{' '}
+                        {new Date(question.created_at).toLocaleDateString(locale)}
+                      </p>
+                    </div>
+                    <StatusBadge status={question.status} matchedBId={(question as any).matched_b_id} myId={user?.id} matchedCId={(question as any).matched_c_id} t={t} />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {totalPages > 1 && (
+            <Pagination currentPage={page} totalPages={totalPages} q={q} t={t} />
+          )}
+        </>
+      ) : (
+        <div className="text-center py-16 text-gray-400">
+          {q ? (
+            <p>{t('noMatch', { query: q })}</p>
+          ) : (
+            <>
+              <p>{t('noQuestions')}</p>
+              <p className="text-sm mt-1">{t('postFirstQuestion')}</p>
+            </>
+          )}
+        </div>
+      )}
     </>
   )
 }
