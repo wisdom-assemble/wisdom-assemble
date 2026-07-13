@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
 import PortalHome from '@/components/PortalHome'
 import QuestionListSkeleton from '@/components/QuestionListSkeleton'
+import LocalDate from '@/components/LocalDate'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -150,7 +151,7 @@ async function QuestionResults({
                       </p>
                       <p className="text-xs text-gray-400">
                         {(question.profiles as any)?.display_name ?? (question.profiles as any)?.username} ·{' '}
-                        {new Date(question.created_at).toLocaleDateString(locale)}
+                        <LocalDate iso={question.created_at} locale={locale} />
                       </p>
                     </div>
                     <StatusBadge status={question.status} matchedBId={(question as any).matched_b_id} myId={user?.id} matchedCId={(question as any).matched_c_id} t={t} />

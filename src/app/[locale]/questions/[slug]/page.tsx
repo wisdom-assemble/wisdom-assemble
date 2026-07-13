@@ -9,6 +9,7 @@ import TranslatedAnswerBody from '@/components/TranslatedAnswerBody'
 import { Link } from '@/i18n/navigation'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
+import LocalDate from '@/components/LocalDate'
 import type { Metadata } from 'next'
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result?: string }> }
@@ -256,7 +257,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             meta={
               <p className="text-xs text-gray-400 mb-4">
                 {poster?.display_name ?? poster?.username} ·{' '}
-                {new Date(question.created_at).toLocaleDateString(locale)} ·{' '}
+                <LocalDate iso={question.created_at} locale={locale} /> ·{' '}
                 {question.view_count} {t('views')}
               </p>
             }
@@ -314,7 +315,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                       {a.is_accepted && (
                         <span className="text-green-700 font-medium">{t('bestAnswer')}</span>
                       )}
-                      <span>{new Date(a.created_at).toLocaleDateString(locale)}</span>
+                      <span><LocalDate iso={a.created_at} locale={locale} /></span>
                     </div>
                     <TranslatedAnswerBody
                       body={a.body}
