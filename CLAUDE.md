@@ -417,11 +417,18 @@
 - 生成した仕様をボタン一つでチャットへ送信でき、そこから実際の実装（DB反映・5ファイル編集・デプロイ）を行う。使い方の詳細はNotion「テナントビルダー 使い方・新テナント追加手順」ページに記載
 - **AdSense審査中の運用**: ローカルで実装・型チェックまで済ませてレビューできる状態にし、明示的にデプロイ指示があるまで`git push origin main`は保留する
 - **重要な発見（v8で修正済み）**: ルートポータル（wisdomassemble.com）の表示制御は`tenantNames.ts`の`LIVE_TENANT_IDS`（どこからも参照されていない不使用定数）ではなく、`src/components/PortalHome.tsx`内の`REVIEW_TENANT_IDS`配列が実体。さらに同ファイルのタグライン取得が`tenantId === 'debug' ? 'debugCardTagline' : 'dtmCardTagline'`という2値決め打ちの三項演算子になっており、3件目以降を追加すると誤って`dtmCardTagline`が使われる潜在バグがある。新規テナントをルートポータルに公開する際は、`REVIEW_TENANT_IDS`・`FALLBACK_COLOR_THEME`への追記に加え、タグライン取得を`t(\`${tenantId}CardTagline\`)`のような動的キーに修正し、`messages/`配下8言語すべてに`{tenantId}CardTagline`キーを追加すること
+- **v1.0.0として確定（2026-07-15）**: 初期コンテンツ（SEO用Q&A）生成機能を内蔵。ユーザー提供の「seed content knowhow.md」（ペルソナ設計・自然さを出す技術・6パターンの解決フロー）をコード内に常時埋め込み、デフォルトで25問・テナント作成と同時に依頼される。ツール自体のデザインもルートサイト（`globals.css`のトークン・`rounded-lg`系）に合わせ、`WisdomAssembleWordmark`と同一のSVGロゴをツールのブランディングにも使用。テナントの配色を選ぶとツール全体のアクセントが連動する。「🔍実装前にコードとの整合性チェックを依頼」ボタンで、ツールの前提とコードの実態がズレていないか事前確認できる。詳細はNotion「テナントビルダー（Artifactツール）v1.0.0」ページ（パラメータ一覧・使い方・既知の制約を網羅）参照
+
+**Claude Team移行にあたっての引き継ぎ整理（2026-07-15）**
+- ユーザーがClaude Teamプランに移行予定。現アカウントは17日後に無料版になるため、Notion全ページ（開発ログ・バグトラック・残タスクリスト・テナントビルダー関連ページ）とこのCLAUDE.mdを棚卸・更新した
+- プロジェクトメモリ（`/Users/apple/.claude/projects/-Users-apple-Music-Ableton/memory/`）はローカルファイルベースであり、Claudeのアカウント/プランに紐付いていない。同じMac・同じプロジェクトパスで使い続ける限り、アカウントを切り替えても記憶は引き継がれる
+- 外部サービス（Supabase・Cloudflare・Groq・Brevo等）の認証情報はClaudeアカウントと無関係なので影響なし。`.env.local`はgitignore対象のためローカルにしか存在しない点だけ留意（バックアップ推奨）
 
 **次回やること**
 1. Claude.aiセッションでのペルソナ・新規質問作成（BUG DEBUG 3問＋MUSIC PRODUCTION 5問、Notion「質問作成用」ページに詳細記載済み）に戻る
 2. 新規質問が固まり次第、既存の未使用データ（ダミー回答・重複等）を削除するSQLを用意
 3. 今回のGRANT忘れの教訓を踏まえ、今後新規テーブルを作る際はGRANT文をマイグレーションのチェックリストに含める
+4. AdSense/Stripe Connect審査通過後、テナントビルダーで残り8テナントを順次展開
 
 ## マッチングフロー
 ```
