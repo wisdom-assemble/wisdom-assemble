@@ -414,8 +414,9 @@
 - AIジャンル判定（inScope/outScope/threshold/dangerKeywords）は「Claudeにお任せ（自動設計）」と「手動入力」を選択可能。知らないジャンルを無理に手動で決め打ちしなくてよい設計
 - ロゴは`SiteLogo.tsx`・`logoColor.ts`と同一のSVG生成ロジックをツール内に移植し、実際の見た目に近いプレビュー（ヘッダー・ヒーロー見出し・ルートポータルカード）を表示
 - 現在DB・コードに下書きが存在する8テナント（tax-japan/australia-whv/bali/chiangmai/portugal/keyboard/philippines/canada）はクイック読み込み可能。それ以外の全く新しいジャンルもテナントIDを直接入力してゼロから作成できる
-- 生成した仕様をボタン一つでチャットへ送信でき、そこから実際の実装（DB反映・4ファイル編集・デプロイ）を行う。使い方の詳細はNotion「テナントビルダー 使い方・新テナント追加手順」ページに記載
+- 生成した仕様をボタン一つでチャットへ送信でき、そこから実際の実装（DB反映・5ファイル編集・デプロイ）を行う。使い方の詳細はNotion「テナントビルダー 使い方・新テナント追加手順」ページに記載
 - **AdSense審査中の運用**: ローカルで実装・型チェックまで済ませてレビューできる状態にし、明示的にデプロイ指示があるまで`git push origin main`は保留する
+- **重要な発見（v8で修正済み）**: ルートポータル（wisdomassemble.com）の表示制御は`tenantNames.ts`の`LIVE_TENANT_IDS`（どこからも参照されていない不使用定数）ではなく、`src/components/PortalHome.tsx`内の`REVIEW_TENANT_IDS`配列が実体。さらに同ファイルのタグライン取得が`tenantId === 'debug' ? 'debugCardTagline' : 'dtmCardTagline'`という2値決め打ちの三項演算子になっており、3件目以降を追加すると誤って`dtmCardTagline`が使われる潜在バグがある。新規テナントをルートポータルに公開する際は、`REVIEW_TENANT_IDS`・`FALLBACK_COLOR_THEME`への追記に加え、タグライン取得を`t(\`${tenantId}CardTagline\`)`のような動的キーに修正し、`messages/`配下8言語すべてに`{tenantId}CardTagline`キーを追加すること
 
 **次回やること**
 1. Claude.aiセッションでのペルソナ・新規質問作成（BUG DEBUG 3問＋MUSIC PRODUCTION 5問、Notion「質問作成用」ページに詳細記載済み）に戻る
