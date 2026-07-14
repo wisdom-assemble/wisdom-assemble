@@ -406,6 +406,17 @@
 - `QuestionListSkeleton.tsx`は以前から存在したが、どこからも呼ばれていない未配線のデッドコードだった
 - トップの質問一覧は`Suspense`でリスト部分を切り出しフォールバックに設定。高難度一覧・質問詳細ページはroute-level`loading.tsx`を追加
 
+**日付表示のタイムゾーン修正**
+- サーバーレンダリング（Cloudflare Workers=UTC）の`toLocaleDateString`だと日本のユーザーには最大1日ずれて見える問題があった。トップの質問一覧・質問詳細ページの日付表示を`LocalDate`クライアントコンポーネント（`src/components/LocalDate.tsx`）に切り出し、閲覧者のブラウザのタイムゾーンで表示するように変更
+
+**テナントビルダー（Artifactツール）の作成**
+- 新しいジャンル（テナント）を追加する際に必要な設定一式（Supabase `tenants`テーブルへのSQL・`middleware.ts`のVALID_SUBDOMAINS/SUBDOMAIN_ALIASES・`src/lib/gemini.ts`のGENRE_CONFIG・`src/lib/tenantNames.ts`の各マップ）をフォーム入力から一括生成するツールを作成
+- AIジャンル判定（inScope/outScope/threshold/dangerKeywords）は「Claudeにお任せ（自動設計）」と「手動入力」を選択可能。知らないジャンルを無理に手動で決め打ちしなくてよい設計
+- ロゴは`SiteLogo.tsx`・`logoColor.ts`と同一のSVG生成ロジックをツール内に移植し、実際の見た目に近いプレビュー（ヘッダー・ヒーロー見出し・ルートポータルカード）を表示
+- 現在DB・コードに下書きが存在する8テナント（tax-japan/australia-whv/bali/chiangmai/portugal/keyboard/philippines/canada）はクイック読み込み可能。それ以外の全く新しいジャンルもテナントIDを直接入力してゼロから作成できる
+- 生成した仕様をボタン一つでチャットへ送信でき、そこから実際の実装（DB反映・4ファイル編集・デプロイ）を行う。使い方の詳細はNotion「テナントビルダー 使い方・新テナント追加手順」ページに記載
+- **AdSense審査中の運用**: ローカルで実装・型チェックまで済ませてレビューできる状態にし、明示的にデプロイ指示があるまで`git push origin main`は保留する
+
 **次回やること**
 1. Claude.aiセッションでのペルソナ・新規質問作成（BUG DEBUG 3問＋MUSIC PRODUCTION 5問、Notion「質問作成用」ページに詳細記載済み）に戻る
 2. 新規質問が固まり次第、既存の未使用データ（ダミー回答・重複等）を削除するSQLを用意
