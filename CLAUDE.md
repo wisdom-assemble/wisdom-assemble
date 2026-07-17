@@ -513,10 +513,31 @@
 | `subdomain` | `debug` | サブドメイン名 |
 | `language` | `ja` または `en` | デフォルト言語 |
 
-### 2. コード `src/components/SiteLogo.tsx` の `NAME_MAP` に追記
-```ts
-'テナント名': 'ENGLISH LOGO',
-```
+### 2. コード側で触る全箇所（テナントIDをキーに持つ設定の完全リスト・2026-07-17時点）
+
+新テナントIDを `newid`、公開サブドメインを `newpub` とする。**★=必須（無いと壊れる/別テナント誤解決）／ジャンル=正しさに必要（未設定だとdebug相当にフォールバックし別ジャンルの候補が出る）／ポータル=ルート掲載時のみ／任意=フォールバックあり**
+
+| 場所 | 定数 | 内容 | 区分 |
+|---|---|---|---|
+| `middleware.ts` | `VALID_SUBDOMAINS` | `newid` を追加 | ★必須 |
+| `middleware.ts` | `SUBDOMAIN_ALIASES` | 公開名≠内部IDのときだけ `{ newpub: 'newid' }` | 条件付 |
+| `src/lib/tenantNames.ts` | `TENANT_NAME_MAP` | 英語ロゴ表示名 | ★必須 |
+| `src/lib/tenantNames.ts` | `PUBLIC_SUBDOMAIN_MAP` | エイリアス時だけ `{ newid: 'newpub' }` | 条件付 |
+| `src/lib/tenantNames.ts` | `TENANT_SEARCH_TAGS` | ポータル検索キーワード | ポータル |
+| `src/lib/tenantNames.ts` | `LOGO_STYLE_OVERRIDES` | ロゴビルダー製ロゴを使うときだけ（font/色/size/**widthEmPerChar**）。未設定なら既定のImpact 3Dロゴ | 任意 |
+| `src/lib/gemini.ts` | `GENRE_CONFIG` | AIジャンル判定（label/threshold/inScope/outScope/dangerKeywords）。未設定は汎用フォールバック | ジャンル |
+| `src/lib/skillTags.ts` | `TENANT_SKILL_OPTIONS` | 専門家が選ぶスキルタグ。未設定はdebug（プログラミング）にフォールバック＝別ジャンルで誤り | ジャンル |
+| `src/lib/skillTags.ts` | `TENANT_SUGGESTED_KEYWORDS` | トップ検索の候補キーワード。同上フォールバック注意 | ジャンル |
+| `src/app/opengraph-image.tsx` | `OG_COLORS` | OGP画像の色。未設定はindigo | 任意 |
+| `src/components/PortalHome.tsx` | `REVIEW_TENANT_IDS` | ルートポータルに掲載する場合に追加 | ポータル |
+| `src/components/PortalHome.tsx` | `FALLBACK_COLOR_THEME` | ポータルカードの色フォールバック | ポータル |
+| `messages/*.json`（8言語） | `{newid}CardTagline` | ポータルカードのタグライン（8言語ぶん） | ポータル |
+| Cloudflare | Custom Domain | `newpub.wisdomassemble.com` を追加 | ★必須 |
+| Supabase | `tenants` INSERT | 下記#1 | ★必須 |
+
+- **favicon(`src/app/icon.tsx`)はDBの`name`/`color_theme`から自動生成**＝コード編集不要
+- **ロゴを崩さないコツ**: ロゴビルダーで作ったら `canvas.measureText(表示名).width / 表示名.length / fontSizePx` を `LOGO_STYLE_OVERRIDES[newid].widthEmPerChar` に入れる（viewBox幅が実測でぴったり合い、右切れ・中央ズレしない）。指定しなくても`maxWidth:100%`で溢れはしないが、フォントによっては見た目が寄る
+- **ローカル確認**: 開発サーバはmiddleware未実行なので `http://localhost:3000/ja?tenant=newid` の `?tenant=` パラメータでテナントを指定して確認できる（middlewareの開発分岐がparam/headerを許可）
 
 ### 3. UI規則（CSSやロゴデザインが変わっても必ず守ること）
 - ログインページのロゴは **左揃え**
