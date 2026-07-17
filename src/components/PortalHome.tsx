@@ -57,7 +57,9 @@ export default async function PortalHome() {
       name: tenant?.name ?? tenantId,
       colorTheme: tenant?.color_theme ?? FALLBACK_COLOR_THEME[tenantId],
       href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
-      tagline: t(tenantId === 'debug' ? 'debugCardTagline' : 'dtmCardTagline'),
+      // タグラインは `{tenantId}CardTagline` の動的キーで取得（3テナント目以降でも壊れない）。
+      // 新テナント追加時は messages/*.json に `{tenantId}CardTagline` を追加すること。
+      tagline: t(`${tenantId}CardTagline` as Parameters<typeof t>[0]),
       tags,
     }
   })

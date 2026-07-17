@@ -37,7 +37,6 @@ export default async function HowItWorksPage({ params }: Props) {
           <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
             <li>{t('expertStep1')}</li>
             <li>{t('expertStep2')}</li>
-            <li>{t('expertStep3')}</li>
             <li>{t('expertStep4')}</li>
           </ol>
         </div>
