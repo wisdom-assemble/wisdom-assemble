@@ -6,7 +6,7 @@ import { askWithScore, askWithScoreInScope, type AiScopedResult } from '@/lib/ge
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser } from '@/lib/email'
-import { translateQuestionToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
+import { translateQuestionToLocales, translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
 function toSlug(text: string): string {
@@ -140,10 +140,18 @@ export async function POST(request: NextRequest) {
     const result = aiResult ?? (await askWithScore(tenantId, `${title}\n\n${body}`))
 
     if (result.routed === 'ai') {
+      // AI回答も8言語へ翻訳して保存（多言語SEO対策）。AI回答は日本語生成のためsource='ja'。
+      // 翻訳失敗時は空オブジェクトで保存し、表示側は原文(日本語)にフォールバックする。
+      const aiBodyI18n = await translateToLocales(result.answer, 'ja').catch((e) => {
+        console.error('AI answer translation error:', e)
+        return {}
+      })
       await admin.from('answers').insert({
         question_id: question.id,
         tenant_id: tenantId,
         body: result.answer,
+        body_i18n: aiBodyI18n,
+        source_locale: 'ja',
         is_ai: true,
         ai_score: result.score,
       })
