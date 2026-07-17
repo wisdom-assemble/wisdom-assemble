@@ -21,6 +21,12 @@ const SUBDOMAIN_ALIASES: Record<string, string> = {
   'music-prod': 'dtm',
 }
 
+// 内部ID → 公開サブドメインの逆引き。内部ID(debug/dtm)へ直アクセスされた場合に
+// 公開URL(bug/music-prod)へ301で寄せ、重複コンテンツ（別ホストで同一内容）を防ぐ。
+const PUBLIC_ALIAS_BY_INTERNAL: Record<string, string> = Object.fromEntries(
+  Object.entries(SUBDOMAIN_ALIASES).map(([pub, internal]) => [internal, pub])
+)
+
 // ルートドメイン（サブドメインなし）はテナントQ&Aではなく、
 // 各ジャンル別サブドメインへの入口ポータルを表示する特別扱いのID
 const ROOT_TENANT_ID = 'root'
@@ -32,6 +38,21 @@ export async function middleware(request: NextRequest) {
 
   // --- テナント解決 ---
   const host = request.headers.get('host') ?? ''
+
+  // 内部ID直アクセス(debug./dtm.)は公開エイリアス(bug./music-prod.)へ301リダイレクト。
+  // 同一内容が2ホストでインデックスされる重複コンテンツを防ぐ。
+  if (!host.includes('localhost') && !host.includes('127.0.0.1') && !ROOT_HOSTS.includes(host)) {
+    const rawSub = host.split('.')[0]
+    const publicSub = PUBLIC_ALIAS_BY_INTERNAL[rawSub]
+    if (publicSub) {
+      const newHost = `${publicSub}.${host.split('.').slice(1).join('.')}`
+      return NextResponse.redirect(
+        `https://${newHost}${request.nextUrl.pathname}${request.nextUrl.search}`,
+        301
+      )
+    }
+  }
+
   let tenantId = 'debug' // 開発デフォルト・未知のホストのフォールバック
 
   if (!host.includes('localhost') && !host.includes('127.0.0.1')) {

@@ -336,6 +336,8 @@
     "section7Title": "7. Thay đổi Chính sách này",
     "section7Body": "Chính sách này có thể được thay đổi mà không cần thông báo trước. Nếu bạn tiếp tục sử dụng Dịch vụ sau khi có thay đổi, bạn được coi là đã đồng ý với Chính sách đã sửa đổi.",
     "section3Item4": "Google AdSense (quảng cáo)",
+    "section3Item5": "Brevo (gửi email — địa chỉ email và tiêu đề câu hỏi của bạn được xử lý khi gửi email thông báo)",
+    "section3Item6": "Cloudflare (lưu trữ và nhật ký truy cập)",
     "section3AdsBody": "Các nhà cung cấp bên thứ ba, bao gồm cả Google, sử dụng cookie để phân phát quảng cáo dựa trên các lượt truy cập trước đó của người dùng vào trang này hoặc các trang web khác. Việc Google sử dụng cookie quảng cáo cho phép Google và các đối tác của mình phân phát quảng cáo cho người dùng dựa trên lượt truy cập của họ vào trang này và/hoặc các trang khác trên Internet. Người dùng có thể chọn không nhận quảng cáo được cá nhân hóa bằng cách truy cập Cài đặt quảng cáo của Google.",
     "section3AdsLink": "Cài đặt quảng cáo của Google",
     "section3EeaConsent": "Đối với người dùng truy cập Dịch vụ từ Khu vực Kinh tế Châu Âu (EEA), Vương quốc Anh hoặc Thụy Sĩ, sự đồng ý cho việc phân phát quảng cáo được cá nhân hóa sẽ được thu thập thông qua Nền tảng Quản lý Sự đồng ý (CMP) được Google chứng nhận. Ngay cả khi không đồng ý, quảng cáo không được cá nhân hóa vẫn có thể được hiển thị.",

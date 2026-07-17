@@ -17,8 +17,8 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result
 // Google推奨のQAPage構造化データ(schema.org)を生成する。
 // XSS対策として`<`をエスケープし、ユーザー投稿文に`</script>`等が
 // 含まれていてもタグを閉じてしまわないようにする。
-function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster: any): string {
-  const answerAuthorName = (a: any) => a.profiles?.display_name ?? a.profiles?.username ?? 'Anonymous'
+function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster: any, displayNameByUser: Record<string, string>): string {
+  const answerAuthorName = (a: any) => displayNameByUser[a.user_id] ?? a.profiles?.username ?? 'Anonymous'
   const toAnswer = (a: any) => ({
     '@type': 'Answer',
     text: a.body_i18n?.[locale] ?? a.body,
@@ -37,7 +37,7 @@ function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster
       text: question.body_i18n?.[locale] ?? question.body,
       answerCount: answers.length,
       dateCreated: question.created_at,
-      author: { '@type': 'Person', name: poster?.display_name ?? poster?.username ?? 'Anonymous' },
+      author: { '@type': 'Person', name: displayNameByUser[question.user_id] ?? poster?.username ?? 'Anonymous' },
       ...(accepted ? { acceptedAnswer: toAnswer(accepted) } : {}),
       ...(others.length > 0 ? { suggestedAnswer: others.map(toAnswer) } : {}),
     },
@@ -90,18 +90,21 @@ export default async function QuestionPage({ params, searchParams }: Props) {
     .eq('question_id', question.id)
     .order('created_at', { ascending: true })
 
-  // 回答者のアクティブ称号を取得（このテナントでの称号のみ）
-  const answererIds = [...new Set((answers ?? []).map((a: any) => a.user_id).filter(Boolean))]
+  // 質問者・回答者の表示名とアクティブ称号を取得（このテナントの tenant_profiles のみ）。
+  // 表示名は profiles ではなく tenant_profiles を正とする（マイページの編集を反映するため）。
+  const nameUserIds = [...new Set([question.user_id, ...(answers ?? []).map((a: any) => a.user_id)].filter(Boolean))]
   const activeTitleByUser: Record<string, string> = {}
+  const displayNameByUser: Record<string, string> = {}
   const titleMap: Record<string, string> = {}
-  if (answererIds.length > 0) {
+  if (nameUserIds.length > 0) {
     const { data: tenantProfileRows } = await supabase
       .from('tenant_profiles')
-      .select('user_id, active_title_id')
+      .select('user_id, display_name, active_title_id')
       .eq('tenant_id', tenantId)
-      .in('user_id', answererIds)
+      .in('user_id', nameUserIds)
     for (const row of tenantProfileRows ?? []) {
       if (row.active_title_id) activeTitleByUser[row.user_id] = row.active_title_id
+      if (row.display_name) displayNameByUser[row.user_id] = row.display_name
     }
     const activeTitleIds = [...new Set(Object.values(activeTitleByUser))]
     if (activeTitleIds.length > 0) {
@@ -178,7 +181,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
       {hasAnswers && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: buildQAPageJsonLd(question, answers ?? [], locale, poster) }}
+          dangerouslySetInnerHTML={{ __html: buildQAPageJsonLd(question, answers ?? [], locale, poster, displayNameByUser) }}
         />
       )}
       <Header />
@@ -256,7 +259,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             translatedBody={question.body_i18n?.[locale] ?? null}
             meta={
               <p className="text-xs text-gray-400 mb-4">
-                {poster?.display_name ?? poster?.username} ·{' '}
+                {displayNameByUser[question.user_id] ?? poster?.username} ·{' '}
                 <LocalDate iso={question.created_at} locale={locale} /> ·{' '}
                 {question.view_count} {t('views')}
               </p>
@@ -303,7 +306,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                       ) : (
                         <>
                           <span className="font-medium text-gray-700">
-                            {responder?.display_name ?? responder?.username}
+                            {displayNameByUser[a.user_id] ?? responder?.username}
                           </span>
                           {activeTitleByUser[a.user_id] && titleMap[activeTitleByUser[a.user_id]] && (
                             <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">

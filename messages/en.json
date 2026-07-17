@@ -336,6 +336,8 @@
     "section7Title": "7. Changes to this Policy",
     "section7Body": "This Policy may be changed without prior notice. If you continue to use the Service after a change, you are deemed to have agreed to the revised Policy.",
     "section3Item4": "Google AdSense (advertising)",
+    "section3Item5": "Brevo (email delivery — your email address and question title are processed when notification emails are sent)",
+    "section3Item6": "Cloudflare (hosting and access logs)",
     "section3AdsBody": "Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this site or other websites. Google's use of advertising cookies enables it and its partners to serve ads to users based on their visit to this site and/or other sites on the Internet. Users may opt out of personalized advertising by visiting Google Ads Settings.",
     "section3AdsLink": "Google Ads Settings",
     "section3EeaConsent": "For users accessing the Service from the European Economic Area (EEA), the UK, or Switzerland, consent for personalized ad delivery is obtained through a Google-certified Consent Management Platform (CMP). Even without consent, non-personalized ads may still be shown.",

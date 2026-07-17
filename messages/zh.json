@@ -336,6 +336,8 @@
     "section7Title": "7. 政策的变更",
     "section7Body": "本政策可能会在不预先通知的情况下变更。变更后如仍继续使用本服务，即视为您已同意变更后的政策。",
     "section3Item4": "Google AdSense（广告投放）",
+    "section3Item5": "Brevo（邮件发送 ※发送通知邮件时会处理您的邮箱地址和问题标题）",
+    "section3Item6": "Cloudflare（托管・访问日志）",
     "section3AdsBody": "包括Google在内的第三方供应商会使用Cookie，根据用户之前访问本服务或其他网站的记录来投放广告。Google使用广告Cookie，使其及其合作伙伴能够根据用户访问本网站和/或互联网上其他网站的记录向用户投放广告。用户可以访问Google广告设置来选择停用个性化广告。",
     "section3AdsLink": "Google广告设置",
     "section3EeaConsent": "对于从欧洲经济区（EEA）、英国或瑞士访问本服务的用户，我们将通过Google认证的同意管理平台（CMP）获取其对个性化广告投放的同意。即使未同意，系统仍可能展示非个性化广告。",

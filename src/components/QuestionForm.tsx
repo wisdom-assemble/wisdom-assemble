@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useTenantId } from '@/components/TenantProvider'
 
 type OverlayPhase = 'ai' | 'matched' | null
 
@@ -33,6 +34,10 @@ export default function QuestionForm() {
   const [error, setError] = useState('')
   const [similar, setSimilar] = useState<SimilarQuestion[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // middlewareが解決した内部テナントID（例: bug.→'debug'）。
+  // 以前はhostname先頭を直接使っており公開サブドメイン('bug')と内部ID('debug')が
+  // ズレて類似質問が常に0件だった。
+  const tenantId = useTenantId()
 
   // タイトル入力時に類似質問を検索
   useEffect(() => {
@@ -41,8 +46,11 @@ export default function QuestionForm() {
 
     debounceRef.current = setTimeout(async () => {
       const supabase = createClient()
-      const tenantId = window.location.hostname.split('.')[0] === 'localhost' ? 'debug' : window.location.hostname.split('.')[0]
-      const keywords = title.trim().split(/[\s　、。？！,.!?]+/).filter(w => w.length >= 2).slice(0, 4)
+      // PostgRESTの.or()構文を壊す/注入し得る記号を除去してからキーワード化
+      const keywords = title.trim()
+        .split(/[\s　、。？！,.!?()（）*%\\]+/)
+        .filter(w => w.length >= 2)
+        .slice(0, 4)
       if (!keywords.length) return
       const orFilter = keywords.map(k => `title.ilike.%${k}%`).join(',')
       const { data } = await supabase
@@ -54,7 +62,7 @@ export default function QuestionForm() {
         .limit(4)
       setSimilar(data ?? [])
     }, 500)
-  }, [title])
+  }, [title, tenantId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

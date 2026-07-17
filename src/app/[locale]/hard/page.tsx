@@ -18,19 +18,40 @@ export default async function HardQuestPage({
   const [{ data: unsolved }, { data: solved }] = await Promise.all([
     supabase
       .from('questions')
-      .select('id, title, slug, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
+      .select('id, title, slug, user_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'hard')
       .order('created_at', { ascending: false }),
     supabase
       .from('questions')
-      .select('id, title, slug, created_at, updated_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
+      .select('id, title, slug, user_id, created_at, updated_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'solved')
       .not('matched_c_id', 'is', null)
       .order('updated_at', { ascending: false })
       .limit(50),
   ])
+
+  // 表示名は tenant_profiles を正とする（マイページの編集を反映）。
+  // 埋め込んだ profiles.display_name を tenant_profiles の値で上書きし、
+  // HardQuestionList 側は変更せずに反映させる。
+  const allRows = [...(unsolved ?? []), ...(solved ?? [])]
+  const posterIds = [...new Set(allRows.map((r: any) => r.user_id).filter(Boolean))]
+  if (posterIds.length > 0) {
+    const { data: tpRows } = await supabase
+      .from('tenant_profiles')
+      .select('user_id, display_name')
+      .eq('tenant_id', tenantId)
+      .in('user_id', posterIds)
+    const nameByUser: Record<string, string> = {}
+    for (const row of tpRows ?? []) {
+      if (row.display_name) nameByUser[row.user_id] = row.display_name
+    }
+    for (const r of allRows as any[]) {
+      const name = nameByUser[r.user_id]
+      if (name) r.profiles = { ...(r.profiles ?? { username: '' }), display_name: name }
+    }
+  }
 
   const questions = tab === 'solved' ? (solved ?? []) : (unsolved ?? [])
 

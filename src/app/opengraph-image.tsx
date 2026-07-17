@@ -1,12 +1,36 @@
 import { ImageResponse } from 'next/og'
+import { headers } from 'next/headers'
+import { TENANT_NAME_MAP } from '@/lib/tenantNames'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default function OgImage() {
-  const primary = '#10B981'
-  const shadows = ['#0a4a30', '#0d5c3a', '#106e45', '#138050', '#16925b']
-  const label = 'BUG DEBUG'
+// テナント別のロゴ色（サイトのcolor_themeに準拠）。未定義テナントは既定色。
+const OG_COLORS: Record<string, string> = {
+  debug: '#10B981',
+  dtm: '#4A90E2',
+  root: '#9ca3af',
+}
+const DEFAULT_COLOR = '#4F46E5'
+
+// hexを暗くする（3D押し出しの影用）
+function darken(hex: string, factor: number): string {
+  const n = parseInt(hex.replace('#', ''), 16)
+  const r = Math.round(((n >> 16) & 0xff) * factor)
+  const g = Math.round(((n >> 8) & 0xff) * factor)
+  const b = Math.round((n & 0xff) * factor)
+  return `rgb(${r},${g},${b})`
+}
+
+export default async function OgImage() {
+  const tenantId = (await headers()).get('x-tenant-id') ?? 'debug'
+  const label =
+    tenantId === 'root' ? 'WISDOM ASSEMBLE' : TENANT_NAME_MAP[tenantId] ?? 'WISDOM ASSEMBLE'
+  const primary = OG_COLORS[tenantId] ?? DEFAULT_COLOR
+  const shadows = [0.4, 0.5, 0.6, 0.7, 0.8].map((f) => darken(primary, f))
+
+  // 長い名前(例 MUSIC PRODUCTION)がはみ出さないよう、文字数に応じてサイズを調整
+  const fontSize = Math.min(120, Math.floor((1120 / label.length) * 1.35))
 
   return new ImageResponse(
     (
@@ -28,7 +52,7 @@ export default function OgImage() {
               key={i}
               style={{
                 position: 'absolute',
-                fontSize: 120,
+                fontSize,
                 fontWeight: 900,
                 color,
                 left: 5 - i,
@@ -43,7 +67,7 @@ export default function OgImage() {
           <div
             style={{
               position: 'relative',
-              fontSize: 120,
+              fontSize,
               fontWeight: 900,
               color: primary,
               fontFamily: 'sans-serif',
@@ -54,7 +78,7 @@ export default function OgImage() {
           </div>
         </div>
 
-        {/* Tagline */}
+        {/* Tagline（全ロケールで確実に描画されるようLatinで統一） */}
         <div
           style={{
             fontSize: 32,
@@ -63,7 +87,7 @@ export default function OgImage() {
             letterSpacing: 1,
           }}
         >
-          AIの隙間を人間が埋める
+          AI answers first — humans fill the gaps
         </div>
       </div>
     ),

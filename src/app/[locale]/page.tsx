@@ -112,7 +112,7 @@ async function QuestionResults({
 
   let query = supabase
     .from('questions')
-    .select('id, title, title_i18n, slug, status, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
+    .select('id, title, title_i18n, slug, status, user_id, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
@@ -123,6 +123,21 @@ async function QuestionResults({
 
   const { data: questions, count } = await query
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
+
+  // 表示名は tenant_profiles を正とする（マイページの編集を反映）。
+  // questions に埋め込んだ profiles.username は既定名のフォールバックとして使う。
+  const posterIds = [...new Set((questions ?? []).map((qq: any) => (qq as any).user_id).filter(Boolean))]
+  const displayNameByUser: Record<string, string> = {}
+  if (posterIds.length > 0) {
+    const { data: tpRows } = await supabase
+      .from('tenant_profiles')
+      .select('user_id, display_name')
+      .eq('tenant_id', tenantId)
+      .in('user_id', posterIds)
+    for (const row of tpRows ?? []) {
+      if (row.display_name) displayNameByUser[row.user_id] = row.display_name
+    }
+  }
 
   return (
     <>
@@ -150,7 +165,7 @@ async function QuestionResults({
                         {(question.title_i18n as Record<string, string> | null)?.[locale] ?? question.title}
                       </p>
                       <p className="text-xs text-gray-400">
-                        {(question.profiles as any)?.display_name ?? (question.profiles as any)?.username} ·{' '}
+                        {displayNameByUser[(question as any).user_id] ?? (question.profiles as any)?.username} ·{' '}
                         <LocalDate iso={question.created_at} locale={locale} />
                       </p>
                     </div>
