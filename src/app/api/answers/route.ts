@@ -69,7 +69,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: apiErrors.alreadyAnswered }, { status: 409 })
   }
 
-  const { data: answer, error } = await supabase
+  // 回答INSERTはservice_role経由。コンテンツフィルタ・最低文字数・重複チェックを
+  // 通した後にサーバーからのみ挿入し、anonキーによる直接INSERT（各検査の回避）を防ぐ。
+  const { data: answer, error } = await admin
     .from('answers')
     .insert({
       question_id: questionId,
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
   // 対応8言語へ自動翻訳して保存（Cloudflare Workers対策のため必ずawaitする）
   try {
     const body_i18n = await translateToLocales(body.trim(), sourceLocale)
-    await supabase.from('answers').update({ body_i18n }).eq('id', answer.id)
+    await admin.from('answers').update({ body_i18n }).eq('id', answer.id)
   } catch (e) {
     console.error('answer translation error:', e)
   }
