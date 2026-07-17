@@ -18,8 +18,11 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
     const fontSize = override.fontSizePx
     const tmFontSize = Math.round(fontSize * 0.34)
     const lsPx = override.letterSpacingEm * fontSize
-    // Century Gothic系フォントの実測: 1文字あたり約0.70em（+letterSpacing分）
-    const textWidth = label.length * fontSize * 0.70 + (label.length - 1) * lsPx
+    // 1文字あたりの幅(em)。ロゴビルダーが実測した値(widthEmPerChar)があればそれを使い、
+    // 無ければ0.70(Century Gothic系の近似)。実測値を渡せばどのフォントでもviewBoxが
+    // ぴったり合い、右切れ・中央ズレが起きない。
+    const perCharEm = override.widthEmPerChar ?? 0.70
+    const textWidth = label.length * fontSize * perCharEm + (label.length - 1) * lsPx
     const svgWidth = Math.max(1, textWidth + tmFontSize * 1.3 + 6)
     const svgHeight = fontSize + 10
     const gradId = `logo-grad-${tenantId ?? 'x'}`

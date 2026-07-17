@@ -51,6 +51,11 @@ export type LogoStyleOverride = {
   gradientFrom: string
   gradientTo: string
   treatment?: LogoTreatment
+  // ロゴビルダーが canvas.measureText で実測した「1文字あたりの幅（em単位）」。
+  // = measureText(表示名).width / 表示名.length / fontSizePx
+  // SVGのviewBox幅をこの実測値でぴったり合わせると、フォントが変わっても
+  // 右切れ・左寄り(中央ズレ)が起きない。未指定時は 0.70（Century Gothic系の実測近似）。
+  widthEmPerChar?: number
 }
 
 export const LOGO_STYLE_OVERRIDES: Record<string, LogoStyleOverride> = {
