@@ -27,7 +27,7 @@ export async function POST(
 
   const { data: question } = await supabase
     .from('questions')
-    .select('id, status, user_id, matched_b_id, matched_c_id, title, title_i18n, slug')
+    .select('id, status, user_id, matched_b_id, matched_c_id, matched_b_deadline, matched_c_deadline, title, title_i18n, slug')
     .eq('id', questionId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
@@ -42,9 +42,30 @@ export async function POST(
     return NextResponse.json({ error: apiErrors.notPermitted }, { status: 403 })
   }
 
-  // 質問者が直接 hard に移行したい場合
+  // 質問者が直接 hard に移行したい場合。
+  // UIで「高難度へ」ボタンが出る条件と厳密に一致させ、不正な直叩き（解決済みを
+  // hardに戻す・段階を飛ばす等）をサーバー側でも弾く。
   const body = await request.json().catch(() => ({}))
   if (isOwner && body.forceHard) {
+    // UIのボタン表示条件を再現するため、回答状況と期限を取得して判定する。
+    const { data: answerRows } = await admin
+      .from('answers')
+      .select('user_id')
+      .eq('question_id', questionId)
+    const answers = answerRows ?? []
+    const hasAnswers = answers.length > 0
+    const bExpired = !!question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
+    const hasCAnswer = !!question.matched_c_id && answers.some((a) => a.user_id === question.matched_c_id)
+
+    // ⑤ B段階（専門家1が回答済み or 期限切れ）から高難度へ
+    const canHardFromB = question.status === 'open' && !!question.matched_b_id && (hasAnswers || bExpired)
+    // ④ C段階（専門家2が実際に回答済み）から高難度へ
+    const canHardFromC = question.status === 'matched_c' && hasCAnswer
+
+    if (!canHardFromB && !canHardFromC) {
+      return NextResponse.json({ error: apiErrors.cannotEscalate }, { status: 400 })
+    }
+
     await admin.from('questions').update({ status: 'hard' }).eq('id', questionId)
     return NextResponse.json({ ok: true, nextStatus: 'hard' })
   }
