@@ -430,6 +430,55 @@
 3. 今回のGRANT忘れの教訓を踏まえ、今後新規テーブルを作る際はGRANT文をマイグレーションのチェックリストに含める
 4. AdSense/Stripe Connect審査通過後、テナントビルダーで残り8テナントを順次展開
 
+### ✅ 全体監査＋大規模修正セッション（2026-07-17）
+
+調査専用のつもりで開始した全体監査（UX/ロジック/多言語/AdSense観点）で多数の問題が見つかり、そのまま順次修正した。**すべて本番デプロイ済み。DB系はユーザーがSupabase SQL Editorで適用済み。**
+
+**🔴 致命的（DB権限が実質無効化）を修正・SQL適用済み**
+- `questions_update`が`using(true)`で誰でも全質問改ざん可能だった → 質問投稿の書き込みを全てservice_role(admin)経由に移し(`questions/route.ts`)、`questions_update`を`auth.uid()=user_id`に是正（migration `20260717000002`）
+- `answers_insert`が`or is_ai=true`で未認証の偽AI回答挿入可能だった → AI回答挿入をadmin化し`answers_insert`を`with check(auth.uid()=user_id)`に
+- security definer RPC（increment_*・check_and_award_titles・check_and_increment_rate_limit）が全ロールで実行可能だった → 全RPC呼び出しをadmin経由にし、`revoke execute from public/anon/authenticated`（DOブロックで動的revoke＋service_roleにgrant）
+- 高難度移行の絶対ルールがサーバー側に無かった → `escalate/route.ts`のforceHardにガード追加（B段階=open+matched_b+回答/期限切れ、C段階=matched_c+C回答済みのUI条件と一致。solved→hard戻し等を400で拒否）
+- 称号「初回のみ自動装備」修正が2引数版で回帰 → migration `20260717000001`で修正
+- **教訓**: 締める系のマイグレーションは、書き込みをservice_role経由に変えたコードを**デプロイした後**に適用すること（逆順だと投稿が壊れる）
+
+**🟠 ログイン済みユーザーのAPI直叩きバイパスを修正（SQL適用済み `20260717000003`/`20260717000004`）**
+- 質問・回答INSERTをservice_role化し、`questions_insert`/`answers_insert`を`with check(false)`で直接INSERT全面禁止（レート制限/フィルタ/文字数/重複チェックの回避を防止）
+- BAN未適用だった → questions・answers POSTに`is_banned`チェック追加＋`profiles`を`language`列のみ更新可に列単位GRANT（BAN自己解除防止）
+- `tenant_profiles`自己改ざん（実績カウント水増し＝マッチング順位操作、未獲得称号装備）→ 本人編集列のみ列単位GRANT＋active_title_idは保有称号のみ(WITH CHECK)
+
+**🟡 UX/ロジック/多言語（コードのみ・デプロイ済み）**
+- **表示名がサイトに反映されない**（`profiles`のJOIN取り残し）→ home/hard/詳細で`tenant_profiles`から取得
+- **類似質問サジェストが本番で常に0件**（hostname直取り）→ `useTenantId()`で内部ID解決＋`.or()`サニタイズ
+- **contentFilter誤検知**（電話regexが日付「2026-07-14」、@mentionが`@types/node`、LINEが`line: 42`を誤爆）→ 高精度化（実データ相当テストで誤ブロック0件）
+- **AI回答が常に日本語・翻訳対象外**（多言語SEOの穴）→ AI回答も`translateToLocales`で8言語翻訳して保存（source='ja'）
+- **人間回答の翻訳がRLSで無音失敗**していた → 回答INSERT・翻訳保存をadmin化して解消
+- **オープンリダイレクト**（`?next=//evil.com`）→ auth callbackで相対パスのみ許可
+- **PortalHomeのタグライン2値決め打ち三項**（3テナント目で壊れる）→ `t(\`${tenantId}CardTagline\`)`動的キー化
+- **MUSIC PRODUCTIONロゴ崩れ**（override系がCSS固定px・幅制限なしで溢れる）→ 通常ロゴと同じSVG+viewBox+maxWidth:100%に統一（gradientはSVG linearGradient）
+
+**🟢 AdSense/SEO/機能**
+- debug.重複ホスト → middlewareで`debug.`/`dtm.`を公開エイリアス(bug./music-prod.)へ301
+- プラポリ第三者提供にBrevo・Cloudflare追加（8言語）
+- OGP画像をx-tenant-idからテナント別動的生成（BUG DEBUG固定を解消）
+- robots.txt追加（`src/app/robots.ts`＋middleware除外。従来307→404だった）
+- hreflang/canonical追加（質問詳細＋ホーム、実在ロケールのみ＋x-default、未翻訳ロケールのcanonicalは元言語に寄せる）＋質問詳細のtitle/descを多言語化
+- カスタム404（`[locale]/not-found.tsx`、テナントロゴ＋同テナントトップへ、8言語。not-found文脈でgetTranslationsが効かないのでNEXT_LOCALEクッキー+messages直import）
+- No.26 質問下書き自動保存（localStorage・テナント別）
+- No.34 AI自動タグ付け（`askWithScoreInScope`がtags2〜3個も返す→質問INSERTに保存）＋ホーム一覧のタグフィルター（?tag・押せるchip）
+
+**⚡ AIコスト最適化**
+- checkInScope＋askWithScoreを`askWithScoreInScope()`に統合し70B呼び出しを2回→1回（約25%減・無料枠消費30%減・実質70問/日超）。Groqエラー時はaskWithScoreへ自動フォールバック
+- 料金（2026-07時点）: 70b=$0.59/$0.79・8b=$0.05/$0.08（入/出 per 1M tokens）。100テナント×20問=2000問/日で月$70前後の試算
+
+**⏰ 自動高難度移行（pg_cron・SQL適用済み `20260717000005`）**
+- `auto_escalate_expired()`を15分ごとに実行。open(matched_b期限切れ＆人間回答なし)/matched_c(期限切れ＆C未回答)を自動でhard化し質問の滞留を防ぐ
+- 旧`auto_escalate_to_hard`（matched_cのみ・回答済みでもhard化する劣った版・リポジトリ外）を発見し、`cron.unschedule`＋`drop function`で削除して新版に一本化済み
+
+**判断メモ（ユーザー確定）**: 稼働トグル（今日は答えられます）は不要＝削除しスキルタグ設定が実質オプトイン（使い方文言も修正）／AI回答に不満時の人再マッチは実装しない（閾値87で十分）／AI回答不満時の導線は無し
+
+**残タスク（ユーザーアクション）**: ①審査用シード質問の作成＋投入時にテスト投稿削除 ②メールログインUIを審査前に隠す ③AdSense/Stripe Connect申請 ④承認後: ads.txt設置・Funding Choices有効化
+
 ## マッチングフロー
 ```
 質問投稿
@@ -490,6 +539,9 @@ GRANT SELECT ON public.tenants TO service_role;
 ---
 
 ## 重要な実装メモ
+- **【2026-07-17〜】questions/answersへの書き込み(INSERT/UPDATE)・全security definer RPCは必ずservice_role(admin)クライアント経由で行うこと**。一般ロール(anon/authenticated)向けのRLSは`questions_insert`/`answers_insert`=`with check(false)`、`questions_update`=`auth.uid()=user_id`のみに締めてあり、userクライアントで新規に書き込むと権限エラーになる。共通ヘルパー`createAdminClient()`（`src/lib/supabase/admin.ts`）を使う。`profiles`はlanguage列のみ、`tenant_profiles`は本人編集列(display_name/skill_tags/is_available/email_notify/active_title_id)のみ列単位GRANT済み（実績カウント等はRPCのみが更新）
+- **AI回答生成はaskWithScoreInScope()に統合済み**（ジャンル判定＋回答＋スコア＋tagsを1回のGroq呼び出しで取得）。checkInScope/askWithScoreは後方互換で残置。質問投稿フローは①askWithScoreInScope→②質問INSERT(tags含む)→③結果を再利用してAI回答/マッチング、の順
+- **自動高難度移行はpg_cronの`auto_escalate_expired()`（15分ごと）**。旧`auto_escalate_to_hard`は削除済み。B/C両段階で「担当者が期限切れまで未回答」の質問をhard化
 - `canEscalateHard = isOwner && !isSolved && !isHard && isMatchedC && hasCAnswer`（Bステージでは絶対に出さない）
 - `canRematch = isOwner && !isSolved && isOpen && question.matched_b_id && (hasAnswers || !!bExpired)`（期限切れでも質問者がアクション可能）
 - `isExpiredMatchedB = user?.id === question.matched_b_id && isOpen && !!bExpired`（期限切れ専門家向けUI表示用）
