@@ -64,6 +64,31 @@ export default function QuestionForm() {
     }, 500)
   }, [title, tenantId])
 
+  // No.26 下書き保存: 入力をlocalStorageに退避し、リロードや誤って離脱しても消えないように（テナント別）
+  const draftKey = `wa_draft_${tenantId}`
+  // マウント時に下書きを復元
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(draftKey)
+      if (saved) {
+        const d = JSON.parse(saved)
+        if (typeof d.title === 'string') setTitle(d.title)
+        if (typeof d.body === 'string') setBody(d.body)
+      }
+    } catch { /* 破損データは無視 */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey])
+  // 入力変更を保存（両方空なら削除）
+  useEffect(() => {
+    try {
+      if (title.trim() || body.trim()) {
+        localStorage.setItem(draftKey, JSON.stringify({ title, body }))
+      } else {
+        localStorage.removeItem(draftKey)
+      }
+    } catch { /* 容量超過等は無視 */ }
+  }, [title, body, draftKey])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !body.trim()) return
@@ -87,6 +112,8 @@ export default function QuestionForm() {
       }
 
       const { slug, result } = await res.json()
+      // 投稿成功したので下書きを消去
+      try { localStorage.removeItem(draftKey) } catch { /* noop */ }
 
       if (result === 'matched') {
         setOverlay('matched')
