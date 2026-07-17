@@ -1,5 +1,8 @@
 import { Suspense } from 'react'
+import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { getTranslations, getLocale, getMessages } from 'next-intl/server'
+import { routing } from '@/i18n/routing'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
@@ -22,6 +25,22 @@ function getAdminClient() {
 }
 
 const PAGE_SIZE = 25
+
+// ホームのhreflang/canonical。UIは全8言語対応のため全ロケールを相互リンクする。
+// タイトル・説明文はレイアウトのgenerateMetadataが提供するのでここでは指定しない。
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get('host') ?? 'bug.wisdomassemble.com'
+  const locale = await getLocale()
+  const languages: Record<string, string> = {}
+  for (const loc of routing.locales) languages[loc] = `https://${host}/${loc}`
+  languages['x-default'] = `https://${host}/${routing.defaultLocale}`
+  return {
+    alternates: {
+      canonical: `https://${host}/${locale}`,
+      languages,
+    },
+  }
+}
 
 export default async function HomePage({
   searchParams,

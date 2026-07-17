@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
 import { getTranslations, getLocale } from 'next-intl/server'
+import { routing } from '@/i18n/routing'
 import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
 import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
@@ -53,13 +55,38 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: q } = await supabase
     .from('questions')
-    .select('title, body')
+    .select('title, body, title_i18n, body_i18n, source_locale')
     .eq('tenant_id', tenantId)
     .eq('slug', slug)
     .single()
 
   if (!q) return {}
-  return { title: q.title, description: q.body.slice(0, 160) }
+
+  const locale = await getLocale()
+  const titleI18n = (q.title_i18n ?? {}) as Record<string, string>
+  const bodyI18n = (q.body_i18n ?? {}) as Record<string, string>
+  const title = titleI18n[locale] ?? q.title
+  const description = (bodyI18n[locale] ?? q.body).slice(0, 160)
+
+  // hreflang / canonical: 各言語版のURLを相互リンクし、重複コンテンツ判定を防ぐ。
+  // 実際に翻訳が存在するロケール（source_locale + 翻訳済み）のみ対象にする（sitemapと同基準）。
+  const host = (await headers()).get('host') ?? 'bug.wisdomassemble.com'
+  const path = `/questions/${encodeURIComponent(slug)}`
+  const availableLocales = [...new Set([q.source_locale ?? 'ja', ...Object.keys(titleI18n)])]
+    .filter((loc) => (routing.locales as readonly string[]).includes(loc))
+  const languages: Record<string, string> = {}
+  for (const loc of availableLocales) languages[loc] = `https://${host}/${loc}${path}`
+  // x-default はデフォルトロケール(en)があればそれ、無ければ元言語を指す
+  languages['x-default'] = languages['en'] ?? `https://${host}/${q.source_locale ?? 'ja'}${path}`
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://${host}/${locale}${path}`,
+      languages,
+    },
+  }
 }
 
 export default async function QuestionPage({ params, searchParams }: Props) {
