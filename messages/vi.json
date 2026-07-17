@@ -1,4 +1,9 @@
 {
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "body": "Trang bạn tìm không tồn tại hoặc có thể đã được di chuyển.",
+    "backHome": "Về trang chủ"
+  },
   "common": {
     "loading": "Đang tải...",
     "search": "Tìm kiếm",

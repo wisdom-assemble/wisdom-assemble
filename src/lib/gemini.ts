@@ -129,7 +129,7 @@ export type AiResult = {
   routed: 'ai' | 'human'  // ai: AI回答表示 / human: 人間へルーティング
 }
 
-export type AiScopedResult = AiResult & { inScope: boolean }
+export type AiScopedResult = AiResult & { inScope: boolean; tags: string[] }
 
 // ジャンル判定＋スコア付き回答生成を1回のGroq呼び出しに統合（コスト最適化・2026-07-17）。
 // 従来は checkInScope → askWithScore と同じ質問文を70Bモデルに2回送っており、
@@ -148,6 +148,7 @@ export async function askWithScoreInScope(tenantId: string, question: string): P
   let scopeOk = true
   let score = 0
   let answer = ''
+  let tags: string[] = []
 
   if (match) {
     try {
@@ -155,6 +156,13 @@ export async function askWithScoreInScope(tenantId: string, question: string): P
       scopeOk = parsed.inScope !== false // 欠落・不正値はフェイルオープン
       score = typeof parsed.score === 'number' ? Math.min(100, Math.max(0, parsed.score)) : 0
       answer = typeof parsed.answer === 'string' ? parsed.answer.trim() : ''
+      // タグは2〜3個の想定。配列以外・空はスキップし、文字列だけを最大3件・各30字までに正規化。
+      if (Array.isArray(parsed.tags)) {
+        tags = parsed.tags
+          .filter((tag: unknown): tag is string => typeof tag === 'string' && tag.trim().length > 0)
+          .map((tag: string) => tag.trim().slice(0, 30))
+          .slice(0, 3)
+      }
     } catch {
       answer = raw
       score = 0
@@ -167,7 +175,7 @@ export async function askWithScoreInScope(tenantId: string, question: string): P
   score = adjustScore(score, answer, question, dangerKeywords)
 
   const routed = score >= threshold ? 'ai' : 'human'
-  return { inScope: scopeOk, answer, score, routed }
+  return { inScope: scopeOk, answer, score, routed, tags }
 }
 
 // ジャンル内確定済みの質問にスコア付き回答を生成
@@ -240,9 +248,10 @@ function buildScopedSystemPrompt(label: string, inScopeDesc: string, outScopeDes
 - 確信が持てない場合は正直にスコアを下げてください
 - 曖昧な推測はしないでください
 - 回答は簡潔・明確に。日本語で答えてください
+- tags には質問の技術キーワード・カテゴリを2〜3個（各1〜2語の短い名詞）。関係なしの場合は空配列[]
 
 必ずJSON形式のみで返してください（説明文・前置き不要）：
-{"inScope": true, "score": 85, "answer": "回答本文"}`
+{"inScope": true, "score": 85, "answer": "回答本文", "tags": ["React", "認証"]}`
 }
 
 function buildSystemPrompt(label: string): string {

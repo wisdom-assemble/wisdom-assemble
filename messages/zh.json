@@ -1,4 +1,9 @@
 {
+  "notFound": {
+    "title": "找不到页面",
+    "body": "您要找的页面不存在或可能已被移动。",
+    "backHome": "返回首页"
+  },
   "common": {
     "loading": "加载中...",
     "search": "搜索",

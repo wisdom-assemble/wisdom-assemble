@@ -114,6 +114,8 @@ export async function POST(request: NextRequest) {
       slug,
       ip_address: ip,
       source_locale: sourceLocale,
+      // AIが内容から付けたタグ(2〜3個)。Groqエラー等で取得できなければ空配列（No.34タグ検索用）
+      tags: aiResult?.tags ?? [],
     })
     .select('id, slug')
     .single()

@@ -35,7 +35,14 @@ export function getPublicSubdomain(tenantId: string): string {
 export const LIVE_TENANT_IDS = ['debug', 'dtm']
 
 // テナントごとのロゴスタイル上書き（Sample Logo builderで作った組み合わせをそのまま反映する用途）。
-// 未指定のテナントは SiteLogo.tsx のデフォルト（Impact系・3D押し出し）のまま
+// 未指定のテナントは SiteLogo.tsx のデフォルト（Impact系・3D押し出し）のまま。
+// treatment省略時は既存互換のため'gradient'扱い。対応済みtreatment一覧はSiteLogo.tsx参照
+// （globals.cssのfx-*クラス。Sample Logo builderの30種のうち15種のCSSのみ処理を移植済み）。
+export type LogoTreatment =
+  | 'flat' | '3d' | 'outline' | 'neon' | 'gradient' | 'stripe' | 'split'
+  | 'underline' | 'shadow' | 'duo' | 'longshadow' | 'vertgradient' | 'fade'
+  | 'dotted' | 'doublerule'
+
 export type LogoStyleOverride = {
   fontFamily: string
   fontWeight: number
@@ -43,6 +50,7 @@ export type LogoStyleOverride = {
   fontSizePx: number
   gradientFrom: string
   gradientTo: string
+  treatment?: LogoTreatment
 }
 
 export const LOGO_STYLE_OVERRIDES: Record<string, LogoStyleOverride> = {

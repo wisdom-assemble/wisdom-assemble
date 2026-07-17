@@ -17,3 +17,110 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* ==========================================================================
+   カスタムロゴ加工（fx-*）— Sample Logo builderと同一のCSS。
+   src/components/SiteLogo.tsx の LOGO_STYLE_OVERRIDES で treatment を
+   指定したテナントのロゴに適用される。--c/--c2/--c1..--c5 は
+   SiteLogo.tsx がインラインで渡す。既存のdtm(gradient)は治療名省略時の
+   デフォルトなので、このブロックを追加してもレンダリング結果は変わらない。
+   ========================================================================== */
+.fx-flat {
+  color: var(--c);
+  font-weight: 700;
+}
+.fx-3d {
+  color: var(--c);
+  font-weight: 900;
+  text-shadow:
+    1px 1px 0 var(--sh1), 2px 2px 0 var(--sh2), 3px 3px 0 var(--sh3), 4px 4px 0 var(--sh4), 5px 5px 0 var(--sh5);
+}
+.fx-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--c);
+  text-shadow: 1px 0 0 var(--c), -1px 0 0 var(--c), 0 1px 0 var(--c), 0 -1px 0 var(--c);
+  font-weight: 800;
+}
+.fx-neon {
+  color: var(--c);
+  font-weight: 700;
+  text-shadow: 0 0 4px var(--c), 0 0 11px var(--c), 0 0 22px var(--c2);
+}
+.fx-gradient {
+  background: linear-gradient(100deg, var(--c) 0%, var(--c2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+.fx-stripe {
+  background: repeating-linear-gradient(48deg, var(--c) 0 6px, var(--c2) 6px 12px);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+.fx-split {
+  background: linear-gradient(90deg, var(--c) 50%, var(--c2) 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+.fx-underline {
+  color: var(--c);
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 4px solid var(--c2);
+}
+.fx-shadow {
+  color: var(--c);
+  font-weight: 700;
+  text-shadow: 4px 4px 0 var(--c2);
+}
+.fx-duo {
+  color: var(--c);
+  font-weight: 800;
+  -webkit-text-stroke: 2px var(--c2);
+  paint-order: stroke fill;
+}
+.fx-longshadow {
+  color: var(--c);
+  font-weight: 700;
+  text-shadow:
+    1px 1px 0 var(--c2), 2px 2px 0 var(--c2), 3px 3px 0 var(--c2), 4px 4px 0 var(--c2),
+    5px 5px 0 var(--c2), 6px 6px 0 var(--c2), 7px 7px 0 var(--c2), 8px 8px 0 var(--c2),
+    9px 9px 0 var(--c2), 10px 10px 0 var(--c2);
+}
+.fx-vertgradient {
+  background: linear-gradient(180deg, var(--c) 0%, var(--c2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+.fx-fade {
+  background: linear-gradient(90deg, var(--c) 0%, var(--c) 55%, transparent 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+.fx-dotted {
+  color: var(--c);
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 3px dotted var(--c2);
+}
+.fx-doublerule {
+  color: var(--c);
+  font-weight: 600;
+  padding: 6px 0;
+  border-top: 2px solid var(--c2);
+  border-bottom: 2px solid var(--c2);
+}

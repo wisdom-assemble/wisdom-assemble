@@ -45,9 +45,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>
+  searchParams: Promise<{ q?: string; page?: string; tag?: string }>
 }) {
-  const { q = '', page: pageStr = '1' } = await searchParams
+  const { q = '', page: pageStr = '1', tag = '' } = await searchParams
   const page = Math.max(1, parseInt(pageStr) || 1)
 
   const tenantId = await getTenantId()
@@ -104,8 +104,8 @@ export default async function HomePage({
           </div>
         )}
 
-        <Suspense key={`${tenantId}-${q}-${page}`} fallback={<QuestionListSkeleton />}>
-          <QuestionResults tenantId={tenantId} q={q} page={page} locale={locale} t={t} />
+        <Suspense key={`${tenantId}-${q}-${tag}-${page}`} fallback={<QuestionListSkeleton />}>
+          <QuestionResults tenantId={tenantId} q={q} tag={tag} page={page} locale={locale} t={t} />
         </Suspense>
       </main>
     </>
@@ -115,12 +115,14 @@ export default async function HomePage({
 async function QuestionResults({
   tenantId,
   q,
+  tag,
   page,
   locale,
   t,
 }: {
   tenantId: string
   q: string
+  tag: string
   page: number
   locale: string
   t: Awaited<ReturnType<typeof getTranslations>>
@@ -131,13 +133,17 @@ async function QuestionResults({
 
   let query = supabase
     .from('questions')
-    .select('id, title, title_i18n, slug, status, user_id, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
+    .select('id, title, title_i18n, slug, status, user_id, tags, matched_b_id, matched_c_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)', { count: 'exact' })
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
   if (q.trim()) {
     query = query.or(`title.ilike.%${q.trim()}%,body.ilike.%${q.trim()}%`)
+  }
+  if (tag.trim()) {
+    // タグ配列に指定タグを含む質問だけ（No.34タグフィルター）
+    query = query.contains('tags', [tag.trim()])
   }
 
   const { data: questions, count } = await query
@@ -169,6 +175,15 @@ async function QuestionResults({
         </p>
       )}
 
+      {tag && (
+        <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-xs">#{tag}</span>
+          <Link href="/" className="underline text-gray-400 hover:text-gray-600 text-xs">
+            {t('clear')}
+          </Link>
+        </p>
+      )}
+
       {questions && questions.length > 0 ? (
         <>
           <ul className="divide-y divide-gray-100">
@@ -191,6 +206,19 @@ async function QuestionResults({
                     <StatusBadge status={question.status} matchedBId={(question as any).matched_b_id} myId={user?.id} matchedCId={(question as any).matched_c_id} t={t} />
                   </div>
                 </Link>
+                {Array.isArray((question as any).tags) && (question as any).tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-0.5 mb-1.5 px-2">
+                    {(question as any).tags.slice(0, 3).map((tg: string) => (
+                      <Link
+                        key={tg}
+                        href={`/?tag=${encodeURIComponent(tg)}`}
+                        className="text-[11px] px-1.5 py-0.5 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                      >
+                        {tg}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

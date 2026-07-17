@@ -1,4 +1,9 @@
 {
+  "notFound": {
+    "title": "Página não encontrada",
+    "body": "A página que você procura não existe ou pode ter sido movida.",
+    "backHome": "Voltar ao início"
+  },
   "common": {
     "loading": "Carregando...",
     "search": "Buscar",

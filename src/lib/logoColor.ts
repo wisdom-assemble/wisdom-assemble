@@ -28,3 +28,15 @@ export function getLogoShadowShades(colorTheme: string): string[] {
   const { h, s } = hexToHueSaturation(colorTheme)
   return [5, 4, 3, 2, 1].map(i => `hsl(${h}, ${s}%, ${8 + i * 4}%)`)
 }
+
+// Sample Logo builderの3D押し出し(fx-3d)と同じdarken()。カスタムロゴのtreatment="3d"用。
+export function darkenHex(hex: string, amt: number): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.slice(0, 2), 16)
+  const g = parseInt(clean.slice(2, 4), 16)
+  const b = parseInt(clean.slice(4, 6), 16)
+  const dr = Math.max(0, Math.round(r * (1 - amt)))
+  const dg = Math.max(0, Math.round(g * (1 - amt)))
+  const db = Math.max(0, Math.round(b * (1 - amt)))
+  return `rgb(${dr},${dg},${db})`
+}

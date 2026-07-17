@@ -1,4 +1,9 @@
 {
+  "notFound": {
+    "title": "Halaman tidak ditemukan",
+    "body": "Halaman yang Anda cari tidak ada atau mungkin telah dipindahkan.",
+    "backHome": "Kembali ke beranda"
+  },
   "common": {
     "loading": "Memuat...",
     "search": "Cari",
