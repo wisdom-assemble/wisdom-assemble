@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
 import { askWithScore, checkInScope } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
@@ -20,6 +21,10 @@ function toSlug(text: string): string {
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
+  // 書き込み・RPC・レート制限は service_role（RLSバイパス）で実行する。
+  // 公開anonキーからの直接改ざん・不正RPC実行を防ぐため、DB側の書き込み権限は
+  // 一般ユーザー(anon/authenticated)に開放せず、サーバーからのみ書き込む。
+  const admin = createAdminClient()
   const apiErrors = await getApiErrors()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -31,7 +36,7 @@ export async function POST(request: NextRequest) {
   const tenantId = headersList.get('x-tenant-id') ?? 'debug'
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? '0.0.0.0'
 
-  const { data: withinLimit, error: rateLimitError } = await supabase.rpc(
+  const { data: withinLimit, error: rateLimitError } = await admin.rpc(
     'check_and_increment_rate_limit',
     { p_user_id: user.id, p_tenant_id: tenantId }
   )
@@ -121,14 +126,14 @@ export async function POST(request: NextRequest) {
     const result = await askWithScore(tenantId, `${title}\n\n${body}`)
 
     if (result.routed === 'ai') {
-      await supabase.from('answers').insert({
+      await admin.from('answers').insert({
         question_id: question.id,
         tenant_id: tenantId,
         body: result.answer,
         is_ai: true,
         ai_score: result.score,
       })
-      await supabase
+      await admin
         .from('questions')
         .update({ status: 'ai_answered', ai_score: result.score })
         .eq('id', question.id)
@@ -138,7 +143,7 @@ export async function POST(request: NextRequest) {
       const matchedB = await findMatch(tenantId, question.id, [user.id])
 
       if (matchedB) {
-        await supabase.from('questions').update({
+        await admin.from('questions').update({
           status: 'open',
           ai_score: result.score,
           matched_b_id: matchedB,
@@ -160,7 +165,7 @@ export async function POST(request: NextRequest) {
       } else {
         const matchedC = await findMatch(tenantId, question.id, [user.id])
         if (matchedC) {
-          await supabase.from('questions').update({
+          await admin.from('questions').update({
             status: 'matched_c',
             ai_score: result.score,
             matched_c_id: matchedC,
@@ -180,7 +185,7 @@ export async function POST(request: NextRequest) {
             console.error('notifyMatchedUser error:', e)
           }
         } else {
-          await supabase.from('questions').update({
+          await admin.from('questions').update({
             status: 'hard',
             ai_score: result.score,
           }).eq('id', question.id)
@@ -194,15 +199,15 @@ export async function POST(request: NextRequest) {
 
   // 質問投稿数カウント＋称号チェック
   try {
-    await supabase.rpc('increment_question_count', { uid: user.id, p_tenant_id: tenantId })
-    await supabase.rpc('check_and_award_titles', { p_user_id: user.id, p_tenant_id: tenantId })
+    await admin.rpc('increment_question_count', { uid: user.id, p_tenant_id: tenantId })
+    await admin.rpc('check_and_award_titles', { p_user_id: user.id, p_tenant_id: tenantId })
   } catch (e) {
     console.error('question title award error:', e)
   }
 
   // 翻訳結果を保存（Cloudflare Workersがレスポンス返却後に処理を打ち切るため必ずawaitする）
   const { title_i18n, body_i18n } = await translationPromise
-  await supabase.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
+  await admin.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
 
   return NextResponse.json({ slug: question.slug, result: resultType })
 }
