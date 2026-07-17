@@ -79,11 +79,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // x-default はデフォルトロケール(en)があればそれ、無ければ元言語を指す
   languages['x-default'] = languages['en'] ?? `https://${host}/${q.source_locale ?? 'ja'}${path}`
 
+  // 翻訳が存在するロケールなら自ページを、無い(=原文フォールバック表示)なら
+  // 元言語ページをcanonicalにして、中身が原文のままの薄い言語ページを正規化しない。
+  const canonicalLocale = availableLocales.includes(locale) ? locale : (q.source_locale ?? 'ja')
+
   return {
     title,
     description,
     alternates: {
-      canonical: `https://${host}/${locale}${path}`,
+      canonical: `https://${host}/${canonicalLocale}${path}`,
       languages,
     },
   }
