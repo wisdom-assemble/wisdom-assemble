@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
 import { checkContent } from '@/lib/contentFilter'
 import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
@@ -7,11 +8,22 @@ import { getApiErrors } from '@/lib/apiErrors'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
+  const admin = createAdminClient()
   const apiErrors = await getApiErrors()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: apiErrors.loginRequired }, { status: 401 })
+  }
+
+  // BANされたユーザーは回答不可（adminで確実に読む）
+  const { data: banProfile } = await admin
+    .from('profiles')
+    .select('is_banned')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (banProfile?.is_banned) {
+    return NextResponse.json({ error: apiErrors.notPermitted }, { status: 403 })
   }
 
   const headersList = await headers()

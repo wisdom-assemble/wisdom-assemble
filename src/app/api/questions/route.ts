@@ -32,6 +32,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: apiErrors.loginRequired }, { status: 401 })
   }
 
+  // BANされたユーザーは投稿不可（is_bannedはプロフィールに保存。adminで確実に読む）
+  const { data: banProfile } = await admin
+    .from('profiles')
+    .select('is_banned')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (banProfile?.is_banned) {
+    return NextResponse.json({ error: apiErrors.notPermitted }, { status: 403 })
+  }
+
   const headersList = await headers()
   const tenantId = headersList.get('x-tenant-id') ?? 'debug'
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? '0.0.0.0'
@@ -91,7 +101,7 @@ export async function POST(request: NextRequest) {
 
   if (count && count > 0) slug = `${slug}-${count + 1}`
 
-  const { data: question, error } = await supabase
+  const { data: question, error } = await admin
     .from('questions')
     .insert({
       tenant_id: tenantId,
