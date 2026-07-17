@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
-import { askWithScore, checkInScope } from '@/lib/gemini'
+import { askWithScore, askWithScoreInScope, type AiScopedResult } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser } from '@/lib/email'
@@ -77,10 +77,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: apiErrors[filterResult.reasonCode] }, { status: 422 })
   }
 
-  // ① 保存前にジャンル判定（OKなら保存、NGなら即拒否）
+  // ① 保存前にジャンル判定＋AI回答生成（1回のGroq呼び出しに統合・コスト最適化）。
+  // ジャンル外なら保存せず即拒否（従来のcheckInScopeと同じUX）。
+  // ジャンル内なら生成済みの回答・スコアを保持し、保存後のルーティングで再利用する。
+  let aiResult: AiScopedResult | null = null
   try {
-    const inScope = await checkInScope(tenantId, `${title}\n\n${body}`)
-    if (!inScope) {
+    aiResult = await askWithScoreInScope(tenantId, `${title}\n\n${body}`)
+    if (!aiResult.inScope) {
       return NextResponse.json(
         { error: 'このサービスでは関連のある質問のみ受け付けています。' },
         { status: 422 }
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (e) {
     console.error('Scope check error:', e)
-    // 判定失敗時は通す（ユーザー体験優先）
+    // 判定失敗時は通す（ユーザー体験優先）。保存後にaskWithScoreで再試行する
   }
 
   // スラッグ生成（重複時は末尾に数値付加）
@@ -130,10 +133,11 @@ export async function POST(request: NextRequest) {
   })
   const titleTranslationPromise = translationPromise.then((r) => r.title_i18n)
 
-  // ② ジャンル内確定なのでスコア付き回答を生成
+  // ② ジャンル内確定。①で生成済みの回答を再利用する（Groq呼び出しなし）。
+  // ①がGroqエラーで結果を持てなかった場合のみ、従来方式のaskWithScoreで再試行する
   let resultType: 'ai' | 'matched' | 'pending' = 'pending'
   try {
-    const result = await askWithScore(tenantId, `${title}\n\n${body}`)
+    const result = aiResult ?? (await askWithScore(tenantId, `${title}\n\n${body}`))
 
     if (result.routed === 'ai') {
       await admin.from('answers').insert({

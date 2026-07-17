@@ -129,6 +129,47 @@ export type AiResult = {
   routed: 'ai' | 'human'  // ai: AI回答表示 / human: 人間へルーティング
 }
 
+export type AiScopedResult = AiResult & { inScope: boolean }
+
+// ジャンル判定＋スコア付き回答生成を1回のGroq呼び出しに統合（コスト最適化・2026-07-17）。
+// 従来は checkInScope → askWithScore と同じ質問文を70Bモデルに2回送っており、
+// トークンを二重に消費していた。統合により約25%のコスト削減＋無料枠の消費も約30%減。
+// 判定部分の挙動は checkInScope と同一（ジャンル外なら inScope=false）。
+// JSONパース失敗・inScopeキー欠落時はフェイルオープン（inScope=true扱い、score=0で人間ルート）。
+export async function askWithScoreInScope(tenantId: string, question: string): Promise<AiScopedResult> {
+  const { label, threshold, inScope, outScope, dangerKeywords } = getConfig(tenantId)
+
+  const raw = await callGroq([
+    { role: 'system', content: buildScopedSystemPrompt(label, inScope, outScope) },
+    { role: 'user', content: question },
+  ])
+
+  const match = raw.match(/\{[\s\S]*\}/)
+  let scopeOk = true
+  let score = 0
+  let answer = ''
+
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[0])
+      scopeOk = parsed.inScope !== false // 欠落・不正値はフェイルオープン
+      score = typeof parsed.score === 'number' ? Math.min(100, Math.max(0, parsed.score)) : 0
+      answer = typeof parsed.answer === 'string' ? parsed.answer.trim() : ''
+    } catch {
+      answer = raw
+      score = 0
+    }
+  } else {
+    answer = raw
+    score = 0
+  }
+
+  score = adjustScore(score, answer, question, dangerKeywords)
+
+  const routed = score >= threshold ? 'ai' : 'human'
+  return { inScope: scopeOk, answer, score, routed }
+}
+
 // ジャンル内確定済みの質問にスコア付き回答を生成
 export async function askWithScore(tenantId: string, question: string): Promise<AiResult> {
   const { label, threshold, dangerKeywords } = getConfig(tenantId)
@@ -175,6 +216,33 @@ function adjustScore(score: number, answer: string, question = '', dangerKeyword
 export async function askGemini(tenantId: string, question: string): Promise<string> {
   const result = await askWithScore(tenantId, question)
   return result.answer
+}
+
+// 統合版システムプロンプト（ジャンル判定＋回答生成）。
+// テナントごとに内容が固定のため、Groqのプロンプトキャッシュ（繰り返し入力50%オフ）が効く。
+function buildScopedSystemPrompt(label: string, inScopeDesc: string, outScopeDesc: string): string {
+  return `あなたは${label}の専門家です。
+
+まず、質問が「${label}」に関係するかを判定してください。${inScopeDesc}などを含む場合は関係あり（inScope=true）です。${outScopeDesc}は関係なし（inScope=false）です。
+
+関係なしの場合は {"inScope": false, "score": 0, "answer": ""} のみを返してください。
+
+関係ありの場合は質問に回答し、自信度スコア（0〜100）を付けてください。
+
+スコア基準：
+- 90〜100：確実に正しい、公式ドキュメントレベルの知識
+- 70〜89：ほぼ正しいが、バージョンや環境依存の可能性あり
+- 50〜69：一般的な回答だが、個別状況で異なる可能性あり
+- 30〜49：推測が含まれる、要検証
+- 0〜29：わからない、情報が古い可能性が高い
+
+重要なルール：
+- 確信が持てない場合は正直にスコアを下げてください
+- 曖昧な推測はしないでください
+- 回答は簡潔・明確に。日本語で答えてください
+
+必ずJSON形式のみで返してください（説明文・前置き不要）：
+{"inScope": true, "score": 85, "answer": "回答本文"}`
 }
 
 function buildSystemPrompt(label: string): string {
