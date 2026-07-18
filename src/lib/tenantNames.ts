@@ -67,7 +67,6 @@ export const LOGO_STYLE_OVERRIDES: Record<string, LogoStyleOverride> = {
     fontSizePx: 32,
     gradientFrom: '#74a7fe',
     gradientTo: '#606060',
-    treatment: '3d', // [一時] foreignObject方式の本番実証用。確認後にgradientへ戻す
   },
 }
 
