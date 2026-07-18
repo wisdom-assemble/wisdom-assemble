@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { QuestionList, UserList } from './AdminActions'
 import AdminSummary, { DashboardStats } from './AdminSummary'
+import AdminVisitors from './AdminVisitors'
+import { getVisitorStats } from '@/lib/cloudflareAnalytics'
 
 const ADMIN_EMAIL = 'wisdomassemble@gmail.com'
 
@@ -21,6 +23,9 @@ export default async function AdminPage({
   if (!user || user.email !== ADMIN_EMAIL) redirect('/')
 
   const { tab = 'summary' } = await searchParams
+
+  // 訪問者データ（Cloudflare Web Analytics）はそのタブを開いたときだけ取得する
+  const visitorStats = tab === 'visitors' ? await getVisitorStats(30) : null
 
   // データ読み取りは service_role（RLSを迂回して全テナントを串刺しで取得する）。
   // 通常のユーザークライアントだと questions_read 等のRLSで「現在のサブドメイン
@@ -116,11 +121,13 @@ export default async function AdminPage({
 
         <div className="flex gap-4 border-b mb-6">
           <TabLink href="/admin?tab=summary" active={tab === 'summary'} label="サマリー" />
+          <TabLink href="/admin?tab=visitors" active={tab === 'visitors'} label="訪問者" />
           <TabLink href="/admin?tab=questions" active={tab === 'questions'} label="質問一覧" />
           <TabLink href="/admin?tab=users" active={tab === 'users'} label="ユーザー一覧" />
         </div>
 
         {tab === 'summary' && <AdminSummary stats={stats} colorMap={colorMap} />}
+        {tab === 'visitors' && visitorStats && <AdminVisitors stats={visitorStats} />}
         {tab === 'questions' && <QuestionList questions={questionsForList} adminUserId={user.id} />}
         {tab === 'users' && <UserList profiles={usersForList} adminUserId={user.id} />}
       </main>
