@@ -91,7 +91,8 @@ type Question = {
   status: string
   tenant_id: string
   created_at: string
-  profiles: { username: string; display_name: string | null } | null
+  matched_b_id?: string | null
+  posterName: string
 }
 
 type Profile = {
@@ -108,7 +109,7 @@ export function QuestionList({ questions, adminUserId }: { questions: Question[]
   const [applied, setApplied] = useState('')
   const filtered = questions.filter(item =>
     item.title.toLowerCase().includes(applied.toLowerCase()) ||
-    (item.profiles?.display_name ?? item.profiles?.username ?? '').toLowerCase().includes(applied.toLowerCase())
+    item.posterName.toLowerCase().includes(applied.toLowerCase())
   )
 
   return (
@@ -130,23 +131,20 @@ export function QuestionList({ questions, adminUserId }: { questions: Question[]
         </button>
       </div>
       <div className="space-y-2">
-        {filtered.map(item => {
-          const poster = item.profiles
-          return (
-            <div key={item.id} className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
-              <div className="flex-1 min-w-0">
-                <Link href={`/questions/${encodeURIComponent(item.slug ?? item.id)}`} className="text-sm font-medium text-gray-900 hover:underline truncate block">
-                  {item.title}
-                </Link>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {poster?.display_name ?? poster?.username} · {item.tenant_id} · {new Date(item.created_at).toLocaleDateString('ja-JP')}
-                </p>
-              </div>
-              <StatusBadge status={item.status} matchedBId={(item as any).matched_b_id} />
-              <DeleteQuestionButton questionId={item.id} />
+        {filtered.map(item => (
+          <div key={item.id} className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
+            <div className="flex-1 min-w-0">
+              <Link href={`/questions/${encodeURIComponent(item.slug ?? item.id)}`} className="text-sm font-medium text-gray-900 hover:underline truncate block">
+                {item.title}
+              </Link>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {item.posterName} · {item.tenant_id} · {new Date(item.created_at).toLocaleDateString('ja-JP')}
+              </p>
             </div>
-          )
-        })}
+            <StatusBadge status={item.status} matchedBId={item.matched_b_id} />
+            <DeleteQuestionButton questionId={item.id} />
+          </div>
+        ))}
         {filtered.length === 0 && <p className="text-sm text-gray-400 text-center py-8">該当なし</p>}
       </div>
     </div>

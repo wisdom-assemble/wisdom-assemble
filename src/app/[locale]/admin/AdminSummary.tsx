@@ -1,0 +1,229 @@
+// 全テナント横断KPIサマリー（サーバーコンポーネント・純表示）。
+// データは admin_dashboard_stats() RPC を service_role で呼んだ結果を受け取る。
+// デザインはサイト共通トークン（gray系・rounded-lg・border-gray-100）に合わせる。
+import { TENANT_NAME_MAP, getPublicSubdomain } from '@/lib/tenantNames'
+
+export type DashboardStats = {
+  totals: {
+    questions: number
+    users: number
+    answers: number
+    ai_answers: number
+    human_answers: number
+    solved: number
+    unsolved: number
+    hard: number
+    views: number
+  }
+  per_tenant: Array<{
+    tenant_id: string
+    questions: number
+    solved: number
+    hard: number
+    unsolved: number
+    q_7d: number
+    q_30d: number
+    views: number
+    avg_solve_hours: number | null
+    ai_answers: number
+    human_answers: number
+    answerers: number
+  }>
+  dau: Array<{ day: string; count: number }>
+  mau: Array<{ month: string; count: number }>
+}
+
+// JSTの「今日」から遡って直近n日のYYYY-MM-DD文字列配列（古い→新しい）
+function lastJstDays(n: number): string[] {
+  const days: string[] = []
+  const now = Date.now()
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now - i * 86_400_000)
+    days.push(d.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' })) // YYYY-MM-DD
+  }
+  return days
+}
+
+function tenantLabel(id: string): string {
+  return TENANT_NAME_MAP[id] ?? id.toUpperCase()
+}
+
+function pct(part: number, whole: number): string {
+  if (!whole) return '—'
+  return `${Math.round((part / whole) * 100)}%`
+}
+
+export default function AdminSummary({
+  stats,
+  colorMap,
+}: {
+  stats: DashboardStats
+  colorMap: Record<string, string>
+}) {
+  const t = stats.totals
+
+  return (
+    <div className="space-y-8">
+      {/* 全体サマリーカード */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">全体サマリー</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Stat label="総質問数" value={t.questions.toLocaleString()} />
+          <Stat label="解決率" value={pct(t.solved, t.questions)} sub={`${t.solved} / ${t.questions}`} />
+          <Stat label="未解決" value={t.unsolved.toLocaleString()} sub={`うち高難度 ${t.hard}`} />
+          <Stat label="総ユーザー数" value={t.users.toLocaleString()} />
+          <Stat label="総回答数" value={t.answers.toLocaleString()} />
+          <Stat label="AI回答" value={t.ai_answers.toLocaleString()} sub={pct(t.ai_answers, t.answers)} />
+          <Stat label="人間回答" value={t.human_answers.toLocaleString()} sub={pct(t.human_answers, t.answers)} />
+          <Stat label="総閲覧数" value={t.views.toLocaleString()} />
+        </div>
+      </section>
+
+      {/* DAU / MAU */}
+      <section className="grid md:grid-cols-2 gap-6">
+        <DauChart dau={stats.dau} />
+        <MauChart mau={stats.mau} />
+      </section>
+
+      {/* テナント別サマリー */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">テナント別サマリー</h2>
+        <div className="overflow-x-auto border border-gray-100 rounded-lg">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-gray-400 border-b border-gray-100">
+                <Th className="text-left pl-3">テナント</Th>
+                <Th>質問</Th>
+                <Th>解決率</Th>
+                <Th>未解決</Th>
+                <Th>高難度</Th>
+                <Th>7日</Th>
+                <Th>30日</Th>
+                <Th>閲覧</Th>
+                <Th>AI/人</Th>
+                <Th>回答者</Th>
+                <Th>平均解決</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.per_tenant.length === 0 && (
+                <tr><td colSpan={11} className="text-center text-gray-400 py-8">データなし</td></tr>
+              )}
+              {stats.per_tenant.map((r) => (
+                <tr key={r.tenant_id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                  <td className="py-2.5 pl-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: colorMap[r.tenant_id] ?? '#9ca3af' }}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-800 truncate">{tenantLabel(r.tenant_id)}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{getPublicSubdomain(r.tenant_id)}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <Td>{r.questions}</Td>
+                  <Td>{pct(r.solved, r.questions)}</Td>
+                  <Td>{r.unsolved}</Td>
+                  <Td>{r.hard}</Td>
+                  <Td>{r.q_7d}</Td>
+                  <Td>{r.q_30d}</Td>
+                  <Td>{r.views.toLocaleString()}</Td>
+                  <Td>{r.ai_answers}/{r.human_answers}</Td>
+                  <Td>{r.answerers}</Td>
+                  <Td>{r.avg_solve_hours != null ? `${r.avg_solve_hours}h` : '—'}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="p-4 border border-gray-100 rounded-lg">
+      <p className="text-2xl font-bold text-gray-800 leading-none">{value}</p>
+      <p className="text-xs text-gray-500 mt-1.5">{label}</p>
+      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+    </div>
+  )
+}
+
+function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <th className={`font-medium px-2 py-2 text-right whitespace-nowrap ${className}`}>{children}</th>
+}
+function Td({ children }: { children: React.ReactNode }) {
+  return <td className="px-2 py-2.5 text-right tabular-nums text-gray-700 whitespace-nowrap">{children}</td>
+}
+
+// 直近30日の投稿者DAUを縦棒で表示（活動のない日は0で埋める）
+function DauChart({ dau }: { dau: DashboardStats['dau'] }) {
+  const days = lastJstDays(30)
+  const map = new Map(dau.map((d) => [d.day, d.count]))
+  const series = days.map((day) => ({ day, count: map.get(day) ?? 0 }))
+  const max = Math.max(1, ...series.map((s) => s.count))
+  const peak = Math.max(0, ...series.map((s) => s.count))
+  const todayCount = series[series.length - 1]?.count ?? 0
+
+  return (
+    <div className="p-4 border border-gray-100 rounded-lg">
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="text-sm font-semibold text-gray-500">DAU（投稿者・直近30日）</h2>
+        <span className="text-xs text-gray-400">今日 {todayCount} / 最大 {peak}</span>
+      </div>
+      <div className="flex items-end gap-[2px] h-24">
+        {series.map((s) => (
+          <div key={s.day} className="flex-1 flex flex-col justify-end group relative" title={`${s.day}: ${s.count}`}>
+            <div
+              className="w-full bg-gray-800 rounded-sm min-h-[1px] group-hover:bg-gray-900 transition-colors"
+              style={{ height: `${(s.count / max) * 100}%` }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+        <span>{series[0]?.day.slice(5)}</span>
+        <span>{series[series.length - 1]?.day.slice(5)}</span>
+      </div>
+      <p className="text-[10px] text-gray-400 mt-2">
+        ※ 質問・回答を投稿したユーザーのみ集計（閲覧のみの訪問者は含まない）
+      </p>
+    </div>
+  )
+}
+
+// 直近12ヶ月の投稿者MAUを横棒で表示
+function MauChart({ mau }: { mau: DashboardStats['mau'] }) {
+  const max = Math.max(1, ...mau.map((m) => m.count))
+  const latest = mau[mau.length - 1]?.count ?? 0
+  return (
+    <div className="p-4 border border-gray-100 rounded-lg">
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="text-sm font-semibold text-gray-500">MAU（投稿者・直近12ヶ月）</h2>
+        <span className="text-xs text-gray-400">今月 {latest}</span>
+      </div>
+      {mau.length === 0 ? (
+        <p className="text-sm text-gray-400 py-6 text-center">データなし</p>
+      ) : (
+        <div className="space-y-1.5">
+          {mau.map((m) => (
+            <div key={m.month} className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-14 shrink-0 tabular-nums">{m.month}</span>
+              <div className="flex-1 bg-gray-100 rounded-sm h-4 overflow-hidden">
+                <div
+                  className="h-full bg-gray-800 rounded-sm"
+                  style={{ width: `${(m.count / max) * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-600 w-8 text-right tabular-nums">{m.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
