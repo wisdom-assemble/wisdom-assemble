@@ -23,6 +23,67 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
     // ぴったり合い、右切れ・中央ズレが起きない。
     const perCharEm = override.widthEmPerChar ?? 0.70
     const textWidth = label.length * fontSize * perCharEm + (label.length - 1) * lsPx
+
+    // treatment指定時：globals.cssのfx-*をforeignObjectで適用（ロゴビルダーとピクセル一致）。
+    // treatment未指定（既存dtm等）は従来のSVG平面グラデ描画のまま（後方互換・見た目不変）。
+    const treatment = override.treatment
+    if (treatment && treatment !== 'gradient') {
+      const shades = getLogoShadowShades(override.gradientFrom)
+      const PAD = 16
+      const isBox = treatment === 'pill' || treatment === 'emblem'
+      const hasRule = treatment === 'underline' || treatment === 'dotted' || treatment === 'doublerule' || treatment === 'varsity'
+      const fw = Math.max(1, textWidth + tmFontSize * 1.3 + PAD * 2 + (isBox ? 40 : 0))
+      const fh = fontSize + PAD * 2 + (hasRule ? 12 : 0) + (isBox ? 16 : 0)
+      const boxStyle = {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingLeft: 8,
+        '--c': override.gradientFrom,
+        '--c2': override.gradientTo,
+        '--sh1': shades[0],
+        '--sh2': shades[1],
+        '--sh3': shades[2],
+        '--sh4': shades[3],
+        '--sh5': shades[4],
+      } as React.CSSProperties
+
+      return (
+        <span className="inline-flex items-center justify-center select-none">
+          <svg
+            width={fw}
+            height={fh}
+            viewBox={`0 0 ${fw} ${fh}`}
+            xmlns="http://www.w3.org/2000/svg"
+            aria-label={name}
+            style={{ maxWidth: '100%', height: 'auto' }}
+          >
+            <foreignObject x="0" y="0" width={fw} height={fh}>
+              <div {...{ xmlns: 'http://www.w3.org/1999/xhtml' }} style={boxStyle}>
+                <span
+                  className={`fx-${treatment}`}
+                  data-text={label}
+                  style={{
+                    fontFamily: override.fontFamily,
+                    fontSize,
+                    fontWeight: override.fontWeight,
+                    letterSpacing: lsPx,
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                  <sup style={{ fontSize: tmFontSize, fontWeight: 700, marginLeft: 2 }}>™</sup>
+                </span>
+              </div>
+            </foreignObject>
+          </svg>
+        </span>
+      )
+    }
+
     const svgWidth = Math.max(1, textWidth + tmFontSize * 1.3 + 6)
     const svgHeight = fontSize + 10
     const gradId = `logo-grad-${tenantId ?? 'x'}`

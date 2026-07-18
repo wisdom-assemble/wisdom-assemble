@@ -124,3 +124,91 @@ body {
   border-top: 2px solid var(--c2);
   border-bottom: 2px solid var(--c2);
 }
+.fx-diagsplit {
+  background: linear-gradient(115deg, var(--c) 48%, var(--c2) 52%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+.fx-skew {
+  display: inline-block;
+  color: var(--c);
+  font-weight: 800;
+  transform: skewX(-14deg);
+}
+.fx-glitch {
+  color: var(--foreground);
+  font-weight: 800;
+  text-shadow: -2px 0 var(--c), 2px 0 var(--c2);
+}
+.fx-engrave {
+  color: var(--c);
+  font-weight: 700;
+  text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.55), 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+.fx-deboss {
+  color: var(--c);
+  font-weight: 700;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.55), -1px -1px 1px rgba(0, 0, 0, 0.45);
+}
+.fx-varsity {
+  color: var(--c);
+  font-weight: 800;
+  text-shadow: 1px 1px 0 var(--c2), 2px 2px 0 var(--c2), 3px 3px 0 var(--c2);
+  padding-bottom: 6px;
+  border-bottom: 3px solid var(--c2);
+}
+.fx-duplicate {
+  position: relative;
+  color: var(--c);
+  font-weight: 800;
+}
+.fx-duplicate::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  color: var(--c2);
+  z-index: -1;
+}
+.fx-bracket {
+  color: var(--c);
+  font-weight: 600;
+}
+.fx-bracket::before {
+  content: "< ";
+  color: var(--c2);
+  margin-right: 4px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+.fx-bracket::after {
+  content: " />";
+  color: var(--c2);
+  margin-left: 4px;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+.fx-marker {
+  color: var(--foreground);
+  font-weight: 700;
+  background: linear-gradient(transparent 62%, var(--c) 62%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 2px;
+}
+.fx-pill {
+  color: #fff;
+  font-weight: 700;
+  background: var(--c);
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+.fx-emblem {
+  color: var(--c);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  border: 2px solid var(--c);
+  border-radius: 3px;
+  padding: 5px 12px;
+}
