@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
-import { getTenantDisplayName } from '@/lib/tenantNames'
+import { getTenantDisplayName, LOGO_STYLE_OVERRIDES } from '@/lib/tenantNames'
 import { getLogoShadowShades } from '@/lib/logoColor'
 
 export const size = { width: 32, height: 32 }
@@ -62,7 +62,10 @@ export default async function Icon() {
 
   const label = getTenantDisplayName(tenantId, tenant?.name ?? 'Wisdom Assemble')
   const letter = label.trim().charAt(0) || 'W'
-  const primary = tenant?.color_theme ?? '#4F46E5'
+  // ロゴ(SiteLogo)がLOGO_STYLE_OVERRIDESを持つテナントは、そのロゴの主色(gradientFrom)を
+  // ファビコンの文字色に使い、ロゴと色を一致させる（例: MUSIC PRODUCTION=#74a7fe）。
+  // 未指定テナントは従来通りcolor_themeを使う（既定の3Dロゴがcolor_themeで描かれ一致するため）。
+  const primary = LOGO_STYLE_OVERRIDES[tenantId]?.gradientFrom ?? tenant?.color_theme ?? '#4F46E5'
   const shadows = getLogoShadowShades(primary)
 
   return new ImageResponse(
