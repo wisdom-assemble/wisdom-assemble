@@ -103,9 +103,13 @@ export default async function Icon() {
     )
   }
 
-  // デフォルトロゴ(Impact 3D押し出し)のテナントは、ロゴが3Dなのでファビコンも3D。
+  // デフォルトロゴ(Impact 3D押し出し)のテナントは、ロゴが3Dなのでファビコンも
+  // 3D＋ロゴのImpact書体に近いGoogle Font(Anton)＋センターにする。
+  // 3DはtextShadowの多層(近い影ほど明・遠い影ほど暗)で表現し、flexでセンター配置。
   const primary = tenant?.color_theme ?? '#4F46E5'
-  const shadows = getLogoShadowShades(primary)
+  const shadows = getLogoShadowShades(primary) // [L28,L24,L20,L16,L12]（近→遠）
+  const impactFont = await loadGoogleFont('Anton', 400, letter)
+  const shadowCss = shadows.map((c, idx) => `${idx + 1}px ${idx + 1}px 0 ${c}`).join(', ')
 
   return new ImageResponse(
     (
@@ -120,37 +124,22 @@ export default async function Icon() {
           borderRadius: 6,
         }}
       >
-        {shadows.map((color, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              fontSize: 26,
-              fontWeight: 900,
-              color,
-              left: 4 + (5 - i),
-              top: 2 + (5 - i),
-              fontFamily: 'sans-serif',
-            }}
-          >
-            {letter}
-          </div>
-        ))}
         <div
           style={{
-            position: 'absolute',
-            fontSize: 26,
-            fontWeight: 900,
+            fontSize: 24,
+            fontWeight: 400,
+            fontFamily: 'ImpactFont',
             color: primary,
-            left: 4,
-            top: 2,
-            fontFamily: 'sans-serif',
+            lineHeight: 1,
+            textShadow: shadowCss,
+            marginRight: 3,
+            marginBottom: 2,
           }}
         >
           {letter}
         </div>
       </div>
     ),
-    { ...size }
+    { ...size, fonts: [{ name: 'ImpactFont', data: impactFont, weight: 400, style: 'normal' }] }
   )
 }
