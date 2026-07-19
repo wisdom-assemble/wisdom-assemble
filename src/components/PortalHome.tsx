@@ -56,7 +56,7 @@ export default async function PortalHome() {
       tenantId,
       name: tenant?.name ?? tenantId,
       colorTheme: tenant?.color_theme ?? FALLBACK_COLOR_THEME[tenantId],
-      theme: tenantId === 'dtm' ? 'dark' : ((tenant as { theme?: string | null } | null)?.theme ?? null), // [一時] ポータルのダークカード検証用。確認後にこの三項を削除
+      theme: (tenant as { theme?: string | null } | null)?.theme ?? null,
       bgColor: (tenant as { bg_color?: string | null } | null)?.bg_color ?? null,
       href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
       // タグラインは `{tenantId}CardTagline` の動的キーで取得（3テナント目以降でも壊れない）。
