@@ -532,6 +532,38 @@
 
 **参照**: 比較ダッシュボード（Artifact） https://claude.ai/code/artifact/95dbabc4-e444-45ad-b515-ddf577d980aa ／詳細リサーチ4本（広告/アフィリ/Stripe/宣伝SEO・出典つき）はプランナーセッション2026-07-18〜19の会話ログ
 
+### ✅ 管理ダッシュボード刷新・ファビコン刷新・ロゴ作成システム・テナント別ダークモード（2026-07-20・大規模実装セッション）
+
+すべて本番デプロイ済み・本番で実物検証済み。DB系はSupabase SQL Editorで適用済み。
+
+**1. `/admin` を全テナント横断KPIダッシュボードに刷新**
+- **重大バグ修正**: `/admin`のデータ読取が通常ユーザークライアントで、2026-07-13追加のRLS(`current_tenant_id()`)により**現在のサブドメイン1テナントにしか絞られていなかった**（rootで開くと空）。データ読取を`createAdminClient()`(service_role)に変更しRLS迂回で全テナント串刺しに。上部statsの`.limit(200)`頭打ち、回答数/表示名が旧`profiles`凍結列参照だったのを`tenant_profiles`解決に修正。
+- `admin_dashboard_stats()` RPC追加（read-only・service_roleのみ・**JST集計**・migration `20260718000001`）。全体サマリー＋テナント別表＋DAU/MAU（投稿者ベース＝質問/回答した一意ユーザー）。認証はcookieクライアント、データ読取はadminクライアント、と分離。
+- 「サマリー」タブ新設（`AdminSummary.tsx`）。
+
+**2. 訪問者タブ（Cloudflare Web Analytics統合）**
+- `src/lib/cloudflareAnalytics.ts`＋`AdminVisitors.tsx`。CF GraphQL Analytics API(`rumPageloadEventsAdaptiveGroups`)からPV/訪問/日別/ホスト別(=テナント別)/流入元/人気ページ/国。
+- Worker Secret: `CF_ANALYTICS_API_TOKEN`（「Read analytics and logs」テンプレのread-onlyトークン）＋`CF_ACCOUNT_ID=c17c4b1e3c6733389ab7cf097141bd18`。Web Analyticsは既に有効(automatic setup)。siteTag省略(単一サイト)。5分キャッシュ。
+- **注意: CFはサンプリング推定なので数値は10刻みで丸められる＝正常**。訪問者DAU/MAU(ROM含む)はCFダッシュ、投稿者ベースは自作サマリータブ、の役割分担。
+
+**3. ファビコン刷新（`icon.tsx`）**
+- ロゴのstyleに追従。override(LOGO_STYLE_OVERRIDES持ち)は`treatment`を gradient/3d/solid に振り分けて近似、フォントは30書体→Google Font代替(`faviconFont()`: 幾何学→Jost/Impact系→Anton/セリフ→Lora/手書き→Caveat/等幅→Roboto Mono/スラブ→Roboto Slab/丸→Baloo2/ディドネ→Playfair)。デフォルトロゴのテナントはImpact系Anton＋3D＋センター。文字色はロゴ実色(`gradientFrom`)。※next/og(Satori)はシステムフォント不可のためGoogle Font代替が必須。
+
+**4. ロゴ作成システム（大）— foreignObject + fx-* CSS方式**
+- **SiteLogo.tsx**: override分岐で`treatment`指定時は**SVGの`foreignObject`＋`globals.css`のfx-* CSS**で描画（→ロゴビルダーとピクセル一致・自動縮小維持）。treatment未指定(既存dtm)は従来のSVG平面グラデ(後方互換・見た目不変)。**本番でMUSIC PRODUCTIONを一時3D化して`foreignObject`描画を実証済み**。
+- **globals.css**: 25種のfx-*(flat/3d/outline/gradient/split/diagsplit/vertgradient/fade/stripe/shadow/longshadow/duo/skew/underline/dotted/doublerule/glitch/engrave/deboss/varsity/duplicate/bracket/marker/pill/emblem)。`--c`/`--c2`(=gradientFrom/To)、`--sh1..sh5`(3D影・getLogoShadowShades相当)。**除外5種**(neon/neonoutline/sticker/stamp/radialglow)は発光blur/回転でviewBox外に切れる/コンテナ依存のため。`LogoTreatment`型を25種に拡張。
+- **テナントビルダー(Artifact)**: 30書体×25スタイル＋メイン/サブ色＋太さ/サイズ/字間＋🎲randomize＋🔒6ロック(書体/スタイル/色/サイズ/字間/太さ)。プレビューは本番と同じfx-* CSS＝**レビュー=本番のピクセル一致**。出力`LOGO_STYLE_OVERRIDES`に`treatment`追加。widthEmPerCharはcanvas実測。
+
+**5. テナント別ダークモード（大）— CSS上書き層方式**
+- **globals.css**に`[data-theme="dark"]`層。全ページの**使用中の全グレー階調(text/bg/border-gray)＋白＋バッジ色(赤緑青黄橙紫の50/700系)を網羅**して`!important`で上書き。**455箇所のTailwind色クラスは無改修**。`--page-bg`でテナントごとに背景色を個別変更可。
+- `tenants`に`theme`(light/dark・default light)/`bg_color`列追加（migration `20260720000001`・**SQL適用済み**）。`layout.tsx`で`tenant.theme==='dark'`→`<html data-theme="dark">`、`bg_color`→`--page-bg`。types.tsのTenantにも追加。
+- **ルートポータルのカードもテナントのtheme/bg_colorに追従**(`PortalTenantSearch`でカードに`data-theme="dark"`＋背景色→内部text/border/hoverが自動ダーク化)。dark=暗色カードで100テナント時の見た目に変化。**本番でMUSIC PRODUCTIONをダーク＋ポータルのダークカードを実証済み**(確認後revert・既存は全てlightで見た目不変)。
+- ビルダーにダークモードトグル＋背景色ピッカー。
+
+**6. ビルダーその他**: ロゴのメイン色→`color_theme`自動同期(独自ロゴON時)。ポータル掲載トグルを**既定ON**(ステージング用にOFF可)。手順書に`?tenant=root`(ポータルに新カード追加状態を確認)追記。
+
+**確立した検証手法**: ローカルで確認できないもの(foreignObject/Satoriレンダリング/ダークCSS層)は「本番デプロイ→md5/HTMLをポーリングで反映検知→ブラウザpaneでスクショ or /iconのPNGをReadで目視」の**本番実証ループ**。一時的にdtmへ強制適用→確認→revert、で安全に検証。
+
 ## マッチングフロー
 ```
 質問投稿
@@ -588,9 +620,11 @@
 | Cloudflare | Custom Domain | `newpub.wisdomassemble.com` を追加 | ★必須 |
 | Supabase | `tenants` INSERT | 下記#1 | ★必須 |
 
-- **favicon(`src/app/icon.tsx`)はDBの`name`/`color_theme`から自動生成**＝コード編集不要
+- **favicon(`src/app/icon.tsx`)はDBの`name`/`color_theme`＋`LOGO_STYLE_OVERRIDES`から自動生成**＝コード編集不要。2026-07-20〜ロゴのstyle(treatment)に追従(gradient/3d/solid)＋30書体をGoogle Font代替で近似
 - **ロゴを崩さないコツ**: ロゴビルダーで作ったら `canvas.measureText(表示名).width / 表示名.length / fontSizePx` を `LOGO_STYLE_OVERRIDES[newid].widthEmPerChar` に入れる（viewBox幅が実測でぴったり合い、右切れ・中央ズレしない）。指定しなくても`maxWidth:100%`で溢れはしないが、フォントによっては見た目が寄る
-- **ローカル確認**: 開発サーバはmiddleware未実行なので `http://localhost:3000/ja?tenant=newid` の `?tenant=` パラメータでテナントを指定して確認できる（middlewareの開発分岐がparam/headerを許可）
+- **ロゴのtreatment(2026-07-20〜)**: `LOGO_STYLE_OVERRIDES[newid].treatment`に25スタイル指定可(`globals.css`のfx-*をSiteLogoが`foreignObject`で適用)。未指定は平面グラデ(後方互換)。テナントビルダー(Artifact)で30書体×25スタイルを組んで出力するのが基本
+- **テナント別ダークモード(2026-07-20〜)**: `tenants.theme='dark'`で`<html data-theme="dark">`＝全ページダーク(`globals.css`のダーク上書き層)。`tenants.bg_color`で背景色を個別変更。ルートポータルのカードもtheme/bg_colorに追従。INSERTの`theme`/`bg_color`列(migration `20260720000001`)をお忘れなく
+- **ローカル確認**: 開発サーバはmiddleware未実行なので `http://localhost:3000/ja?tenant=newid` の `?tenant=` パラメータでテナントを指定して確認できる（middlewareの開発分岐がparam/headerを許可）。**ルートポータルのカード確認は `?tenant=root`**（新テナントのカード追加状態・ダーク/ライトを確認）
 
 ### 3. UI規則（CSSやロゴデザインが変わっても必ず守ること）
 - ログインページのロゴは **左揃え**
