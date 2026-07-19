@@ -98,7 +98,7 @@ export default async function RootLayout({
 
   // テナント別ダークモード。theme='dark'なら<html data-theme="dark">、
   // bg_colorがあれば --page-bg で背景色を個別上書き（globals.css参照）。
-  const isDark = tenant?.theme === 'dark' || tenantId === 'dtm' // [一時] ダーク層の本番実証用。確認後にこのtenantId条件を削除
+  const isDark = tenant?.theme === 'dark'
   const htmlStyle = tenant?.bg_color
     ? ({ '--page-bg': tenant.bg_color } as React.CSSProperties)
     : undefined
