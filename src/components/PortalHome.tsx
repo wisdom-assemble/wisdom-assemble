@@ -41,7 +41,7 @@ export default async function PortalHome() {
   // （.in()での一括取得だと本番で稀に color_theme が取得できないことがあったため）
   const results = await Promise.all(
     REVIEW_TENANT_IDS.map((tenantId) =>
-      admin.from('tenants').select('id, name, color_theme').eq('id', tenantId).single()
+      admin.from('tenants').select('*').eq('id', tenantId).single()
     )
   )
 
@@ -56,6 +56,8 @@ export default async function PortalHome() {
       tenantId,
       name: tenant?.name ?? tenantId,
       colorTheme: tenant?.color_theme ?? FALLBACK_COLOR_THEME[tenantId],
+      theme: (tenant as { theme?: string | null } | null)?.theme ?? null,
+      bgColor: (tenant as { bg_color?: string | null } | null)?.bg_color ?? null,
       href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
       // タグラインは `{tenantId}CardTagline` の動的キーで取得（3テナント目以降でも壊れない）。
       // 新テナント追加時は messages/*.json に `{tenantId}CardTagline` を追加すること。

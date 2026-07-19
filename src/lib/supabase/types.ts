@@ -10,6 +10,8 @@ export interface Tenant {
   subdomain: string
   language: string
   color_theme: string
+  theme: 'light' | 'dark' | null
+  bg_color: string | null
   logo_url: string | null
   is_active: boolean
   created_at: string

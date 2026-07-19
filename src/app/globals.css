@@ -14,7 +14,7 @@
 }
 
 body {
-  background: var(--background);
+  background: var(--page-bg, var(--background));
   color: var(--foreground);
 }
 
@@ -212,3 +212,65 @@ body {
   border-radius: 3px;
   padding: 5px 12px;
 }
+
+/* ==========================================================================
+   テナント別ダークモード（[data-theme="dark"]）。
+   全ページで使われているTailwind色クラス(約455箇所)を"触らず"に、使用中の階調だけ
+   ここで上書きしてダーク化する。--page-bg でテナントごとに背景色を個別変更できる。
+   TenantProvider が tenants.theme='dark' のとき <html data-theme="dark"> を付与し、
+   tenants.bg_color があれば style で --page-bg にセットする。
+   ※ bg-gray-700/800/900・text-white・bg-{色}-500/600/700(濃い実色ボタン) は
+      元から暗い/濃いのでそのまま。
+   ========================================================================== */
+:root[data-theme="dark"] {
+  --background: #14161a;
+  --foreground: #e8eaed;
+}
+/* サーフェス（白・薄グレー → 暗いサーフェス） */
+[data-theme="dark"] .bg-white { background-color: #1c1f26 !important; }
+[data-theme="dark"] .bg-gray-50 { background-color: #191c22 !important; }
+[data-theme="dark"] .bg-gray-100 { background-color: #23272f !important; }
+[data-theme="dark"] .bg-gray-200 { background-color: #2c313a !important; }
+[data-theme="dark"] .bg-gray-300 { background-color: #363c46 !important; }
+/* テキスト（濃グレー → 明グレー） */
+[data-theme="dark"] .text-gray-900 { color: #eef1f5 !important; }
+[data-theme="dark"] .text-gray-800 { color: #dfe3e9 !important; }
+[data-theme="dark"] .text-gray-700 { color: #cad0d9 !important; }
+[data-theme="dark"] .text-gray-600 { color: #adb4c0 !important; }
+[data-theme="dark"] .text-gray-500 { color: #949cab !important; }
+[data-theme="dark"] .text-gray-400 { color: #79808f !important; }
+[data-theme="dark"] .text-gray-300 { color: #656c79 !important; }
+[data-theme="dark"] .text-gray-200 { color: #515863 !important; }
+[data-theme="dark"] .text-gray-100 { color: #3b424b !important; }
+/* ボーダー（薄枠 → 暗枠） */
+[data-theme="dark"] .border-gray-50 { border-color: #24282f !important; }
+[data-theme="dark"] .border-gray-100 { border-color: #2a2f38 !important; }
+[data-theme="dark"] .border-gray-200 { border-color: #333944 !important; }
+[data-theme="dark"] .border-gray-300 { border-color: #3d4450 !important; }
+[data-theme="dark"] .border-gray-400 { border-color: #4a515e !important; }
+[data-theme="dark"] .border-gray-500 { border-color: #565e6c !important; }
+/* 色付きバッジ背景（薄tint → 暗tint） */
+[data-theme="dark"] .bg-red-50 { background-color: #3a1f22 !important; }
+[data-theme="dark"] .bg-red-100 { background-color: #45242a !important; }
+[data-theme="dark"] .bg-green-50 { background-color: #16301f !important; }
+[data-theme="dark"] .bg-green-100 { background-color: #1b3a26 !important; }
+[data-theme="dark"] .bg-blue-50 { background-color: #1a2740 !important; }
+[data-theme="dark"] .bg-yellow-50 { background-color: #3a3212 !important; }
+[data-theme="dark"] .bg-amber-50 { background-color: #3a2f12 !important; }
+[data-theme="dark"] .bg-amber-100 { background-color: #463818 !important; }
+[data-theme="dark"] .bg-purple-50 { background-color: #2a1f3a !important; }
+[data-theme="dark"] .bg-orange-50 { background-color: #3a2712 !important; }
+/* 色付きテキスト（濃色 → 明色で可読性確保） */
+[data-theme="dark"] .text-red-800, [data-theme="dark"] .text-red-700, [data-theme="dark"] .text-red-600, [data-theme="dark"] .text-red-500 { color: #f87171 !important; }
+[data-theme="dark"] .text-green-800, [data-theme="dark"] .text-green-700, [data-theme="dark"] .text-green-600 { color: #4ade80 !important; }
+[data-theme="dark"] .text-blue-800, [data-theme="dark"] .text-blue-700, [data-theme="dark"] .text-blue-600 { color: #60a5fa !important; }
+[data-theme="dark"] .text-yellow-700 { color: #fbbf24 !important; }
+[data-theme="dark"] .text-amber-800, [data-theme="dark"] .text-amber-700, [data-theme="dark"] .text-amber-600 { color: #fbbf24 !important; }
+[data-theme="dark"] .text-purple-800, [data-theme="dark"] .text-purple-700, [data-theme="dark"] .text-purple-600 { color: #c084fc !important; }
+[data-theme="dark"] .text-orange-800, [data-theme="dark"] .text-orange-700, [data-theme="dark"] .text-orange-500 { color: #fb923c !important; }
+/* 色付きボーダー（薄 → 暗） */
+[data-theme="dark"] .border-red-200 { border-color: #5a2a2e !important; }
+[data-theme="dark"] .border-amber-200 { border-color: #4a3a12 !important; }
+[data-theme="dark"] .border-green-200, [data-theme="dark"] .border-green-300 { border-color: #1f4a30 !important; }
+[data-theme="dark"] .border-purple-200, [data-theme="dark"] .border-purple-300 { border-color: #3a2a5a !important; }
+[data-theme="dark"] .border-blue-200 { border-color: #2a3a5a !important; }

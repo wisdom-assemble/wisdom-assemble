@@ -96,8 +96,15 @@ export default async function RootLayout({
     getMessages(),
   ])
 
+  // テナント別ダークモード。theme='dark'なら<html data-theme="dark">、
+  // bg_colorがあれば --page-bg で背景色を個別上書き（globals.css参照）。
+  const isDark = tenant?.theme === 'dark' || tenantId === 'dtm' // [一時] ダーク層の本番実証用。確認後にこのtenantId条件を削除
+  const htmlStyle = tenant?.bg_color
+    ? ({ '--page-bg': tenant.bg_color } as React.CSSProperties)
+    : undefined
+
   return (
-    <html lang={locale} className={geist.variable}>
+    <html lang={locale} className={geist.variable} data-theme={isDark ? 'dark' : undefined} style={htmlStyle}>
       <body className="min-h-full flex flex-col antialiased">
         <NextIntlClientProvider messages={messages}>
           <TenantProvider tenant={tenant} tenantId={tenantId}>
