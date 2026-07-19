@@ -52,12 +52,21 @@ export default async function AdminPage({
       .limit(200),
   ])
 
-  const stats = (statsRaw ?? {
-    totals: { questions: 0, users: 0, answers: 0, ai_answers: 0, human_answers: 0, solved: 0, unsolved: 0, hard: 0, views: 0 },
-    per_tenant: [],
-    dau: [],
-    mau: [],
-  }) as DashboardStats
+  // RPCが旧シェイプ(migration未適用)を返してもクラッシュしないよう既定値でマージ補完する
+  const raw = (statsRaw ?? {}) as Partial<DashboardStats>
+  const stats: DashboardStats = {
+    totals: {
+      questions: 0, users: 0, answers: 0, ai_answers: 0, human_answers: 0,
+      solved: 0, unsolved: 0, hard: 0, views: 0, tenant_count: 0, routed: 0,
+      ...(raw.totals ?? {}),
+    },
+    per_tenant: raw.per_tenant ?? [],
+    dau: raw.dau ?? [],
+    mau: raw.mau ?? [],
+    tags: raw.tags ?? [],
+    ai_today: raw.ai_today ?? { calls: 0, cost_usd: 0, cap: 60 },
+    revenue: raw.revenue ?? { total_jpy: 0, by_source: {} },
+  }
 
   const colorMap: Record<string, string> = {}
   for (const t of tenants ?? []) colorMap[t.id] = t.color_theme

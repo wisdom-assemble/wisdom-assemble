@@ -14,6 +14,8 @@ export type DashboardStats = {
     unsolved: number
     hard: number
     views: number
+    tenant_count: number
+    routed: number
   }
   per_tenant: Array<{
     tenant_id: string
@@ -21,6 +23,7 @@ export type DashboardStats = {
     solved: number
     hard: number
     unsolved: number
+    routed: number
     q_7d: number
     q_30d: number
     views: number
@@ -28,10 +31,19 @@ export type DashboardStats = {
     ai_answers: number
     human_answers: number
     answerers: number
+    ai_cost_usd: number
   }>
   dau: Array<{ day: string; count: number }>
   mau: Array<{ month: string; count: number }>
+  tags: Array<{ tag: string; count: number }>
+  ai_today: { calls: number; cost_usd: number; cap: number }
+  revenue: { total_jpy: number; by_source: Record<string, number> }
 }
+
+const TENANT_TARGET = 100 // 目標テナント数
+// 人間ルーティング率の正常帯。これを外れたら異常(バグ)の可能性→ハイライト
+const ROUTING_LOW = 20
+const ROUTING_HIGH = 60
 
 // JSTの「今日」から遡って直近n日のYYYY-MM-DD文字列配列（古い→新しい）
 function lastJstDays(n: number): string[] {
@@ -62,8 +74,38 @@ export default function AdminSummary({
 }) {
   const t = stats.totals
 
+  const routingRate = t.questions ? Math.round((t.routed / t.questions) * 100) : 0
+  const routingAbnormal = t.questions > 0 && (routingRate < ROUTING_LOW || routingRate > ROUTING_HIGH)
+  const aiPct = stats.ai_today.cap ? Math.round((stats.ai_today.calls / stats.ai_today.cap) * 100) : 0
+
   return (
     <div className="space-y-8">
+      {/* 運営ヘルス（テナント進捗・ルーティング率・本日AI） */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">運営ヘルス</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-4 border border-gray-100 rounded-lg">
+            <p className="text-2xl font-bold text-gray-800 leading-none">{t.tenant_count}<span className="text-base text-gray-400"> / {TENANT_TARGET}</span></p>
+            <p className="text-xs text-gray-500 mt-1.5">稼働テナント数</p>
+            <div className="mt-2 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div className="h-full bg-gray-700 rounded-full" style={{ width: `${Math.min(100, (t.tenant_count / TENANT_TARGET) * 100)}%` }} />
+            </div>
+          </div>
+          <div className={`p-4 border rounded-lg ${routingAbnormal ? 'border-red-300 bg-red-50' : 'border-gray-100'}`}>
+            <p className={`text-2xl font-bold leading-none ${routingAbnormal ? 'text-red-700' : 'text-gray-800'}`}>{routingRate}%</p>
+            <p className="text-xs text-gray-500 mt-1.5">人間ルーティング率{routingAbnormal ? ' ⚠️ 異常' : ''}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">正常帯 {ROUTING_LOW}〜{ROUTING_HIGH}%（外れたらバグ疑い）</p>
+          </div>
+          <div className={`p-4 border rounded-lg ${aiPct >= 90 ? 'border-amber-300 bg-amber-50' : 'border-gray-100'}`}>
+            <p className={`text-2xl font-bold leading-none ${aiPct >= 90 ? 'text-amber-700' : 'text-gray-800'}`}>{stats.ai_today.calls}<span className="text-base text-gray-400"> / {stats.ai_today.cap}</span></p>
+            <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数 / 上限（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
+            <div className="mt-2 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div className={`h-full rounded-full ${aiPct >= 90 ? 'bg-amber-500' : 'bg-gray-700'}`} style={{ width: `${Math.min(100, aiPct)}%` }} />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 全体サマリーカード */}
       <section>
         <h2 className="text-sm font-semibold text-gray-500 mb-3">全体サマリー</h2>
@@ -95,6 +137,7 @@ export default function AdminSummary({
                 <Th className="text-left pl-3">テナント</Th>
                 <Th>質問</Th>
                 <Th>解決率</Th>
+                <Th>ルート率</Th>
                 <Th>未解決</Th>
                 <Th>高難度</Th>
                 <Th>7日</Th>
@@ -103,6 +146,7 @@ export default function AdminSummary({
                 <Th>AI/人</Th>
                 <Th>回答者</Th>
                 <Th>平均解決</Th>
+                <Th>AI費</Th>
               </tr>
             </thead>
             <tbody>
@@ -125,6 +169,7 @@ export default function AdminSummary({
                   </td>
                   <Td>{r.questions}</Td>
                   <Td>{pct(r.solved, r.questions)}</Td>
+                  <RoutingTd routed={r.routed} total={r.questions} />
                   <Td>{r.unsolved}</Td>
                   <Td>{r.hard}</Td>
                   <Td>{r.q_7d}</Td>
@@ -133,13 +178,52 @@ export default function AdminSummary({
                   <Td>{r.ai_answers}/{r.human_answers}</Td>
                   <Td>{r.answerers}</Td>
                   <Td>{r.avg_solve_hours != null ? `${r.avg_solve_hours}h` : '—'}</Td>
+                  <Td>{r.ai_cost_usd > 0 ? `$${r.ai_cost_usd.toFixed(2)}` : '—'}</Td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
+
+      {/* タグ集計（次テナント企画のヒント） */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">人気タグ（AI自動タグ・次テナントのヒント）</h2>
+        {stats.tags.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 border border-gray-100 rounded-lg text-center">まだタグ付き質問がありません（新規質問はAIが自動タグ付け）</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {stats.tags.map((tg) => (
+              <span key={tg.tag} className="text-xs px-2.5 py-1 border border-gray-200 rounded-full text-gray-600">
+                {tg.tag} <span className="text-gray-400">{tg.count}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 収益プレースホルダ（AdSense/Stripe/アフィリ承認後に接続） */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">収益（データ源接続待ち）</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Stat label="AdSense" value="—" sub="承認後に接続" />
+          <Stat label="Stripeチップ" value="—" sub="実装後に接続" />
+          <Stat label="アフィリエイト" value="—" sub="承認後に接続" />
+          <Stat label="合計（¥）" value={stats.revenue.total_jpy > 0 ? `¥${stats.revenue.total_jpy.toLocaleString()}` : '—'} sub="daily_revenue" />
+        </div>
+        <p className="text-[10px] text-gray-400 mt-2">※ 収益データの箱（daily_revenue表）は用意済み。AdSense/Stripe承認後にAPI連携して数字を入れる。黒字額（収益−Groqコスト）もその時に表示。</p>
+      </section>
     </div>
+  )
+}
+
+function RoutingTd({ routed, total }: { routed: number; total: number }) {
+  const rate = total ? Math.round(((routed ?? 0) / total) * 100) : 0
+  const abnormal = total > 0 && (rate < ROUTING_LOW || rate > ROUTING_HIGH)
+  return (
+    <td className={`px-2 py-2.5 text-right tabular-nums whitespace-nowrap ${abnormal ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
+      {total ? `${rate}%` : '—'}{abnormal ? ' ⚠️' : ''}
+    </td>
   )
 }
 
