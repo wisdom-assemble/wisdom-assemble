@@ -86,7 +86,12 @@
     "submitting": "전송 중...",
     "submit": "질문 게시하기",
     "aiThinking": "AI가 생각 중...",
-    "matching": "전문가와 매칭 중..."
+    "matching": "전문가와 매칭 중...",
+    "aiCapTitle": "AI 사용 한도에 도달했습니다",
+    "aiCapWithTime": "다음 AI 사용 가능까지 남은 시간",
+    "aiCapVague": "잠시 후 다시 이용해 주세요 (오늘 중 재개 예정).",
+    "aiCapRouted": "이번 질문은 사람 전문가에게 전달됩니다.",
+    "aiCapClose": "질문 확인하기"
   },
   "newQuestionPage": {
     "title": "질문하기"

@@ -86,7 +86,12 @@
     "submitting": "Submitting...",
     "submit": "Post question",
     "aiThinking": "AI is thinking...",
-    "matching": "Matching with an expert..."
+    "matching": "Matching with an expert...",
+    "aiCapTitle": "AI usage limit reached",
+    "aiCapWithTime": "AI will be available again in",
+    "aiCapVague": "Please try again later (expected to resume today).",
+    "aiCapRouted": "This question will be routed to a human expert.",
+    "aiCapClose": "View your question"
   },
   "newQuestionPage": {
     "title": "Ask a question"

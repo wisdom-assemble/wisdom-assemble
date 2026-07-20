@@ -86,7 +86,12 @@
     "submitting": "Enviando...",
     "submit": "Publicar pregunta",
     "aiThinking": "La IA está pensando...",
-    "matching": "Emparejando con un experto..."
+    "matching": "Emparejando con un experto...",
+    "aiCapTitle": "Se alcanzó el límite de uso de IA",
+    "aiCapWithTime": "La IA volverá a estar disponible en",
+    "aiCapVague": "Inténtalo de nuevo más tarde (se espera que se reanude hoy).",
+    "aiCapRouted": "Esta pregunta se enviará a un experto humano.",
+    "aiCapClose": "Ver tu pregunta"
   },
   "newQuestionPage": {
     "title": "Hacer una pregunta"

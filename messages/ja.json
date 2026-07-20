@@ -86,7 +86,12 @@
     "submitting": "送信中...",
     "submit": "質問を投稿する",
     "aiThinking": "AIが考え中...",
-    "matching": "専門家にマッチング中..."
+    "matching": "専門家にマッチング中...",
+    "aiCapTitle": "AIの利用が上限に達しました",
+    "aiCapWithTime": "次にAIが使えるまで あと",
+    "aiCapVague": "しばらく時間をおいてご利用ください（本日中に再開見込み）。",
+    "aiCapRouted": "今回の質問は、人間の専門家にお回しします。",
+    "aiCapClose": "質問を確認する"
   },
   "newQuestionPage": {
     "title": "質問する"

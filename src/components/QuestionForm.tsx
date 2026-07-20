@@ -23,6 +23,62 @@ function Overlay({ phase, aiLabel, matchingLabel }: { phase: OverlayPhase; aiLab
 
 type SimilarQuestion = { id: string; title: string; slug: string; status: string }
 
+// AI利用上限モーダル。resetAtがあれば「あとHH:MM:SS」をライブ表示（時刻計算のみ＝AIコストゼロ）。
+// resetAtが無い(Groq自身の429/ブロック等)場合は曖昧文言にフォールバック。
+function AiCapModal({
+  resetAt,
+  onClose,
+  t,
+}: {
+  resetAt: string | null
+  onClose: () => void
+  t: (key: string, values?: Record<string, string>) => string
+}) {
+  const [remaining, setRemaining] = useState('')
+  useEffect(() => {
+    if (!resetAt) return
+    const target = new Date(resetAt).getTime()
+    const tick = () => {
+      const ms = target - Date.now()
+      if (ms <= 0) {
+        setRemaining('00:00:00')
+        return
+      }
+      const h = Math.floor(ms / 3_600_000)
+      const m = Math.floor((ms % 3_600_000) / 60_000)
+      const s = Math.floor((ms % 60_000) / 1000)
+      setRemaining(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [resetAt])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-7 shadow-2xl text-center">
+        <h2 className="text-lg font-bold text-gray-900 mb-3">{t('aiCapTitle')}</h2>
+        {resetAt ? (
+          <p className="text-sm text-gray-600 leading-relaxed mb-1">
+            {t('aiCapWithTime')}
+            <span className="block mt-1 text-2xl font-bold tabular-nums text-gray-800">{remaining || '—:—:—'}</span>
+          </p>
+        ) : (
+          <p className="text-sm text-gray-600 leading-relaxed mb-1">{t('aiCapVague')}</p>
+        )}
+        <p className="text-sm text-gray-600 leading-relaxed mt-3 mb-6">{t('aiCapRouted')}</p>
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 rounded-lg text-sm font-medium text-white"
+          style={{ backgroundColor: 'var(--color-primary)' }}
+        >
+          {t('aiCapClose')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function QuestionForm() {
   const t = useTranslations('questionForm')
   const locale = useLocale()
@@ -31,6 +87,7 @@ export default function QuestionForm() {
   const [body, setBody] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [overlay, setOverlay] = useState<OverlayPhase>(null)
+  const [capModal, setCapModal] = useState<{ slug: string; result: string; resetAt: string | null } | null>(null)
   const [error, setError] = useState('')
   const [similar, setSimilar] = useState<SimilarQuestion[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -111,9 +168,16 @@ export default function QuestionForm() {
         throw new Error(data.error ?? t('submitFailed'))
       }
 
-      const { slug, result } = await res.json()
+      const { slug, result, aiCapped, aiResetAt } = await res.json()
       // 投稿成功したので下書きを消去
       try { localStorage.removeItem(draftKey) } catch { /* noop */ }
+
+      // AI上限で人間へ回された場合はモーダルで案内（閉じたら質問ページへ）
+      if (aiCapped) {
+        setOverlay(null)
+        setCapModal({ slug, result: result ?? 'pending', resetAt: aiResetAt ?? null })
+        return
+      }
 
       if (result === 'matched') {
         setOverlay('matched')
@@ -141,6 +205,13 @@ export default function QuestionForm() {
   return (
     <>
       <Overlay phase={overlay} aiLabel={t('aiThinking')} matchingLabel={t('matching')} />
+      {capModal && (
+        <AiCapModal
+          resetAt={capModal.resetAt}
+          t={t}
+          onClose={() => router.push(`/questions/${capModal.slug}?result=${capModal.result}`)}
+        />
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

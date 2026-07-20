@@ -86,7 +86,12 @@
     "submitting": "Mengirim...",
     "submit": "Ajukan pertanyaan",
     "aiThinking": "AI sedang berpikir...",
-    "matching": "Mencocokkan dengan ahli..."
+    "matching": "Mencocokkan dengan ahli...",
+    "aiCapTitle": "Batas penggunaan AI tercapai",
+    "aiCapWithTime": "AI akan tersedia lagi dalam",
+    "aiCapVague": "Silakan coba lagi nanti (diperkirakan pulih hari ini).",
+    "aiCapRouted": "Pertanyaan ini akan diteruskan ke pakar manusia.",
+    "aiCapClose": "Lihat pertanyaan Anda"
   },
   "newQuestionPage": {
     "title": "Ajukan pertanyaan"

@@ -86,7 +86,12 @@
     "submitting": "提交中...",
     "submit": "发布问题",
     "aiThinking": "AI思考中...",
-    "matching": "正在匹配专家..."
+    "matching": "正在匹配专家...",
+    "aiCapTitle": "AI 使用已达上限",
+    "aiCapWithTime": "AI 将在以下时间后恢复",
+    "aiCapVague": "请稍后再试（预计今日内恢复）。",
+    "aiCapRouted": "本次问题将转交人工专家处理。",
+    "aiCapClose": "查看你的问题"
   },
   "newQuestionPage": {
     "title": "提问"

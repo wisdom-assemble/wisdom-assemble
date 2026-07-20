@@ -86,7 +86,12 @@
     "submitting": "Đang gửi...",
     "submit": "Đăng câu hỏi",
     "aiThinking": "AI đang suy nghĩ...",
-    "matching": "Đang ghép nối với chuyên gia..."
+    "matching": "Đang ghép nối với chuyên gia...",
+    "aiCapTitle": "Đã đạt giới hạn sử dụng AI",
+    "aiCapWithTime": "AI sẽ khả dụng trở lại sau",
+    "aiCapVague": "Vui lòng thử lại sau (dự kiến khôi phục trong hôm nay).",
+    "aiCapRouted": "Câu hỏi này sẽ được chuyển đến chuyên gia.",
+    "aiCapClose": "Xem câu hỏi của bạn"
   },
   "newQuestionPage": {
     "title": "Đặt câu hỏi"
