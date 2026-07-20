@@ -64,7 +64,7 @@ export default async function AdminPage({
     dau: raw.dau ?? [],
     mau: raw.mau ?? [],
     tags: raw.tags ?? [],
-    ai_today: raw.ai_today ?? { calls: 0, cost_usd: 0, cap: 60 },
+    ai_today: { calls: 0, cost_usd: 0, cap: 60, cap_enabled: false, ...(raw.ai_today ?? {}) },
     revenue: raw.revenue ?? { total_jpy: 0, by_source: {} },
   }
 

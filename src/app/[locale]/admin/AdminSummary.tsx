@@ -2,6 +2,10 @@
 // データは admin_dashboard_stats() RPC を service_role で呼んだ結果を受け取る。
 // デザインはサイト共通トークン（gray系・rounded-lg・border-gray-100）に合わせる。
 import { TENANT_NAME_MAP, getPublicSubdomain } from '@/lib/tenantNames'
+import AiBudgetEditor from './AiBudgetEditor'
+
+// Groqの利用上限（Spend Limit）設定ページ。有料化後にここで請求の物理的な蓋をかける。
+const GROQ_LIMITS_URL = 'https://console.groq.com/settings/billing/limits'
 
 export type DashboardStats = {
   totals: {
@@ -37,7 +41,7 @@ export type DashboardStats = {
   dau: Array<{ day: string; count: number }>
   mau: Array<{ month: string; count: number }>
   tags: Array<{ tag: string; count: number }>
-  ai_today: { calls: number; cost_usd: number; cap: number }
+  ai_today: { calls: number; cost_usd: number; cap: number; cap_enabled: boolean }
   revenue: { total_jpy: number; by_source: Record<string, number> }
 }
 
@@ -101,12 +105,40 @@ export default function AdminSummary({
             <p className="text-xs text-gray-500 mt-1.5">人間ルーティング率{routingAbnormal ? ' ⚠️ 高すぎ' : ''}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">低いほど健全（AIが大半を解決）。{ROUTING_SUSPICIOUS_HIGH}%超はAI障害/バグ疑い</p>
           </div>
-          <div className={`p-4 border rounded-lg ${aiOver ? 'border-red-300 bg-red-50' : aiPct >= 90 ? 'border-amber-300 bg-amber-50' : 'border-gray-100'}`}>
-            <p className={`text-2xl font-bold leading-none ${aiOver ? 'text-red-700' : aiPct >= 90 ? 'text-amber-700' : 'text-gray-800'}`}>{stats.ai_today.calls}<span className="text-base text-gray-400"> / {stats.ai_today.cap}</span></p>
-            <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数 / 上限{aiOver ? '（到達）' : ''}（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
-            <div className="mt-2 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-              <div className={`h-full rounded-full ${aiOver ? 'bg-red-500' : aiPct >= 90 ? 'bg-amber-500' : 'bg-gray-700'}`} style={{ width: `${Math.min(100, aiPct)}%` }} />
+          {stats.ai_today.cap_enabled ? (
+            <div className={`p-4 border rounded-lg ${aiOver ? 'border-red-300 bg-red-50' : aiPct >= 90 ? 'border-amber-300 bg-amber-50' : 'border-gray-100'}`}>
+              <p className={`text-2xl font-bold leading-none ${aiOver ? 'text-red-700' : aiPct >= 90 ? 'text-amber-700' : 'text-gray-800'}`}>{stats.ai_today.calls}<span className="text-base text-gray-400"> / {stats.ai_today.cap}</span></p>
+              <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数 / 上限{aiOver ? '（到達）' : ''}（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
+              <div className="mt-2 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                <div className={`h-full rounded-full ${aiOver ? 'bg-red-500' : aiPct >= 90 ? 'bg-amber-500' : 'bg-gray-700'}`} style={{ width: `${Math.min(100, aiPct)}%` }} />
+              </div>
             </div>
+          ) : (
+            <div className="p-4 border border-gray-100 rounded-lg">
+              <p className="text-2xl font-bold text-gray-800 leading-none">{stats.ai_today.calls}<span className="text-base text-gray-400"> 件</span></p>
+              <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
+              <p className="text-[10px] text-gray-400 mt-1.5">無料プラン・制限なし（Groqの無料枠で自然に頭打ち）</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* AIコスト上限（三重ストッパー） */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">AIコスト上限（三重ストッパー）</h2>
+        <div className="border border-gray-100 rounded-lg p-4 space-y-4">
+          {/* 層②: ダッシュボードから変更できる自主上限 */}
+          <AiBudgetEditor initialCap={stats.ai_today.cap} initialEnabled={stats.ai_today.cap_enabled} />
+
+          {/* 三層の説明＋Groqリンク（層③） */}
+          <div className="border-t border-gray-100 pt-4 space-y-2 text-xs text-gray-500">
+            <p className="font-medium text-gray-600">3つの蓋（①②は挙動制御・③だけが請求を物理的に止める）</p>
+            <p>① アプリのレート制限：1人1日3件/テナント・10件/全体（荒らし対策・常時有効）</p>
+            <p>② アプリの自主上限：上の設定。<b>無料の今はオフ＝制限なし</b>（Groq無料枠で自然に頭打ち）。有料化したらオンにして上限を設定。</p>
+            <p>
+              ③ Groq Spend Limit：<b>請求を物理的に止める唯一の蓋</b>。有料化時にGroq側で設定する（¥1,000スタート推奨）。
+              <a href={GROQ_LIMITS_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">Groqコンソールで設定 ↗</a>
+            </p>
           </div>
         </div>
       </section>

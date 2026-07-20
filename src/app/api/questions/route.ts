@@ -9,6 +9,15 @@ import { notifyMatchedUser, sendAiCostAlert } from '@/lib/email'
 import { translateQuestionToLocales, translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
+// 翌JST0時をISO(UTC)で返す。AIが使えない時のモーダル「次に使える時刻」の
+// フォールバック（予算RPCのreset_atが取れない場合用）。
+function nextJstMidnightIso(): string {
+  const now = Date.now()
+  const jst = new Date(now + 9 * 3_600_000) // UTC→JST
+  const next0Jst = Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate() + 1, 0, 0, 0)
+  return new Date(next0Jst - 9 * 3_600_000).toISOString() // JST0時をUTCへ戻す
+}
+
 function toSlug(text: string): string {
   return text
     .toLowerCase()
@@ -84,9 +93,13 @@ export async function POST(request: NextRequest) {
   // AIを一切呼ばず、後段で人間ルーティングへ切り替える（赤字/暴走の自主的な蓋）。
   let aiUnavailable = false
   let aiResetAt: string | null = null
+  // 予算RPCが返す reset_at（翌JST0時）は上限オン/オフに関わらず常に返る。
+  // 無料モードでGroq自身が429で止まった時も、この時刻をモーダルの「次に使える時刻」に流用する。
+  let budgetResetAt: string | null = null
   try {
     const { data: budget } = await admin.rpc('check_and_reserve_ai_budget', { p_tenant_id: tenantId })
-    const b = budget as { allowed?: boolean; remaining?: number; cap?: number; reset_at?: string } | null
+    const b = budget as { allowed?: boolean; enabled?: boolean; remaining?: number; cap?: number; reset_at?: string } | null
+    budgetResetAt = b?.reset_at ?? null
     if (b && b.allowed === false) {
       aiUnavailable = true
       aiResetAt = b.reset_at ?? null
@@ -286,6 +299,12 @@ export async function POST(request: NextRequest) {
   // 翻訳結果を保存（Cloudflare Workersがレスポンス返却後に処理を打ち切るため必ずawaitする）
   const { title_i18n, body_i18n } = await translationPromise
   await admin.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
+
+  // AIが使えなかった場合は、理由（自主上限/Groqの無料枠429）に関わらず必ず具体的な
+  // 復活時刻をモーダルへ渡す。ユーザーには無料/有料の区別は見せない（同じ体験にする）。
+  if (aiUnavailable && !aiResetAt) {
+    aiResetAt = budgetResetAt ?? nextJstMidnightIso()
+  }
 
   return NextResponse.json({ slug: question.slug, result: resultType, aiCapped: aiUnavailable, aiResetAt })
 }
