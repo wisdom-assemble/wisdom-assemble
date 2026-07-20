@@ -75,6 +75,15 @@ export default function AdminVisitors({ stats }: { stats: VisitorStats }) {
         />
       </section>
 
+      {/* テナント別の流入元（requestHost × refererHost） */}
+      <section>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-500">テナント別の流入元</h2>
+          <span className="text-[10px] text-gray-400">どの流入元がどのテナントへ / PV</span>
+        </div>
+        <RefByTenant rows={stats.refByTenant} />
+      </section>
+
       <section className="grid md:grid-cols-2 gap-6">
         {/* 人気ページ */}
         <RankTable
@@ -133,6 +142,62 @@ function DayBars({ byDay }: { byDay: VisitorStats['byDay'] }) {
         <span>{byDay[0]?.date.slice(5)}</span>
         <span>{byDay[byDay.length - 1]?.date.slice(5)}</span>
       </div>
+    </div>
+  )
+}
+
+// テナント（ホスト）ごとに流入元を束ねて表示する。
+function RefByTenant({ rows }: { rows: VisitorStats['refByTenant'] }) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-400 py-6 text-center border border-gray-100 rounded-lg">データなし</p>
+  }
+  // host → その流入元一覧（PV降順）にまとめる
+  const byHost = new Map<string, { referer: string; pageviews: number }[]>()
+  for (const r of rows) {
+    const list = byHost.get(r.host) ?? []
+    list.push({ referer: r.referer, pageviews: r.pageviews })
+    byHost.set(r.host, list)
+  }
+  // テナント（ホスト）自体もPV合計の多い順に並べる
+  const groups = [...byHost.entries()]
+    .map(([host, refs]) => ({
+      host,
+      total: refs.reduce((s, x) => s + x.pageviews, 0),
+      refs: refs.sort((a, b) => b.pageviews - a.pageviews).slice(0, 8),
+    }))
+    .sort((a, b) => b.total - a.total)
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      {groups.map((g) => {
+        const max = Math.max(1, ...g.refs.map((r) => r.pageviews))
+        return (
+          <div key={g.host} className="p-4 border border-gray-100 rounded-lg">
+            <div className="flex items-baseline justify-between mb-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-gray-700 truncate">{hostLabel(g.host)}</h3>
+                <span className="text-[10px] text-gray-400 truncate">{g.host}</span>
+              </div>
+              <span className="text-xs text-gray-500 tabular-nums shrink-0">計 {g.total.toLocaleString()} PV</span>
+            </div>
+            <div className="space-y-1.5">
+              {g.refs.map((r, i) => (
+                <div key={`${r.referer}-${i}`} className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs text-gray-700 truncate block">{r.referer}</span>
+                    <div className="mt-0.5 bg-gray-100 rounded-sm h-1.5 overflow-hidden">
+                      <div className="h-full bg-gray-700 rounded-sm" style={{ width: `${(r.pageviews / max) * 100}%` }} />
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-600 tabular-nums shrink-0 w-12 text-right">
+                    {r.pageviews.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

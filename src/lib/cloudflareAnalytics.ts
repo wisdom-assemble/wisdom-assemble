@@ -15,6 +15,8 @@ export type VisitorStats = {
   totals: { pageviews: number; visits: number; pageviews7d: number; visits7d: number }
   byDay: Array<{ date: string; pageviews: number; visits: number }>
   referrers: Array<{ host: string; pageviews: number }>
+  // テナント別（=requestHost別）の流入元（refererHost）クロス集計
+  refByTenant: Array<{ host: string; referer: string; pageviews: number }>
   pages: Array<{ host: string; path: string; pageviews: number }>
   hosts: Array<{ host: string; pageviews: number; visits: number }>
   countries: Array<{ country: string; pageviews: number }>
@@ -27,6 +29,7 @@ function emptyStats(days: number, extra?: Partial<VisitorStats>): VisitorStats {
     totals: { pageviews: 0, visits: 0, pageviews7d: 0, visits7d: 0 },
     byDay: [],
     referrers: [],
+    refByTenant: [],
     pages: [],
     hosts: [],
     countries: [],
@@ -67,6 +70,9 @@ export async function getVisitorStats(days = 30): Promise<VisitorStats> {
           byReferer: rumPageloadEventsAdaptiveGroups(
             filter: { ${dateFilter} }, limit: 15, orderBy: [count_DESC]
           ) { count dimensions { refererHost } }
+          byHostReferer: rumPageloadEventsAdaptiveGroups(
+            filter: { ${dateFilter} }, limit: 100, orderBy: [count_DESC]
+          ) { count dimensions { requestHost refererHost } }
           byPath: rumPageloadEventsAdaptiveGroups(
             filter: { ${dateFilter} }, limit: 15, orderBy: [count_DESC]
           ) { count dimensions { requestHost requestPath } }
@@ -130,6 +136,11 @@ export async function getVisitorStats(days = 30): Promise<VisitorStats> {
     host: g.dimensions.refererHost || '(direct / なし)',
     pageviews: g.count ?? 0,
   }))
+  const refByTenant = (acc.byHostReferer ?? []).map((g) => ({
+    host: g.dimensions.requestHost ?? '',
+    referer: g.dimensions.refererHost || '(direct / なし)',
+    pageviews: g.count ?? 0,
+  }))
   const pages = (acc.byPath ?? []).map((g) => ({
     host: g.dimensions.requestHost ?? '',
     path: g.dimensions.requestPath ?? '',
@@ -151,6 +162,7 @@ export async function getVisitorStats(days = 30): Promise<VisitorStats> {
     totals: { pageviews, visits, pageviews7d, visits7d },
     byDay,
     referrers,
+    refByTenant,
     pages,
     hosts,
     countries,
