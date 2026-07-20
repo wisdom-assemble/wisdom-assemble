@@ -57,7 +57,7 @@ export default async function AdminPage({
   const stats: DashboardStats = {
     totals: {
       questions: 0, users: 0, answers: 0, ai_answers: 0, human_answers: 0,
-      solved: 0, unsolved: 0, hard: 0, views: 0, tenant_count: 0, routed: 0,
+      solved: 0, unsolved: 0, hard: 0, views: 0, tenant_count: 0, tenant_registered: 0, routed: 0,
       ...(raw.totals ?? {}),
     },
     per_tenant: raw.per_tenant ?? [],

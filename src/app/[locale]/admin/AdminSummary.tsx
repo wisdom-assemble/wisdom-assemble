@@ -14,7 +14,8 @@ export type DashboardStats = {
     unsolved: number
     hard: number
     views: number
-    tenant_count: number
+    tenant_count: number       // 稼働（質問がある）テナント数
+    tenant_registered: number  // tenantsテーブルの登録総数（下書き含む）
     routed: number
   }
   per_tenant: Array<{
@@ -41,9 +42,10 @@ export type DashboardStats = {
 }
 
 const TENANT_TARGET = 100 // 目標テナント数
-// 人間ルーティング率の正常帯。これを外れたら異常(バグ)の可能性→ハイライト
-const ROUTING_LOW = 20
-const ROUTING_HIGH = 60
+// 人間ルーティング率は「低いほど健全」（AIが大半を解決するのが理想）。
+// 逆に高すぎる＝Groq障害やバグで質問が全部人間へ落ちている兆候なので、
+// この閾値を超えたときだけ異常としてハイライトする（低い側は正常なので出さない）。
+const ROUTING_SUSPICIOUS_HIGH = 80
 
 // JSTの「今日」から遡って直近n日のYYYY-MM-DD文字列配列（古い→新しい）
 function lastJstDays(n: number): string[] {
@@ -75,8 +77,10 @@ export default function AdminSummary({
   const t = stats.totals
 
   const routingRate = t.questions ? Math.round((t.routed / t.questions) * 100) : 0
-  const routingAbnormal = t.questions > 0 && (routingRate < ROUTING_LOW || routingRate > ROUTING_HIGH)
+  const routingAbnormal = t.questions > 0 && routingRate > ROUTING_SUSPICIOUS_HIGH
   const aiPct = stats.ai_today.cap ? Math.round((stats.ai_today.calls / stats.ai_today.cap) * 100) : 0
+  // 本日のAI質問数が上限に到達/超過しているか（超過は赤・90%台はamber）
+  const aiOver = stats.ai_today.cap > 0 && stats.ai_today.calls >= stats.ai_today.cap
 
   return (
     <div className="space-y-8">
@@ -86,21 +90,22 @@ export default function AdminSummary({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="p-4 border border-gray-100 rounded-lg">
             <p className="text-2xl font-bold text-gray-800 leading-none">{t.tenant_count}<span className="text-base text-gray-400"> / {TENANT_TARGET}</span></p>
-            <p className="text-xs text-gray-500 mt-1.5">稼働テナント数</p>
+            <p className="text-xs text-gray-500 mt-1.5">稼働テナント数（質問あり）</p>
             <div className="mt-2 bg-gray-100 rounded-full h-1.5 overflow-hidden">
               <div className="h-full bg-gray-700 rounded-full" style={{ width: `${Math.min(100, (t.tenant_count / TENANT_TARGET) * 100)}%` }} />
             </div>
+            <p className="text-[10px] text-gray-400 mt-1.5">登録 {t.tenant_registered} 件（うち下書き {Math.max(0, t.tenant_registered - t.tenant_count)} 件）</p>
           </div>
           <div className={`p-4 border rounded-lg ${routingAbnormal ? 'border-red-300 bg-red-50' : 'border-gray-100'}`}>
             <p className={`text-2xl font-bold leading-none ${routingAbnormal ? 'text-red-700' : 'text-gray-800'}`}>{routingRate}%</p>
-            <p className="text-xs text-gray-500 mt-1.5">人間ルーティング率{routingAbnormal ? ' ⚠️ 異常' : ''}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">正常帯 {ROUTING_LOW}〜{ROUTING_HIGH}%（外れたらバグ疑い）</p>
+            <p className="text-xs text-gray-500 mt-1.5">人間ルーティング率{routingAbnormal ? ' ⚠️ 高すぎ' : ''}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">低いほど健全（AIが大半を解決）。{ROUTING_SUSPICIOUS_HIGH}%超はAI障害/バグ疑い</p>
           </div>
-          <div className={`p-4 border rounded-lg ${aiPct >= 90 ? 'border-amber-300 bg-amber-50' : 'border-gray-100'}`}>
-            <p className={`text-2xl font-bold leading-none ${aiPct >= 90 ? 'text-amber-700' : 'text-gray-800'}`}>{stats.ai_today.calls}<span className="text-base text-gray-400"> / {stats.ai_today.cap}</span></p>
-            <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数 / 上限（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
+          <div className={`p-4 border rounded-lg ${aiOver ? 'border-red-300 bg-red-50' : aiPct >= 90 ? 'border-amber-300 bg-amber-50' : 'border-gray-100'}`}>
+            <p className={`text-2xl font-bold leading-none ${aiOver ? 'text-red-700' : aiPct >= 90 ? 'text-amber-700' : 'text-gray-800'}`}>{stats.ai_today.calls}<span className="text-base text-gray-400"> / {stats.ai_today.cap}</span></p>
+            <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数 / 上限{aiOver ? '（到達）' : ''}（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
             <div className="mt-2 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-              <div className={`h-full rounded-full ${aiPct >= 90 ? 'bg-amber-500' : 'bg-gray-700'}`} style={{ width: `${Math.min(100, aiPct)}%` }} />
+              <div className={`h-full rounded-full ${aiOver ? 'bg-red-500' : aiPct >= 90 ? 'bg-amber-500' : 'bg-gray-700'}`} style={{ width: `${Math.min(100, aiPct)}%` }} />
             </div>
           </div>
         </div>
@@ -219,7 +224,7 @@ export default function AdminSummary({
 
 function RoutingTd({ routed, total }: { routed: number; total: number }) {
   const rate = total ? Math.round(((routed ?? 0) / total) * 100) : 0
-  const abnormal = total > 0 && (rate < ROUTING_LOW || rate > ROUTING_HIGH)
+  const abnormal = total > 0 && rate > ROUTING_SUSPICIOUS_HIGH
   return (
     <td className={`px-2 py-2.5 text-right tabular-nums whitespace-nowrap ${abnormal ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
       {total ? `${rate}%` : '—'}{abnormal ? ' ⚠️' : ''}
