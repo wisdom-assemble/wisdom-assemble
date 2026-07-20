@@ -123,7 +123,8 @@
     "listButton": "Go to question list",
     "supportText": "This site is run by volunteers. If you'd like, please consider supporting us.",
     "supportButton": "Support Us",
-    "translationNote": "Question and answer content is automatically translated into other languages by AI and may contain errors. Character limits for the title and body also vary by language."
+    "translationNote": "Question and answer content is automatically translated into other languages by AI and may contain errors. Character limits for the title and body also vary by language.",
+    "aiLimitNote": "When AI is busy or at its usage limit, human experts step in."
   },
   "answerForm": {
     "heading": "Post an answer",
@@ -314,7 +315,8 @@
     "section8ContactPrefix": "For inquiries, please use the",
     "section8ContactLink": "contact form",
     "section8ContactSuffix": ".",
-    "translationDisclaimer": "Posted questions and answers are automatically translated into other languages by AI. We do not guarantee the accuracy of these translations and are not liable for any misunderstanding or damage arising from translation errors."
+    "translationDisclaimer": "Posted questions and answers are automatically translated into other languages by AI. We do not guarantee the accuracy of these translations and are not liable for any misunderstanding or damage arising from translation errors.",
+    "aiAvailabilityDisclaimer": "AI answer generation may be temporarily limited or paused due to usage or system limits; in such cases human experts handle the question."
   },
   "privacyPage": {
     "title": "Privacy Policy",

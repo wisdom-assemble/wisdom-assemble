@@ -134,6 +134,24 @@ async function sendEmail(params: { to: string; subject: string; htmlContent: str
 
 const CONTACT_INBOX = 'wisdomassemble@gmail.com'
 
+// Groqコスト上限アラート（運営者=日本語・件名に【重要】）。90%到達と上限到達で文言を出し分け。
+export async function sendAiCostAlert(params: { level: 'warn90' | 'limit'; cap: number; remaining: number }): Promise<void> {
+  const { level, cap, remaining } = params
+  const isLimit = level === 'limit'
+  const used = cap - remaining
+  const subject = isLimit
+    ? '【重要】Groqコスト：本日のAI上限に到達しました'
+    : '【重要】Groqコスト：本日のAI使用が90%を超えました'
+  const body = isLimit
+    ? `本日(JST)のAI質問数が自主上限 <b>${cap}件</b> に到達しました。以降の新規質問は自動で人間ルーティングに切り替わっています（赤字防止の蓋が作動）。<br><br>Groqの請求は有料化時に設定する Spend Limit で物理的に止まります。自主上限を上げるなら <code>update ai_budget set daily_question_cap = N;</code> を実行してください。`
+    : `本日(JST)のAI質問数が <b>${used}/${cap}件（90%超）</b> に達しました。上限到達で自動的に人間ルーティングへ切り替わります。<br><br>必要なら <code>update ai_budget set daily_question_cap = N;</code> で調整してください。`
+  await sendEmail({
+    to: CONTACT_INBOX,
+    subject,
+    htmlContent: `<div style="font-family:sans-serif;line-height:1.7;color:#222"><p>${body}</p></div>`,
+  })
+}
+
 // 問い合わせフォームの内容を運営者のGmailに転送する（ユーザーには宛先を見せない）
 export async function sendContactInquiry(params: {
   fromEmail: string

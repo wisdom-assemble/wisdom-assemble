@@ -21,6 +21,7 @@ export default async function HowItWorksPage({ params }: Props) {
           {t('intro2')}
         </p>
         <p className="text-xs text-gray-400 mb-1">{t('loginNote')}</p>
+        <p className="text-xs text-gray-400 mb-1">{t('aiLimitNote')}</p>
         <p className="text-xs text-gray-400 mb-10">{t('translationNote')}</p>
 
         <div className="space-y-10">

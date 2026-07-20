@@ -123,7 +123,8 @@
     "listButton": "Xem danh sách câu hỏi",
     "supportText": "Trang web này được vận hành bởi các tình nguyện viên. Nếu bạn muốn, hãy ủng hộ chúng tôi.",
     "supportButton": "Ủng hộ chúng tôi",
-    "translationNote": "Nội dung câu hỏi và câu trả lời được AI tự động dịch sang các ngôn ngữ khác và có thể chứa lỗi. Giới hạn số ký tự cho tiêu đề và nội dung cũng khác nhau tùy theo ngôn ngữ."
+    "translationNote": "Nội dung câu hỏi và câu trả lời được AI tự động dịch sang các ngôn ngữ khác và có thể chứa lỗi. Giới hạn số ký tự cho tiêu đề và nội dung cũng khác nhau tùy theo ngôn ngữ.",
+    "aiLimitNote": "Khi AI bận hoặc đạt giới hạn sử dụng, chuyên gia sẽ hỗ trợ."
   },
   "answerForm": {
     "heading": "Đăng câu trả lời",
@@ -314,7 +315,8 @@
     "section8ContactPrefix": "Để biết thêm thông tin, vui lòng sử dụng",
     "section8ContactLink": "biểu mẫu liên hệ",
     "section8ContactSuffix": ".",
-    "translationDisclaimer": "Các câu hỏi và câu trả lời đã đăng sẽ được AI tự động dịch sang các ngôn ngữ khác. Chúng tôi không đảm bảo độ chính xác của bản dịch và không chịu trách nhiệm về bất kỳ hiểu lầm hoặc thiệt hại nào phát sinh từ lỗi dịch thuật."
+    "translationDisclaimer": "Các câu hỏi và câu trả lời đã đăng sẽ được AI tự động dịch sang các ngôn ngữ khác. Chúng tôi không đảm bảo độ chính xác của bản dịch và không chịu trách nhiệm về bất kỳ hiểu lầm hoặc thiệt hại nào phát sinh từ lỗi dịch thuật.",
+    "aiAvailabilityDisclaimer": "Việc tạo câu trả lời bằng AI có thể bị giới hạn hoặc tạm dừng do giới hạn sử dụng hoặc hệ thống; khi đó chuyên gia sẽ xử lý."
   },
   "privacyPage": {
     "title": "Chính sách bảo mật",

@@ -123,7 +123,8 @@
     "listButton": "Lihat daftar pertanyaan",
     "supportText": "Situs ini dikelola secara sukarela. Jika berkenan, dukungan Anda sangat kami hargai.",
     "supportButton": "Dukung Kami",
-    "translationNote": "Konten pertanyaan dan jawaban diterjemahkan secara otomatis ke bahasa lain oleh AI dan mungkin mengandung kesalahan. Batas jumlah karakter untuk judul dan isi juga berbeda tergantung bahasa."
+    "translationNote": "Konten pertanyaan dan jawaban diterjemahkan secara otomatis ke bahasa lain oleh AI dan mungkin mengandung kesalahan. Batas jumlah karakter untuk judul dan isi juga berbeda tergantung bahasa.",
+    "aiLimitNote": "Saat AI sibuk atau mencapai batas penggunaan, pakar manusia yang menangani."
   },
   "answerForm": {
     "heading": "Kirim jawaban",
@@ -314,7 +315,8 @@
     "section8ContactPrefix": "Untuk pertanyaan, silakan gunakan",
     "section8ContactLink": "formulir kontak",
     "section8ContactSuffix": ".",
-    "translationDisclaimer": "Pertanyaan dan jawaban yang diposting akan diterjemahkan secara otomatis ke bahasa lain oleh AI. Kami tidak menjamin keakuratan terjemahan dan tidak bertanggung jawab atas kesalahpahaman atau kerugian yang timbul akibat kesalahan terjemahan."
+    "translationDisclaimer": "Pertanyaan dan jawaban yang diposting akan diterjemahkan secara otomatis ke bahasa lain oleh AI. Kami tidak menjamin keakuratan terjemahan dan tidak bertanggung jawab atas kesalahpahaman atau kerugian yang timbul akibat kesalahan terjemahan.",
+    "aiAvailabilityDisclaimer": "Pembuatan jawaban AI dapat dibatasi atau dijeda sementara karena batas penggunaan atau sistem; dalam hal ini pakar manusia yang menangani."
   },
   "privacyPage": {
     "title": "Kebijakan Privasi",

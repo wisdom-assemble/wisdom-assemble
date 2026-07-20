@@ -123,7 +123,8 @@
     "listButton": "查看问题列表",
     "supportText": "本站由志愿者运营。如果可以的话，欢迎支持我们。",
     "supportButton": "支持我们",
-    "translationNote": "问题和回答内容会由AI自动翻译成其他语言，翻译可能存在错误。此外，标题和正文的字数限制因语言而异。"
+    "translationNote": "问题和回答内容会由AI自动翻译成其他语言，翻译可能存在错误。此外，标题和正文的字数限制因语言而异。",
+    "aiLimitNote": "当 AI 繁忙或达到使用上限时，将由人工专家处理。"
   },
   "answerForm": {
     "heading": "发布回答",
@@ -314,7 +315,8 @@
     "section8ContactPrefix": "如有意见，请通过",
     "section8ContactLink": "联系表单",
     "section8ContactSuffix": "与我们联系。",
-    "translationDisclaimer": "发布的问题和回答会由AI自动翻译成其他语言。我们不保证翻译的准确性，对因翻译错误引起的误解或损失不承担责任。"
+    "translationDisclaimer": "发布的问题和回答会由AI自动翻译成其他语言。我们不保证翻译的准确性，对因翻译错误引起的误解或损失不承担责任。",
+    "aiAvailabilityDisclaimer": "AI 回答的提供可能因使用情况或系统上限而被临时限制或暂停；此时由人工专家处理。"
   },
   "privacyPage": {
     "title": "隐私政策",

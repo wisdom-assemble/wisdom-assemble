@@ -5,7 +5,7 @@ import { headers } from 'next/headers'
 import { askWithScore, askWithScoreInScope, isGroqUnavailable, type AiScopedResult } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
-import { notifyMatchedUser } from '@/lib/email'
+import { notifyMatchedUser, sendAiCostAlert } from '@/lib/email'
 import { translateQuestionToLocales, translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
@@ -86,9 +86,23 @@ export async function POST(request: NextRequest) {
   let aiResetAt: string | null = null
   try {
     const { data: budget } = await admin.rpc('check_and_reserve_ai_budget', { p_tenant_id: tenantId })
-    if (budget && budget.allowed === false) {
+    const b = budget as { allowed?: boolean; remaining?: number; cap?: number; reset_at?: string } | null
+    if (b && b.allowed === false) {
       aiUnavailable = true
-      aiResetAt = budget.reset_at ?? null
+      aiResetAt = b.reset_at ?? null
+    }
+    // コストアラート（使用90%到達 or 上限到達で、運営者に1日1回だけメール）
+    if (b?.cap && typeof b.remaining === 'number') {
+      const usedPct = ((b.cap - b.remaining) / b.cap) * 100
+      const level: 'limit' | 'warn90' | null =
+        b.allowed === false ? 'limit' : usedPct >= 90 ? 'warn90' : null
+      if (level) {
+        const { data: shouldSend } = await admin.rpc('try_mark_ai_alert', { p_level: level })
+        if (shouldSend) {
+          await sendAiCostAlert({ level, cap: b.cap, remaining: Math.max(0, b.remaining) })
+            .catch((e) => console.error('ai cost alert send error:', e))
+        }
+      }
     }
   } catch (e) {
     console.error('ai budget check error:', e) // フェイルオープン: 判定失敗時はAIを許可

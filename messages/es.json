@@ -123,7 +123,8 @@
     "listButton": "Ir a la lista de preguntas",
     "supportText": "Este sitio está gestionado por voluntarios. Si lo deseas, considera apoyarnos.",
     "supportButton": "Apóyanos",
-    "translationNote": "El contenido de las preguntas y respuestas se traduce automáticamente a otros idiomas mediante IA y puede contener errores. Los límites de caracteres del título y el cuerpo también varían según el idioma."
+    "translationNote": "El contenido de las preguntas y respuestas se traduce automáticamente a otros idiomas mediante IA y puede contener errores. Los límites de caracteres del título y el cuerpo también varían según el idioma.",
+    "aiLimitNote": "Cuando la IA está ocupada o alcanza su límite, intervienen expertos humanos."
   },
   "answerForm": {
     "heading": "Publicar una respuesta",
@@ -314,7 +315,8 @@
     "section8ContactPrefix": "Para consultas, utiliza el",
     "section8ContactLink": "formulario de contacto",
     "section8ContactSuffix": ".",
-    "translationDisclaimer": "Las preguntas y respuestas publicadas se traducen automáticamente a otros idiomas mediante IA. No garantizamos la precisión de estas traducciones y no somos responsables de ningún malentendido o daño derivado de errores de traducción."
+    "translationDisclaimer": "Las preguntas y respuestas publicadas se traducen automáticamente a otros idiomas mediante IA. No garantizamos la precisión de estas traducciones y no somos responsables de ningún malentendido o daño derivado de errores de traducción.",
+    "aiAvailabilityDisclaimer": "La generación de respuestas por IA puede limitarse o pausarse temporalmente por límites de uso o del sistema; en tal caso, expertos humanos atienden la pregunta."
   },
   "privacyPage": {
     "title": "Política de privacidad",
