@@ -3,13 +3,57 @@
 import type { VisitorStats } from '@/lib/cloudflareAnalytics'
 import { TENANT_NAME_MAP } from '@/lib/tenantNames'
 
-// 公開ホスト名 → テナント表示名
-function hostLabel(host: string): string {
-  if (!host) return '(unknown)'
-  if (host === 'wisdomassemble.com' || host === 'www.wisdomassemble.com') return 'ルートポータル'
+// 公開ホスト名 → 内部テナントキーに正規化する。
+// CFはホスト名ごとに集計するため、同じテナントに複数ホストが向いていると重複して見える
+// （例: 旧 debug.wisdomassemble.com は現 bug.wisdomassemble.com へ301。dtm↔music-prod も同様）。
+// ここで正規化して合算し、テナント単位で1行にまとめる。
+function tenantKeyOf(host: string): string {
+  if (!host) return 'unknown'
+  if (host === 'wisdomassemble.com' || host === 'www.wisdomassemble.com') return 'root'
   const sub = host.replace(/\.wisdomassemble\.com$/, '')
+  const alias: Record<string, string> = { debug: 'bug', bug: 'bug', dtm: 'music-prod', 'music-prod': 'music-prod' }
+  return alias[sub] ?? sub
+}
+
+function labelForKey(key: string): string {
+  if (key === 'root') return 'ルートポータル'
+  if (key === 'unknown') return '(unknown)'
   const map: Record<string, string> = { bug: 'BUG DEBUG', 'music-prod': 'MUSIC PRODUCTION' }
-  return map[sub] ?? TENANT_NAME_MAP[sub] ?? host
+  return map[key] ?? TENANT_NAME_MAP[key] ?? key
+}
+
+// テナントキーの代表（公開）ホスト名
+function publicHostForKey(key: string): string {
+  if (key === 'root') return 'wisdomassemble.com'
+  if (key === 'unknown') return ''
+  return `${key}.wisdomassemble.com`
+}
+
+// 表示順は「実装順」（先に立ち上げた順）。未知テナントは後ろでPV降順。
+const TENANT_ORDER = ['bug', 'music-prod', 'root']
+function orderRank(key: string): number {
+  const i = TENANT_ORDER.indexOf(key)
+  return i === -1 ? TENANT_ORDER.length : i
+}
+
+// リファラーのうち自サイトの各サブドメインは公開ホストに正規化（debug.→bug. 等）。
+// 外部（google/reddit等）や (direct) はそのまま。
+function normalizeReferer(ref: string): string {
+  if (!ref || ref === '(direct / なし)') return ref
+  if (ref === 'wisdomassemble.com' || ref === 'www.wisdomassemble.com' || ref.endsWith('.wisdomassemble.com')) {
+    return publicHostForKey(tenantKeyOf(ref))
+  }
+  return ref
+}
+
+// [{host, pageviews}] を正規化キーで合算し PV 降順の {referer, pageviews}[] にする
+function mergeReferers(rows: Array<{ referer: string; pageviews: number }>): Array<{ referer: string; pageviews: number }> {
+  const m = new Map<string, number>()
+  for (const r of rows) {
+    const k = normalizeReferer(r.referer)
+    m.set(k, (m.get(k) ?? 0) + r.pageviews)
+  }
+  return [...m.entries()].map(([referer, pageviews]) => ({ referer, pageviews })).sort((a, b) => b.pageviews - a.pageviews)
 }
 
 export default function AdminVisitors({ stats }: { stats: VisitorStats }) {
@@ -23,6 +67,32 @@ export default function AdminVisitors({ stats }: { stats: VisitorStats }) {
   }
 
   const t = stats.totals
+
+  // テナント別（ホスト別）訪問：正規化キーで合算し実装順に並べる（debug.↔bug. 等の重複解消）
+  const mergedHostsMap = new Map<string, { pv: number; visits: number }>()
+  for (const h of stats.hosts) {
+    const k = tenantKeyOf(h.host)
+    const cur = mergedHostsMap.get(k) ?? { pv: 0, visits: 0 }
+    cur.pv += h.pageviews
+    cur.visits += h.visits
+    mergedHostsMap.set(k, cur)
+  }
+  const mergedHosts = [...mergedHostsMap.entries()]
+    .map(([key, v]) => ({ key, pv: v.pv, visits: v.visits }))
+    .sort((a, b) => orderRank(a.key) - orderRank(b.key) || b.pv - a.pv)
+
+  // 人気ページ：同じパスが複数ホストに散らないよう (テナント, パス) で合算
+  const pagesMap = new Map<string, { key: string; path: string; pv: number }>()
+  for (const p of stats.pages) {
+    const k = tenantKeyOf(p.host)
+    const mk = `${k}\n${p.path}`
+    const cur = pagesMap.get(mk) ?? { key: k, path: p.path, pv: 0 }
+    cur.pv += p.pageviews
+    pagesMap.set(mk, cur)
+  }
+  const mergedPages = [...pagesMap.values()].sort((a, b) => b.pv - a.pv).slice(0, 15)
+
+  const mergedReferrers = mergeReferers(stats.referrers.map((r) => ({ referer: r.host, pageviews: r.pageviews })))
 
   return (
     <div className="space-y-8">
@@ -56,10 +126,10 @@ export default function AdminVisitors({ stats }: { stats: VisitorStats }) {
         {/* テナント別（ホスト別） */}
         <RankTable
           title="テナント別（ホスト別）訪問"
-          rows={stats.hosts.map((h) => ({
-            label: hostLabel(h.host),
-            sub: h.host,
-            value: h.pageviews,
+          rows={mergedHosts.map((h) => ({
+            label: labelForKey(h.key),
+            sub: publicHostForKey(h.key),
+            value: h.pv,
             value2: h.visits,
           }))}
           valueHead="PV"
@@ -69,7 +139,7 @@ export default function AdminVisitors({ stats }: { stats: VisitorStats }) {
         {/* 流入元 */}
         <RankTable
           title="流入元（リファラー）"
-          rows={stats.referrers.map((r) => ({ label: r.host, value: r.pageviews }))}
+          rows={mergedReferrers.map((r) => ({ label: r.referer, value: r.pageviews }))}
           valueHead="PV"
           emptyLabel="データなし"
         />
@@ -88,10 +158,10 @@ export default function AdminVisitors({ stats }: { stats: VisitorStats }) {
         {/* 人気ページ */}
         <RankTable
           title="人気ページ"
-          rows={stats.pages.map((p) => ({
+          rows={mergedPages.map((p) => ({
             label: p.path || '/',
-            sub: hostLabel(p.host),
-            value: p.pageviews,
+            sub: labelForKey(p.key),
+            value: p.pv,
           }))}
           valueHead="PV"
           emptyLabel="データなし"
@@ -146,37 +216,41 @@ function DayBars({ byDay }: { byDay: VisitorStats['byDay'] }) {
   )
 }
 
-// テナント（ホスト）ごとに流入元を束ねて表示する。
+// テナント（正規化キー）ごとに流入元を束ねて表示する。debug.↔bug. 等は1テナントに合算。
 function RefByTenant({ rows }: { rows: VisitorStats['refByTenant'] }) {
   if (rows.length === 0) {
     return <p className="text-sm text-gray-400 py-6 text-center border border-gray-100 rounded-lg">データなし</p>
   }
-  // host → その流入元一覧（PV降順）にまとめる
-  const byHost = new Map<string, { referer: string; pageviews: number }[]>()
+  // key -> (正規化リファラー -> PV)
+  const byTenant = new Map<string, Map<string, number>>()
   for (const r of rows) {
-    const list = byHost.get(r.host) ?? []
-    list.push({ referer: r.referer, pageviews: r.pageviews })
-    byHost.set(r.host, list)
+    const k = tenantKeyOf(r.host)
+    const inner = byTenant.get(k) ?? new Map<string, number>()
+    const ref = normalizeReferer(r.referer)
+    inner.set(ref, (inner.get(ref) ?? 0) + r.pageviews)
+    byTenant.set(k, inner)
   }
-  // テナント（ホスト）自体もPV合計の多い順に並べる
-  const groups = [...byHost.entries()]
-    .map(([host, refs]) => ({
-      host,
-      total: refs.reduce((s, x) => s + x.pageviews, 0),
-      refs: refs.sort((a, b) => b.pageviews - a.pageviews).slice(0, 8),
-    }))
-    .sort((a, b) => b.total - a.total)
+  const groups = [...byTenant.entries()]
+    .map(([key, inner]) => {
+      const refs = [...inner.entries()].map(([referer, pageviews]) => ({ referer, pageviews }))
+      return {
+        key,
+        total: refs.reduce((s, x) => s + x.pageviews, 0),
+        refs: refs.sort((a, b) => b.pageviews - a.pageviews).slice(0, 8),
+      }
+    })
+    .sort((a, b) => orderRank(a.key) - orderRank(b.key) || b.total - a.total)
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {groups.map((g) => {
         const max = Math.max(1, ...g.refs.map((r) => r.pageviews))
         return (
-          <div key={g.host} className="p-4 border border-gray-100 rounded-lg">
+          <div key={g.key} className="p-4 border border-gray-100 rounded-lg">
             <div className="flex items-baseline justify-between mb-3">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-700 truncate">{hostLabel(g.host)}</h3>
-                <span className="text-[10px] text-gray-400 truncate">{g.host}</span>
+                <h3 className="text-sm font-semibold text-gray-700 truncate">{labelForKey(g.key)}</h3>
+                <span className="text-[10px] text-gray-400 truncate">{publicHostForKey(g.key)}</span>
               </div>
               <span className="text-xs text-gray-500 tabular-nums shrink-0">計 {g.total.toLocaleString()} PV</span>
             </div>
