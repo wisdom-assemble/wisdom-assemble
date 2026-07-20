@@ -90,10 +90,29 @@ export function getScoreThreshold(tenantId: string): number {
   return getConfig(tenantId).threshold
 }
 
+// Groqが「一時的に使えない」状態（無料枠/レート超過429・Spend Limit到達blocked_api_access）を表す。
+// 呼び出し側はこれを検知したらAI回答をスキップし人間ルーティングへ切り替える。
+export class GroqUnavailableError extends Error {
+  constructor(public code: string) {
+    super(`Groq unavailable: ${code}`)
+    this.name = 'GroqUnavailableError'
+  }
+}
+export function isGroqUnavailable(e: unknown): boolean {
+  return e instanceof GroqUnavailableError
+}
+
+// Groq 70Bモデルの料金（USD / 1Mトークン、2026-07時点）: 入力$0.59 / 出力$0.79
+const RATE_70B_IN = 0.59
+const RATE_70B_OUT = 0.79
+export function groqCost(usage: { prompt: number; completion: number }): number {
+  return (usage.prompt / 1_000_000) * RATE_70B_IN + (usage.completion / 1_000_000) * RATE_70B_OUT
+}
+
 async function callGroq(
   messages: { role: string; content: string }[],
   maxTokens = 1024
-): Promise<string> {
+): Promise<{ content: string; usage: { prompt: number; completion: number } }> {
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -102,15 +121,35 @@ async function callGroq(
     },
     body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens }),
   })
-  if (!res.ok) throw new Error(`Groq API error: ${res.status}`)
+  if (!res.ok) {
+    // 429(無料枠/レート超過) と blocked_api_access(Spend Limit到達) は「AI一時停止」として扱う
+    let code = `http_${res.status}`
+    try {
+      const err = await res.json()
+      const m = String(err?.error?.code ?? err?.error?.type ?? '')
+      if (m === 'blocked_api_access' || m.includes('blocked')) code = 'blocked_api_access'
+    } catch {
+      /* ボディが読めなくてもステータスで判定する */
+    }
+    if (res.status === 429 || code === 'blocked_api_access') {
+      throw new GroqUnavailableError(res.status === 429 ? 'rate_limited' : 'blocked_api_access')
+    }
+    throw new Error(`Groq API error: ${res.status}`)
+  }
   const json = await res.json()
-  return (json.choices?.[0]?.message?.content ?? '').trim()
+  return {
+    content: (json.choices?.[0]?.message?.content ?? '').trim(),
+    usage: {
+      prompt: json.usage?.prompt_tokens ?? 0,
+      completion: json.usage?.completion_tokens ?? 0,
+    },
+  }
 }
 
 // 保存前のジャンル判定（YES/NOのみ）
 export async function checkInScope(tenantId: string, question: string): Promise<boolean> {
   const { label, inScope, outScope } = getConfig(tenantId)
-  const result = await callGroq(
+  const { content } = await callGroq(
     [
       {
         role: 'system',
@@ -120,13 +159,16 @@ export async function checkInScope(tenantId: string, question: string): Promise<
     ],
     5
   )
-  return result.toUpperCase().startsWith('YES')
+  return content.toUpperCase().startsWith('YES')
 }
+
+export type AiUsage = { prompt: number; completion: number; cost: number }
 
 export type AiResult = {
   answer: string
   score: number        // 0〜100
   routed: 'ai' | 'human'  // ai: AI回答表示 / human: 人間へルーティング
+  usage?: AiUsage
 }
 
 export type AiScopedResult = AiResult & { inScope: boolean; tags: string[] }
@@ -139,7 +181,7 @@ export type AiScopedResult = AiResult & { inScope: boolean; tags: string[] }
 export async function askWithScoreInScope(tenantId: string, question: string): Promise<AiScopedResult> {
   const { label, threshold, inScope, outScope, dangerKeywords } = getConfig(tenantId)
 
-  const raw = await callGroq([
+  const { content: raw, usage } = await callGroq([
     { role: 'system', content: buildScopedSystemPrompt(label, inScope, outScope) },
     { role: 'user', content: question },
   ])
@@ -175,14 +217,14 @@ export async function askWithScoreInScope(tenantId: string, question: string): P
   score = adjustScore(score, answer, question, dangerKeywords)
 
   const routed = score >= threshold ? 'ai' : 'human'
-  return { inScope: scopeOk, answer, score, routed, tags }
+  return { inScope: scopeOk, answer, score, routed, tags, usage: { ...usage, cost: groqCost(usage) } }
 }
 
 // ジャンル内確定済みの質問にスコア付き回答を生成
 export async function askWithScore(tenantId: string, question: string): Promise<AiResult> {
   const { label, threshold, dangerKeywords } = getConfig(tenantId)
 
-  const raw = await callGroq([
+  const { content: raw, usage } = await callGroq([
     { role: 'system', content: buildSystemPrompt(label) },
     { role: 'user', content: question },
   ])
@@ -208,7 +250,7 @@ export async function askWithScore(tenantId: string, question: string): Promise<
   score = adjustScore(score, answer, question, dangerKeywords)
 
   const routed = score >= threshold ? 'ai' : 'human'
-  return { answer, score, routed }
+  return { answer, score, routed, usage: { ...usage, cost: groqCost(usage) } }
 }
 
 function adjustScore(score: number, answer: string, question = '', dangerKeywords?: RegExp): number {

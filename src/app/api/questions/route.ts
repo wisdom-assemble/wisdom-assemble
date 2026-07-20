@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
-import { askWithScore, askWithScoreInScope, type AiScopedResult } from '@/lib/gemini'
+import { askWithScore, askWithScoreInScope, isGroqUnavailable, type AiScopedResult } from '@/lib/gemini'
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser } from '@/lib/email'
@@ -80,18 +80,36 @@ export async function POST(request: NextRequest) {
   // ① 保存前にジャンル判定＋AI回答生成（1回のGroq呼び出しに統合・コスト最適化）。
   // ジャンル外なら保存せず即拒否（従来のcheckInScopeと同じUX）。
   // ジャンル内なら生成済みの回答・スコアを保持し、保存後のルーティングで再利用する。
-  let aiResult: AiScopedResult | null = null
+  // AI予算チェック（Groq呼び出し前に1回）。本日の全体AI質問数が自主上限に達していたら
+  // AIを一切呼ばず、後段で人間ルーティングへ切り替える（赤字/暴走の自主的な蓋）。
+  let aiUnavailable = false
+  let aiResetAt: string | null = null
   try {
-    aiResult = await askWithScoreInScope(tenantId, `${title}\n\n${body}`)
-    if (!aiResult.inScope) {
-      return NextResponse.json(
-        { error: 'このサービスでは関連のある質問のみ受け付けています。' },
-        { status: 422 }
-      )
+    const { data: budget } = await admin.rpc('check_and_reserve_ai_budget', { p_tenant_id: tenantId })
+    if (budget && budget.allowed === false) {
+      aiUnavailable = true
+      aiResetAt = budget.reset_at ?? null
     }
   } catch (e) {
-    console.error('Scope check error:', e)
-    // 判定失敗時は通す（ユーザー体験優先）。保存後にaskWithScoreで再試行する
+    console.error('ai budget check error:', e) // フェイルオープン: 判定失敗時はAIを許可
+  }
+
+  let aiResult: AiScopedResult | null = null
+  if (!aiUnavailable) {
+    try {
+      aiResult = await askWithScoreInScope(tenantId, `${title}\n\n${body}`)
+      if (!aiResult.inScope) {
+        return NextResponse.json(
+          { error: 'このサービスでは関連のある質問のみ受け付けています。' },
+          { status: 422 }
+        )
+      }
+    } catch (e) {
+      console.error('Scope check error:', e)
+      // Groqが一時停止(429/blocked)ならAI不可として人間ルーティングへ（reset時刻は不明=曖昧UX）。
+      // それ以外のエラーはaiResult=nullのまま後段askWithScoreで再試行する。
+      if (isGroqUnavailable(e)) aiUnavailable = true
+    }
   }
 
   // スラッグ生成（重複時は末尾に数値付加）
@@ -135,90 +153,112 @@ export async function POST(request: NextRequest) {
   })
   const titleTranslationPromise = translationPromise.then((r) => r.title_i18n)
 
-  // ② ジャンル内確定。①で生成済みの回答を再利用する（Groq呼び出しなし）。
-  // ①がGroqエラーで結果を持てなかった場合のみ、従来方式のaskWithScoreで再試行する
-  let resultType: 'ai' | 'matched' | 'pending' = 'pending'
-  try {
-    const result = aiResult ?? (await askWithScore(tenantId, `${title}\n\n${body}`))
+  // クロージャ内ではSupabaseの判別ユニオンによる非null絞り込みが失われるため、
+  // 確定済み(insert成功・認証済み)の値をローカルに束ねてから使う。
+  const q = question
+  const posterId = user.id
 
-    if (result.routed === 'ai') {
-      // AI回答も8言語へ翻訳して保存（多言語SEO対策）。AI回答は日本語生成のためsource='ja'。
-      // 翻訳失敗時は空オブジェクトで保存し、表示側は原文(日本語)にフォールバックする。
-      const aiBodyI18n = await translateToLocales(result.answer, 'ja').catch((e) => {
-        console.error('AI answer translation error:', e)
-        return {}
-      })
-      await admin.from('answers').insert({
-        question_id: question.id,
-        tenant_id: tenantId,
-        body: result.answer,
-        body_i18n: aiBodyI18n,
-        source_locale: 'ja',
-        is_ai: true,
-        ai_score: result.score,
-      })
-      await admin
-        .from('questions')
-        .update({ status: 'ai_answered', ai_score: result.score })
-        .eq('id', question.id)
-      resultType = 'ai'
-    } else {
-      console.log(`[Routing] score=${result.score} → human (tenant=${tenantId})`)
-      const matchedB = await findMatch(tenantId, question.id, [user.id])
-
-      if (matchedB) {
-        await admin.from('questions').update({
-          status: 'open',
-          ai_score: result.score,
-          matched_b_id: matchedB,
-          matched_b_deadline: calcDeadline(8),
-        }).eq('id', question.id)
-        console.log(`[Matching] B=${matchedB}`)
-        resultType = 'matched'
-        try {
-          await notifyMatchedUser({
-            userId: matchedB,
-            tenantId,
-            questionTitle: title.trim(),
-            questionTitleTranslations: await titleTranslationPromise,
-            questionSlug: question.slug,
-          })
-        } catch (e) {
-          console.error('notifyMatchedUser error:', e)
-        }
-      } else {
-        const matchedC = await findMatch(tenantId, question.id, [user.id])
-        if (matchedC) {
-          await admin.from('questions').update({
-            status: 'matched_c',
-            ai_score: result.score,
-            matched_c_id: matchedC,
-            matched_c_deadline: calcDeadline(8),
-          }).eq('id', question.id)
-          console.log(`[Matching] B=none → C=${matchedC}`)
-          resultType = 'matched'
-          try {
-            await notifyMatchedUser({
-              userId: matchedC,
-              tenantId,
-              questionTitle: title.trim(),
-              questionTitleTranslations: await titleTranslationPromise,
-              questionSlug: question.slug,
-            })
-          } catch (e) {
-            console.error('notifyMatchedUser error:', e)
-          }
-        } else {
-          await admin.from('questions').update({
-            status: 'hard',
-            ai_score: result.score,
-          }).eq('id', question.id)
-          console.log(`[Matching] B=none, C=none → hard`)
-        }
+  // AIが使えない/低スコア時に質問を人間へルーティングする（B→C→hard）。孤立を防ぐ共通処理。
+  async function routeToHuman(score: number): Promise<'matched' | 'pending'> {
+    const matchedB = await findMatch(tenantId, q.id, [posterId])
+    if (matchedB) {
+      await admin.from('questions').update({
+        status: 'open',
+        ai_score: score,
+        matched_b_id: matchedB,
+        matched_b_deadline: calcDeadline(8),
+      }).eq('id', q.id)
+      console.log(`[Matching] B=${matchedB}`)
+      try {
+        await notifyMatchedUser({
+          userId: matchedB,
+          tenantId,
+          questionTitle: title.trim(),
+          questionTitleTranslations: await titleTranslationPromise,
+          questionSlug: q.slug,
+        })
+      } catch (e) {
+        console.error('notifyMatchedUser error:', e)
       }
+      return 'matched'
     }
-  } catch (e) {
-    console.error('Groq error:', e)
+    const matchedC = await findMatch(tenantId, q.id, [posterId])
+    if (matchedC) {
+      await admin.from('questions').update({
+        status: 'matched_c',
+        ai_score: score,
+        matched_c_id: matchedC,
+        matched_c_deadline: calcDeadline(8),
+      }).eq('id', q.id)
+      console.log(`[Matching] B=none → C=${matchedC}`)
+      try {
+        await notifyMatchedUser({
+          userId: matchedC,
+          tenantId,
+          questionTitle: title.trim(),
+          questionTitleTranslations: await titleTranslationPromise,
+          questionSlug: q.slug,
+        })
+      } catch (e) {
+        console.error('notifyMatchedUser error:', e)
+      }
+      return 'matched'
+    }
+    await admin.from('questions').update({ status: 'hard', ai_score: score }).eq('id', q.id)
+    console.log(`[Matching] B=none, C=none → hard`)
+    return 'pending'
+  }
+
+  // ② AI回答を試みる（予算内 & AI障害なしの場合のみ）。①で生成済みの回答があれば再利用。
+  let resultType: 'ai' | 'matched' | 'pending' = 'pending'
+  let handled = false
+  if (!aiUnavailable) {
+    try {
+      const result = aiResult ?? (await askWithScore(tenantId, `${title}\n\n${body}`))
+      // トークン使用量を記録（ダッシュボードのコスト表示用・失敗しても本処理は続行）
+      if (result.usage) {
+        admin.rpc('record_ai_tokens', {
+          p_tenant_id: tenantId,
+          p_prompt: result.usage.prompt,
+          p_completion: result.usage.completion,
+          p_cost: result.usage.cost,
+        }).then(() => {}, (e: unknown) => console.error('record_ai_tokens error:', e))
+      }
+      if (result.routed === 'ai') {
+        // AI回答も8言語へ翻訳して保存（多言語SEO対策）。AI回答は日本語生成のためsource='ja'。
+        const aiBodyI18n = await translateToLocales(result.answer, 'ja').catch((e) => {
+          console.error('AI answer translation error:', e)
+          return {}
+        })
+        await admin.from('answers').insert({
+          question_id: question.id,
+          tenant_id: tenantId,
+          body: result.answer,
+          body_i18n: aiBodyI18n,
+          source_locale: 'ja',
+          is_ai: true,
+          ai_score: result.score,
+        })
+        await admin
+          .from('questions')
+          .update({ status: 'ai_answered', ai_score: result.score })
+          .eq('id', question.id)
+        resultType = 'ai'
+      } else {
+        console.log(`[Routing] score=${result.score} → human (tenant=${tenantId})`)
+        resultType = await routeToHuman(result.score)
+      }
+      handled = true
+    } catch (e) {
+      console.error('Groq error:', e)
+      // Groqが一時停止(429/blocked)ならAI不可扱い。いずれにせよ下の孤立防止で人間へ回す。
+      if (isGroqUnavailable(e)) aiUnavailable = true
+    }
+  }
+
+  // AIが使えなかった(上限/障害)・未処理のまま抜けた質問は人間へ回す（孤立を防ぐ）。
+  if (!handled) {
+    resultType = await routeToHuman(0)
   }
 
   // 質問投稿数カウント＋称号チェック
@@ -233,5 +273,5 @@ export async function POST(request: NextRequest) {
   const { title_i18n, body_i18n } = await translationPromise
   await admin.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
 
-  return NextResponse.json({ slug: question.slug, result: resultType })
+  return NextResponse.json({ slug: question.slug, result: resultType, aiCapped: aiUnavailable, aiResetAt })
 }
