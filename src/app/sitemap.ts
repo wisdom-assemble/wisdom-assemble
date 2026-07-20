@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { headers } from 'next/headers'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { routing } from '@/i18n/routing'
+import { routing, INDEXABLE_LOCALES } from '@/i18n/routing'
 import { getTenantId } from '@/lib/tenant'
 
 const STATIC_PATHS = ['', '/how-it-works', '/hard', '/terms', '/privacy', '/contact']
@@ -23,9 +23,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 静的ページ（ルートポータルには質問投稿・使い方・高難度などテナント固有ページがないため、
   // トップ＋利用規約・プライバシーポリシー・お問い合わせの共通ページのみに絞る）
+  // インデックス対象（en/ja）のみサイトマップに載せる。機械翻訳6言語は載せない。
+  const indexableLocales = routing.locales.filter((l) => INDEXABLE_LOCALES.includes(l))
   const staticPaths = tenantId === 'root' ? ['', '/about', '/terms', '/privacy', '/contact'] : STATIC_PATHS
   for (const path of staticPaths) {
-    for (const locale of routing.locales) {
+    for (const locale of indexableLocales) {
       entries.push({
         url: `${baseUrl}/${locale}${path}`,
         changeFrequency: path === '' ? 'daily' : 'monthly',
@@ -50,7 +52,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // のみをサイトマップに含める
       const titleI18n = (q.title_i18n as Record<string, string> | null) ?? {}
       const availableLocales = routing.locales.filter(
-        (locale) => locale === q.source_locale || !!titleI18n[locale]
+        (locale) =>
+          INDEXABLE_LOCALES.includes(locale) &&
+          (locale === q.source_locale || !!titleI18n[locale])
       )
       for (const locale of availableLocales) {
         entries.push({

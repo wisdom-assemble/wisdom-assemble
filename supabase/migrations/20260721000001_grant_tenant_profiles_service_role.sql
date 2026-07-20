@@ -1,0 +1,13 @@
+-- ============================================================
+-- tenant_profiles に service_role の SELECT 権限を付与（追加のみ・安全）
+-- ------------------------------------------------------------
+-- 経緯: tenant_profiles は 20260713000002 で新設した際、GRANT を anon/authenticated
+--   のみに付与し service_role に付け忘れていた。マッチング(matching.ts)は認証ユーザー
+--   クライアントで読むため無事だが、管理ダッシュボード(admin/page.tsx)は admin
+--   (service_role) で tenant_profiles を読むため 42501 permission denied となり、
+--   投稿者名・回答数が user_xxxxxx のフォールバック表示に劣化していた。
+-- 影響: これは「読み取り権限を1つ足すだけ」の純粋な追加。RLS/アプリ挙動は変えず、
+--   重複や副作用は無い。service_role は BYPASSRLS なので付与後は全テナントを串刺しで
+--   読める（＝管理ダッシュボードが意図通り全テナントの表示名/回答数を解決できる）。
+-- ============================================================
+grant select on public.tenant_profiles to service_role;

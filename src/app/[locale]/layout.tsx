@@ -4,7 +4,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import { Geist } from 'next/font/google'
 import '../globals.css'
-import { routing } from '@/i18n/routing'
+import { routing, INDEXABLE_LOCALES } from '@/i18n/routing'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { TenantProvider } from '@/components/TenantProvider'
@@ -55,6 +55,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: displayName,
     description,
+    // en/ja以外の機械翻訳ロケールはnoindex（follow）。このrobotsはlayout配下の
+    // 全ページ（トップ・質問詳細・利用規約等）に継承される。ページ側でrobotsを
+    // 上書きしていないため、ここ1箇所で当該ロケール全体をnoindexにできる。
+    ...(INDEXABLE_LOCALES.includes(locale) ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title: displayName,
       description,
