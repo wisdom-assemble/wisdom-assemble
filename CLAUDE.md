@@ -564,6 +564,25 @@
 
 **確立した検証手法**: ローカルで確認できないもの(foreignObject/Satoriレンダリング/ダークCSS層)は「本番デプロイ→md5/HTMLをポーリングで反映検知→ブラウザpaneでスクショ or /iconのPNGをReadで目視」の**本番実証ループ**。一時的にdtmへ強制適用→確認→revert、で安全に検証。
 
+### ✅ AIコスト管理（三重ストッパー）＋ダッシュボード拡張（2026-07-20）
+
+Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(既存3回/テナント・10回/日) ②アプリ自主上限(今回追加) ③Groq Spend Limit(ユーザー手作業・有料化時)。**物理的に請求を止めるのは③のみ**。①②は挙動制御。現在は無料枠=コスト¥0。
+
+- **DB(migration `20260720000002`/`20260720000003`・SQL適用済み)**: `ai_usage`(日次Groq使用量/テナント別)・`ai_budget`(日次AI質問上限・default 60)・`daily_revenue`(収益stub)・`ai_alert_log`(アラートdedup)。RPC: `check_and_reserve_ai_budget`(AI呼出前に上限判定＋予約・reset_at=翌JST0時)・`record_ai_tokens`(使用量記録)・`try_mark_ai_alert`(1日1レベル1回)。
+- **gemini.ts**: `callGroq`がトークン数を返す＋429/`blocked_api_access`を`GroqUnavailableError`で検知。`askWithScore(InScope)`が`usage`(コスト込み)を返す。
+- **questions/route.ts**: AI呼出前に予算チェック→超過ならAIスキップ。人間ルーティングを`routeToHuman`に抽出し、**上限/Groq障害/低スコア すべてで人間へ回す**（=Groq失敗で質問がopenのまま孤立するバグも修正）。レスポンスに`aiCapped`/`aiResetAt`。90%/上限で運営者にBrevoアラート(日本語・件名【重要】)。**RPC未適用時はフェイルオープン(AI許可)で安全**。
+- **QuestionForm.tsx**: `aiCapped`時にモーダル（8言語・resetAtから「あとHH:MM:SS」をJSでライブ計算＝**AIコストゼロ**。Groq自身の429/block等でresetAt無しなら曖昧文言）。閲覧/検索は止めない。
+- **自主上限は無料枠(約70問/日)より低い60に設定**＝先に当たり正確な残り時間UXが出る。有料化時に引き上げる。
+- 利用規約に`aiAvailabilityDisclaimer`・使い方に`aiLimitNote`(共に8言語・AI上限時は人間対応の旨)。
+- **ダッシュボード拡張(AdminSummary)**: 運営ヘルス(稼働数/目標100・**人間ルーティング率の異常ハイライト**<20%/>60%＝バグ早期発見・本日AI使用/上限)、テナント別にルート率(異常赤)/AI費列、**人気タグ集計**(次テナント企画のヒント)、**収益プレースホルダ**(AdSense/Stripe/アフィリ承認後に接続)。
+
+## ⚠️ ユーザー手作業タスク（コードでは完結しない・忘れ防止）
+私(Claude)のコードでは完結せず、ユーザーの手作業が必要。忘れないこと。
+- **Groq有料化＋Spend Limit（最重要・赤字の物理的な蓋＝③）**: 全体AU100到達時に判断。Developer planへ切替 → `Settings→Billing→Limits` で **Spend Limit ¥1,000スタート**（アラート50/75/90%）→ 実績を見て段階引き上げ（DAU500で¥3,000〜5,000、採算ラインで¥1万〜、スケール後¥2万目安）。無料枠ではSpend Limit設定不可。有料化後はアプリ自主上限(`update ai_budget set daily_question_cap = N;`)も引き上げる。反映10〜15分ラグあり＝上限は余裕を持たせる。
+- **AdSense**: 申請 → 承認後に `public/ads.txt` 設置・Funding Choices(CMP)有効化。
+- **Stripe Connect**: 投げ銭機能実装後に申請（承認後に本番決済有効化。資金決済法の専門家相談は本番で資金分配する前に）。
+- **収益/黒字のダッシュボード表示**: AdSense/Stripe/アフィリのAPI連携で`daily_revenue`表に投入後に有効化（黒字額=収益−Groqコスト）。
+
 ## マッチングフロー
 ```
 質問投稿
