@@ -186,9 +186,18 @@ export default function ProfilePage() {
     if (!user) return
     const newActive = activeTitle === titleId ? null : titleId
     setActiveTitle(newActive)
-    await supabase
+    // save()と同じ理由でupsertは使わない（ON CONFLICTで主キー列を触り42501になる）。
+    // active_title_idはUPDATE許可列なのでupdateで保存する（称号を持つユーザーは
+    // 既にtenant_profiles行があるため既存行のUPDATEで足りる）。
+    const { error } = await supabase
       .from('tenant_profiles')
-      .upsert({ tenant_id: tenantId, user_id: user.id, active_title_id: newActive }, { onConflict: 'tenant_id,user_id' })
+      .update({ active_title_id: newActive })
+      .eq('tenant_id', tenantId)
+      .eq('user_id', user.id)
+    if (error) {
+      console.error('active title save error:', JSON.stringify(error))
+      setActiveTitle(activeTitle) // 失敗したらUIを元に戻す
+    }
   }
 
   function toggleSkill(skill: string) {
