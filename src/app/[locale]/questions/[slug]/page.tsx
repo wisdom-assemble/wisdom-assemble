@@ -147,8 +147,10 @@ export default async function QuestionPage({ params, searchParams }: Props) {
     }
   }
 
-  // ビュー数インクリメント（fire and forget）
-  supabase.from('questions').update({ view_count: question.view_count + 1 }).eq('id', question.id)
+  // ビュー数インクリメント（fire and forget）。
+  // questions_update RLS が auth.uid()=user_id に絞られているため直接UPDATEだと
+  // 所有者以外・匿名の閲覧で増えない。RLS迂回のsecurity definer RPCで加算する。
+  supabase.rpc('increment_view_count', { p_question_id: question.id })
 
   const poster = question.profiles as any
   const isOwner = user?.id === question.user_id
