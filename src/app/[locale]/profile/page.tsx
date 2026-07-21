@@ -133,6 +133,19 @@ export default function ProfilePage() {
         setActiveTitle(tenantProfile.active_title_id ?? null)
       }
       if (profile?.language) setLanguage(profile.language)
+      // ログイン後にブラウザ言語/デフォルトで別ロケール(/en等)へ着地した場合、
+      // 保存済みの表示言語(profiles.language)でこのページを開き直し、本文とセレクタの
+      // 言語不一致を解消する。loading解除前に遷移するので英語表示のちらつきは出ない。
+      // 言語スイッチャー(下部)と同じ実績あるフルリロード遷移。無限ループ防止に
+      // 「有効なロケール かつ 現在のURLロケールと異なる」ときだけ実行する。
+      if (
+        profile?.language &&
+        profile.language !== locale &&
+        LANGUAGE_OPTIONS.some(o => o.code === profile.language)
+      ) {
+        window.location.href = `/${profile.language}/profile`
+        return
+      }
       if (userTitles && userTitles.length > 0) {
         const titleIds = userTitles.map((ut: any) => ut.title_id)
         const { data: titleData } = await supabase
@@ -211,19 +224,32 @@ export default function ProfilePage() {
       return
     }
 
-    const { error } = await supabase
+    // tenant_profiles は本人編集列(display_name/skill_tags/is_available/email_notify)にのみ
+    // UPDATE権限を絞ってある（2026-07-17のlock-down）。upsertだとPostgRESTが
+    // ON CONFLICT DO UPDATE のSET句に主キー列(tenant_id/user_id)も含めてしまい、
+    // それらにUPDATE権限が無いため 42501 permission denied で保存が失敗していた。
+    // → 既存行はUPDATE（許可された4列のみ）、初回のみINSERTに分ける。
+    const fields = {
+      display_name: displayName.trim() || null,
+      skill_tags: skills,
+      is_available: isAvailable,
+      email_notify: emailNotify,
+    }
+    const { data: updated, error: updateError } = await supabase
       .from('tenant_profiles')
-      .upsert(
-        {
-          tenant_id: tenantId,
-          user_id: user.id,
-          display_name: displayName.trim() || null,
-          skill_tags: skills,
-          is_available: isAvailable,
-          email_notify: emailNotify,
-        },
-        { onConflict: 'tenant_id,user_id' }
-      )
+      .update(fields)
+      .eq('tenant_id', tenantId)
+      .eq('user_id', user.id)
+      .select('user_id')
+
+    let error = updateError
+    if (!error && (!updated || updated.length === 0)) {
+      // 既存行なし（このテナントで初めて保存）→ INSERT
+      const { error: insertError } = await supabase
+        .from('tenant_profiles')
+        .insert({ tenant_id: tenantId, user_id: user.id, ...fields })
+      error = insertError
+    }
 
     setSaving(false)
     if (error) console.error('profile save error:', JSON.stringify(error))
