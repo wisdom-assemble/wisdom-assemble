@@ -124,7 +124,8 @@
     "supportText": "Este site é mantido por voluntários. Se desejar, considere nos apoiar.",
     "supportButton": "Apoie-nos",
     "translationNote": "O conteúdo de perguntas e respostas é traduzido automaticamente para outros idiomas por IA e pode conter erros. Os limites de caracteres do título e do corpo também variam de acordo com o idioma.",
-    "aiLimitNote": "Quando a IA está ocupada ou no limite de uso, especialistas humanos assumem."
+    "aiLimitNote": "Quando a IA está ocupada ou no limite de uso, especialistas humanos assumem.",
+    "aiAccuracyNote": "As respostas da IA são apenas informativas e podem conter erros. Se não ficar satisfeito, reformule a pergunta e publique novamente."
   },
   "answerForm": {
     "heading": "Publicar uma resposta",

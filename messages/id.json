@@ -124,7 +124,8 @@
     "supportText": "Situs ini dikelola secara sukarela. Jika berkenan, dukungan Anda sangat kami hargai.",
     "supportButton": "Dukung Kami",
     "translationNote": "Konten pertanyaan dan jawaban diterjemahkan secara otomatis ke bahasa lain oleh AI dan mungkin mengandung kesalahan. Batas jumlah karakter untuk judul dan isi juga berbeda tergantung bahasa.",
-    "aiLimitNote": "Saat AI sibuk atau mencapai batas penggunaan, pakar manusia yang menangani."
+    "aiLimitNote": "Saat AI sibuk atau mencapai batas penggunaan, pakar manusia yang menangani.",
+    "aiAccuracyNote": "Jawaban AI hanya sebagai referensi dan mungkin tidak akurat. Jika kurang puas, coba ubah sedikit pertanyaan Anda lalu kirim ulang."
   },
   "answerForm": {
     "heading": "Kirim jawaban",

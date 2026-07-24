@@ -124,7 +124,8 @@
     "supportText": "This site is run by volunteers. If you'd like, please consider supporting us.",
     "supportButton": "Support Us",
     "translationNote": "Question and answer content is automatically translated into other languages by AI and may contain errors. Character limits for the title and body also vary by language.",
-    "aiLimitNote": "When AI is busy or at its usage limit, human experts step in."
+    "aiLimitNote": "When AI is busy or at its usage limit, human experts step in.",
+    "aiAccuracyNote": "AI answers are for reference only and may be incorrect. If you're not satisfied, try rephrasing your question and posting it again."
   },
   "answerForm": {
     "heading": "Post an answer",

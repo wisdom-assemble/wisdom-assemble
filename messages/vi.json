@@ -124,7 +124,8 @@
     "supportText": "Trang web này được vận hành bởi các tình nguyện viên. Nếu bạn muốn, hãy ủng hộ chúng tôi.",
     "supportButton": "Ủng hộ chúng tôi",
     "translationNote": "Nội dung câu hỏi và câu trả lời được AI tự động dịch sang các ngôn ngữ khác và có thể chứa lỗi. Giới hạn số ký tự cho tiêu đề và nội dung cũng khác nhau tùy theo ngôn ngữ.",
-    "aiLimitNote": "Khi AI bận hoặc đạt giới hạn sử dụng, chuyên gia sẽ hỗ trợ."
+    "aiLimitNote": "Khi AI bận hoặc đạt giới hạn sử dụng, chuyên gia sẽ hỗ trợ.",
+    "aiAccuracyNote": "Câu trả lời của AI chỉ mang tính tham khảo và có thể không chính xác. Nếu chưa hài lòng, hãy thử diễn đạt lại câu hỏi và đăng lại."
   },
   "answerForm": {
     "heading": "Đăng câu trả lời",

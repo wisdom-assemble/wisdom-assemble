@@ -1,0 +1,12 @@
+{
+  "label": "DTM・音楽制作",
+  "inScope": "DAW・音楽制作・シンセサイザー・ミキシング・マスタリング・プラグイン・MIDI・作曲",
+  "outScope": "料理・スポーツ・医療・税金など、音楽制作と無関係な話題",
+  "threshold": 87,
+  "_note": "各質問をGroqに通した後、回答の正誤をレビューして correct: true/false を記入→再実行で推奨thresholdが出る。correct が null のうちは未判定。",
+  "questions": [
+    { "id": "M13-DAW初心者", "text": "初心者にも分かりやすい、一番使いやすいDAWソフトってなんですか？", "correct": true },
+    { "id": "M19-M4Lデバッグ", "text": "Max for Liveで、条件を満たしているはずなのに、自動発火しない時があります。もっと楽にデバッグ出来る方法はないですか？", "correct": false },
+    { "id": "M01-最強IF", "text": "個人向けで、最強のオーディオインターフェースって、ハイエンドだとどういった機種を選ぶといいですか？", "correct": true }
+  ]
+}
