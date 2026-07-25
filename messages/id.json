@@ -329,7 +329,7 @@
     "section1Item3": "Tag keahlian, nama tampilan, dan status ketersediaan yang diatur di profilmu",
     "section1Item4": "Log akses (alamat IP, halaman yang dilihat)",
     "section1Outro": "Kami tidak mengumpulkan informasi yang dapat mengidentifikasi pribadi seperti nama, alamat, atau nomor telepon.",
-    "section1AiNote": "Konten pertanyaan dan jawaban diproses oleh AI (Google Gemini dan Groq) untuk pembuatan jawaban dan terjemahan multibahasa. Hindari memposting informasi pribadi yang tidak ingin Anda ketahui pihak ketiga, seperti nomor telepon, alamat, atau nama asli.",
+    "section1AiNote": "Konten pertanyaan dan jawaban diproses oleh AI (Google Gemini dan Groq) untuk pembuatan jawaban dan terjemahan multibahasa. Hindari memposting informasi pribadi yang tidak ingin Anda ketahui pihak ketiga, seperti nomor telepon, alamat, atau nama asli.Selain itu, karena kami menggunakan API AI tingkat gratis, konten pertanyaan dan jawaban yang dikirimkan dapat digunakan oleh penyedia AI untuk meningkatkan layanan dan model mereka.",
     "section2Title": "2. Tujuan Penggunaan",
     "section2Item1": "Menyediakan, mengoperasikan, dan meningkatkan Layanan",
     "section2Item2": "Mencocokkan pertanyaan dengan penjawab",

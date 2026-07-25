@@ -329,7 +329,7 @@
     "section1Item3": "Thẻ kỹ năng, tên hiển thị và trạng thái sẵn sàng được đặt trong hồ sơ của bạn",
     "section1Item4": "Nhật ký truy cập (địa chỉ IP, trang đã xem)",
     "section1Outro": "Chúng tôi không thu thập thông tin có thể nhận dạng cá nhân như tên, địa chỉ hoặc số điện thoại.",
-    "section1AiNote": "Nội dung câu hỏi và câu trả lời được xử lý bởi AI (Google Gemini và Groq) để tạo câu trả lời và dịch đa ngôn ngữ. Vui lòng tránh đăng thông tin cá nhân mà bạn không muốn bên thứ ba biết, chẳng hạn như số điện thoại, địa chỉ hoặc tên thật.",
+    "section1AiNote": "Nội dung câu hỏi và câu trả lời được xử lý bởi AI (Google Gemini và Groq) để tạo câu trả lời và dịch đa ngôn ngữ. Vui lòng tránh đăng thông tin cá nhân mà bạn không muốn bên thứ ba biết, chẳng hạn như số điện thoại, địa chỉ hoặc tên thật.Ngoài ra, do chúng tôi sử dụng API AI ở gói miễn phí, nội dung câu hỏi và câu trả lời được gửi có thể được các nhà cung cấp AI sử dụng để cải thiện dịch vụ và mô hình của họ.",
     "section2Title": "2. Mục đích sử dụng",
     "section2Item1": "Cung cấp, vận hành và cải thiện Dịch vụ",
     "section2Item2": "Ghép nối câu hỏi với người trả lời",

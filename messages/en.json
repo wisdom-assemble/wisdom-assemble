@@ -329,7 +329,7 @@
     "section1Item3": "Skill tags, display name, and availability status set in your profile",
     "section1Item4": "Access logs (IP address, pages viewed)",
     "section1Outro": "We do not collect personally identifiable information such as name, address, or phone number.",
-    "section1AiNote": "Question and answer text is processed by AI (Google Gemini and Groq) for answer generation and multilingual translation. Please avoid posting personal information you would not want third parties to know, such as phone numbers, addresses, or real names.",
+    "section1AiNote": "Question and answer text is processed by AI (Google Gemini and Groq) for answer generation and multilingual translation. Please avoid posting personal information you would not want third parties to know, such as phone numbers, addresses, or real names.In addition, because we use free-tier AI APIs, the content of submitted questions and answers may be used by the AI providers to improve their services and models.",
     "section2Title": "2. Purpose of Use",
     "section2Item1": "Providing, operating, and improving the Service",
     "section2Item2": "Matching questions with responders",

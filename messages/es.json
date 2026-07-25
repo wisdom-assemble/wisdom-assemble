@@ -329,7 +329,7 @@
     "section1Item3": "Etiquetas de habilidad, nombre visible y estado de disponibilidad configurados en tu perfil",
     "section1Item4": "Registros de acceso (dirección IP, páginas visitadas)",
     "section1Outro": "No recopilamos información de identificación personal como nombre, dirección o número de teléfono.",
-    "section1AiNote": "El contenido de las preguntas y respuestas es procesado por IA (Google Gemini y Groq) para generar respuestas y traducciones multilingües. Evite publicar información personal que no desee que conozcan terceros, como números de teléfono, direcciones o nombres reales.",
+    "section1AiNote": "El contenido de las preguntas y respuestas es procesado por IA (Google Gemini y Groq) para generar respuestas y traducciones multilingües. Evite publicar información personal que no desee que conozcan terceros, como números de teléfono, direcciones o nombres reales.Además, dado que utilizamos APIs de IA de nivel gratuito, el contenido de las preguntas y respuestas enviadas puede ser utilizado por los proveedores de IA para mejorar sus servicios y modelos.",
     "section2Title": "2. Finalidad del uso",
     "section2Item1": "Proporcionar, operar y mejorar el Servicio",
     "section2Item2": "Emparejar preguntas con quienes responden",

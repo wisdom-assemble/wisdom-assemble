@@ -53,6 +53,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   // タブタイトル・OGPはロゴ表記に合わせて常に英語表記（DBのnameは日本語の場合があるため）
   const displayName = getTenantDisplayName(tenantId, tenant?.name ?? 'Wisdom Assemble')
   return {
+    // metadataBaseが無いとNext.jsがOGP/Twitter画像の相対URLを解決できず、
+    // Cloudflareログに警告が出続ける（SNSシェア時のサムネイルにも影響）。
+    // テナントごとに公開URLが違うので、ここで動的に指定する。
+    metadataBase: new URL(siteUrl),
     title: displayName,
     description,
     // en/ja以外の機械翻訳ロケールはnoindex（follow）。このrobotsはlayout配下の
