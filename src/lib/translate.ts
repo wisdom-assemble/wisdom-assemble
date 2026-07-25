@@ -3,6 +3,19 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 // AI回答（askWithScore）とはモデルを分けてコストを抑える。翻訳は複雑な推論が不要な軽いタスクのため。
 const TRANSLATE_MODEL = 'llama-3.1-8b-instant'
 
+// 翻訳(Groq 8b-instant)の料金（USD / 1Mトークン、2026-07時点）: 入力$0.05 / 出力$0.08。
+// 回答生成がGeminiになりコストの請求先が2つに割れたため、翻訳分も計上しないと
+// ダッシュボードの金額が実コストより過小に見える（プランナー指摘・2026-07-22）。
+const RATE_8B_IN = 0.05
+const RATE_8B_OUT = 0.08
+
+// 呼び出し側が任意で渡すトークン集計用アキュムレータ。
+// 渡さなければ従来どおり何も起きない（既存の呼び出しは無改修で動く）。
+export type TokenUsage = { prompt: number; completion: number }
+export function translateCost(u: TokenUsage): number {
+  return (u.prompt / 1_000_000) * RATE_8B_IN + (u.completion / 1_000_000) * RATE_8B_OUT
+}
+
 export const SUPPORTED_LOCALES = ['en', 'ja', 'zh', 'id', 'vi', 'ko', 'es', 'pt'] as const
 
 const LOCALE_NAMES: Record<string, string> = {
@@ -17,7 +30,7 @@ const LOCALE_NAMES: Record<string, string> = {
 }
 
 // 429(レート制限)の時は間隔を空けて最大4回リトライする。それ以外のエラーは即座に投げる。
-async function callGroqJson(systemPrompt: string, userText: string, attempt = 0): Promise<string> {
+async function callGroqJson(systemPrompt: string, userText: string, attempt = 0, usageOut?: TokenUsage): Promise<string> {
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -36,13 +49,17 @@ async function callGroqJson(systemPrompt: string, userText: string, attempt = 0)
   })
   if (res.status === 429 && attempt < 4) {
     await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
-    return callGroqJson(systemPrompt, userText, attempt + 1)
+    return callGroqJson(systemPrompt, userText, attempt + 1, usageOut)
   }
   if (!res.ok) {
     const bodyText = await res.text().catch(() => '')
     throw new Error(`Groq translate API error: ${res.status} ${bodyText}`)
   }
   const json = await res.json()
+  if (usageOut) {
+    usageOut.prompt += json.usage?.prompt_tokens ?? 0
+    usageOut.completion += json.usage?.completion_tokens ?? 0
+  }
   return (json.choices?.[0]?.message?.content ?? '').trim()
 }
 
@@ -51,14 +68,15 @@ async function callGroqJson(systemPrompt: string, userText: string, attempt = 0)
 // 全ターゲット言語分を1回のGroq呼び出しにまとめてJSONで受け取る。
 export async function translateToLocales(
   text: string,
-  sourceLocale: string
+  sourceLocale: string,
+  usageOut?: TokenUsage
 ): Promise<Record<string, string>> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
   const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
   const systemPrompt = `You are a professional translator. Translate the user's text into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}) and whose values are the translated text for that locale. No explanations, no extra keys.`
 
   try {
-    const content = await callGroqJson(systemPrompt, text)
+    const content = await callGroqJson(systemPrompt, text, 0, usageOut)
     const parsed = JSON.parse(content) as Record<string, string>
     const result: Record<string, string> = {}
     for (const locale of targets) {
@@ -81,7 +99,8 @@ export async function translateToLocales(
 export async function translateQuestionToLocales(
   title: string,
   body: string,
-  sourceLocale: string
+  sourceLocale: string,
+  usageOut?: TokenUsage
 ): Promise<{ title_i18n: Record<string, string>; body_i18n: Record<string, string> }> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
   const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
@@ -90,7 +109,7 @@ export async function translateQuestionToLocales(
   const userText = JSON.stringify({ title, body })
 
   try {
-    const content = await callGroqJson(systemPrompt, userText)
+    const content = await callGroqJson(systemPrompt, userText, 0, usageOut)
     const parsed = JSON.parse(content) as Record<string, string>
     const title_i18n: Record<string, string> = {}
     const body_i18n: Record<string, string> = {}
@@ -104,8 +123,8 @@ export async function translateQuestionToLocales(
   } catch (e) {
     console.error('translateQuestionToLocales: batch translation failed, falling back to separate calls', e)
     const [title_i18n, body_i18n] = await Promise.all([
-      translateToLocales(title, sourceLocale),
-      translateToLocales(body, sourceLocale),
+      translateToLocales(title, sourceLocale, usageOut),
+      translateToLocales(body, sourceLocale, usageOut),
     ])
     return { title_i18n, body_i18n }
   }

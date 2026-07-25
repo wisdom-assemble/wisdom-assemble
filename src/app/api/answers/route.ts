@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { headers } from 'next/headers'
 import { checkContent } from '@/lib/contentFilter'
-import { translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
+import { translateToLocales, translateCost, SUPPORTED_LOCALES, type TokenUsage } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
 export async function POST(request: NextRequest) {
@@ -91,7 +91,17 @@ export async function POST(request: NextRequest) {
 
   // 対応8言語へ自動翻訳して保存（Cloudflare Workers対策のため必ずawaitする）
   try {
-    const body_i18n = await translateToLocales(body.trim(), sourceLocale)
+    const translationUsage: TokenUsage = { prompt: 0, completion: 0 }
+    const body_i18n = await translateToLocales(body.trim(), sourceLocale, translationUsage)
+    // 回答の翻訳コストも計上（ダッシュボードの金額を実コストに近づける）
+    if (translationUsage.prompt || translationUsage.completion) {
+      await admin.rpc('record_ai_tokens', {
+        p_tenant_id: tenantId,
+        p_prompt: translationUsage.prompt,
+        p_completion: translationUsage.completion,
+        p_cost: translateCost(translationUsage),
+      }).then(() => {}, (e: unknown) => console.error('record translation tokens error:', e))
+    }
     await admin.from('answers').update({ body_i18n }).eq('id', answer.id)
   } catch (e) {
     console.error('answer translation error:', e)

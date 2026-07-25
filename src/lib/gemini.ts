@@ -169,7 +169,7 @@ function parseRetryAfterSec(body: string): number | null {
 async function callGroq(
   messages: { role: string; content: string }[],
   maxTokens = 1024
-): Promise<{ content: string; usage: { prompt: number; completion: number } }> {
+): Promise<{ content: string; usage: { prompt: number; completion: number }; model: string }> {
   // GeminiもGroqもOpenAI互換エンドポイントなのでリクエスト形は共通。
   // Geminiは内部thinkingがトークンを消費するため上限を広めに取る。
   const url = USE_GEMINI ? GEMINI_API_URL : GROQ_API_URL
@@ -245,6 +245,9 @@ async function callGroq(
   }
   const json = await res.json()
   return {
+    // 実際に使われたモデル名（404で-latestへ退避した場合はその名前）を返す。
+    // ai_usage.model に記録し、後から「どのモデルが出した回答か」を追えるようにする。
+    model,
     content: (json.choices?.[0]?.message?.content ?? '').trim(),
     usage: {
       prompt: json.usage?.prompt_tokens ?? 0,
@@ -269,7 +272,7 @@ export async function checkInScope(tenantId: string, question: string): Promise<
   return content.toUpperCase().startsWith('YES')
 }
 
-export type AiUsage = { prompt: number; completion: number; cost: number }
+export type AiUsage = { prompt: number; completion: number; cost: number; model: string }
 
 export type AiResult = {
   answer: string
@@ -288,7 +291,7 @@ export type AiScopedResult = AiResult & { inScope: boolean; tags: string[] }
 export async function askWithScoreInScope(tenantId: string, question: string): Promise<AiScopedResult> {
   const { label, threshold, inScope, outScope, dangerKeywords } = getConfig(tenantId)
 
-  const { content: raw, usage } = await callGroq([
+  const { content: raw, usage, model: usedModel } = await callGroq([
     { role: 'system', content: buildScopedSystemPrompt(label, inScope, outScope) },
     { role: 'user', content: question },
   ])
@@ -324,14 +327,14 @@ export async function askWithScoreInScope(tenantId: string, question: string): P
   score = adjustScore(score, answer, question, dangerKeywords)
 
   const routed = score >= threshold ? 'ai' : 'human'
-  return { inScope: scopeOk, answer, score, routed, tags, usage: { ...usage, cost: groqCost(usage) } }
+  return { inScope: scopeOk, answer, score, routed, tags, usage: { ...usage, cost: groqCost(usage), model: usedModel } }
 }
 
 // ジャンル内確定済みの質問にスコア付き回答を生成
 export async function askWithScore(tenantId: string, question: string): Promise<AiResult> {
   const { label, threshold, dangerKeywords } = getConfig(tenantId)
 
-  const { content: raw, usage } = await callGroq([
+  const { content: raw, usage, model: usedModel } = await callGroq([
     { role: 'system', content: buildSystemPrompt(label) },
     { role: 'user', content: question },
   ])
@@ -357,7 +360,7 @@ export async function askWithScore(tenantId: string, question: string): Promise<
   score = adjustScore(score, answer, question, dangerKeywords)
 
   const routed = score >= threshold ? 'ai' : 'human'
-  return { answer, score, routed, usage: { ...usage, cost: groqCost(usage) } }
+  return { answer, score, routed, usage: { ...usage, cost: groqCost(usage), model: usedModel } }
 }
 
 // スコア補正。2026-07-22のGemini移行時に、Groqの文体前提だったルールを実測に基づき是正した。

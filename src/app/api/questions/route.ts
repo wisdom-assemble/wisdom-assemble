@@ -6,7 +6,7 @@ import { askWithScore, askWithScoreInScope, isGroqUnavailable, type AiScopedResu
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser, sendAiCostAlert } from '@/lib/email'
-import { translateQuestionToLocales, translateToLocales, SUPPORTED_LOCALES } from '@/lib/translate'
+import { translateQuestionToLocales, translateToLocales, translateCost, SUPPORTED_LOCALES, type TokenUsage } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
 // 翌JST0時をISO(UTC)で返す。AIが使えない時のモーダル「次に使える時刻」の
@@ -179,7 +179,10 @@ export async function POST(request: NextRequest) {
   // AI回答・マッチング処理と並行実行するため、ここではPromiseを開始するだけで待たない。
   // Cloudflare Workersはレスポンスを返すと未完了のfire-and-forget処理を打ち切るため、
   // 必ずレスポンス返却前にawaitする（下部参照）。
-  const translationPromise = translateQuestionToLocales(title.trim(), body.trim(), sourceLocale).catch((e) => {
+  // 翻訳(Groq 8b)のトークンも計上する。回答生成(Gemini)だけだとダッシュボードの
+  // 金額が実コストより過小に見えるため（請求先がGoogle/Groqの2つに割れている）。
+  const translationUsage: TokenUsage = { prompt: 0, completion: 0 }
+  const translationPromise = translateQuestionToLocales(title.trim(), body.trim(), sourceLocale, translationUsage).catch((e) => {
     console.error('question translation error:', e)
     return { title_i18n: {}, body_i18n: {} }
   })
@@ -254,11 +257,12 @@ export async function POST(request: NextRequest) {
           p_prompt: result.usage.prompt,
           p_completion: result.usage.completion,
           p_cost: result.usage.cost,
+          p_model: result.usage.model,
         }).then(() => {}, (e: unknown) => console.error('record_ai_tokens error:', e))
       }
       if (result.routed === 'ai') {
         // AI回答も8言語へ翻訳して保存（多言語SEO対策）。AI回答は日本語生成のためsource='ja'。
-        const aiBodyI18n = await translateToLocales(result.answer, 'ja').catch((e) => {
+        const aiBodyI18n = await translateToLocales(result.answer, 'ja', translationUsage).catch((e) => {
           console.error('AI answer translation error:', e)
           return {}
         })
@@ -307,6 +311,16 @@ export async function POST(request: NextRequest) {
   // 翻訳結果を保存（Cloudflare Workersがレスポンス返却後に処理を打ち切るため必ずawaitする）
   const { title_i18n, body_i18n } = await translationPromise
   await admin.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
+
+  // 翻訳分のトークン/コストを加算（callsは増やさない＝AI質問数は回答生成のみを数える）
+  if (translationUsage.prompt || translationUsage.completion) {
+    await admin.rpc('record_ai_tokens', {
+      p_tenant_id: tenantId,
+      p_prompt: translationUsage.prompt,
+      p_completion: translationUsage.completion,
+      p_cost: translateCost(translationUsage),
+    }).then(() => {}, (e: unknown) => console.error('record translation tokens error:', e))
+  }
 
   // AIが使えなかった場合は、理由（自主上限/レート超過）に関わらず必ず具体的な
   // 復活時刻をモーダルへ渡す。ユーザーには無料/有料の区別は見せない（同じ体験にする）。
