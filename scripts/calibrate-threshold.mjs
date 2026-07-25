@@ -27,15 +27,32 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 const CONFIG_PATH = process.argv[2]
 if (!CONFIG_PATH) { console.error('usage: node scripts/calibrate-threshold.mjs <config.json>'); process.exit(1) }
 
-// --- GROQ_API_KEY を .env.local から読む（値は出力しない） ---
+// --- プロバイダ選択（A/B比較用）: 第2引数 'gemini' でGemini、無指定はGroq ---
+// GroqもGeminiもOpenAI互換エンドポイントなのでリクエスト形は共通。
+//   node scripts/calibrate-threshold.mjs <config.json>          → Groq(本番と同一)
+//   node scripts/calibrate-threshold.mjs <config.json> gemini   → Gemini Flash-Lite
+// GeminiモデルIDは環境変数 GEMINI_MODEL で上書き可（既定 gemini-2.5-flash-lite）。
+const PROVIDER = (process.argv[3] || 'groq').toLowerCase()
 const envUrl = new URL('../.env.local', import.meta.url)
 const env = readFileSync(envUrl, 'utf8')
-const km = env.match(/^GROQ_API_KEY\s*=\s*(.+)$/m)
-if (!km) { console.error('GROQ_API_KEY not found in .env.local'); process.exit(1) }
-const GROQ_API_KEY = km[1].trim().replace(/^["']|["']$/g, '')
+function readEnvKey(name) {
+  const m = env.match(new RegExp('^' + name + '\\s*=\\s*(.+)$', 'm'))
+  return m ? m[1].trim().replace(/^["']|["']$/g, '') : null
+}
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODEL = 'llama-3.3-70b-versatile' // gemini.ts と一致させること
+let API_URL, API_KEY, MODEL
+if (PROVIDER === 'gemini') {
+  API_KEY = readEnvKey('GEMINI_API_KEY') || readEnvKey('GOOGLE_API_KEY')
+  if (!API_KEY) { console.error('GEMINI_API_KEY not found in .env.local（Google AI Studioで無料発行して追記してください）'); process.exit(1) }
+  API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+  MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
+} else {
+  API_KEY = readEnvKey('GROQ_API_KEY')
+  if (!API_KEY) { console.error('GROQ_API_KEY not found in .env.local'); process.exit(1) }
+  API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+  MODEL = 'llama-3.3-70b-versatile' // gemini.ts と一致させること
+}
+console.log(`# provider=${PROVIDER} model=${MODEL} config=${CONFIG_PATH}`)
 
 const cfg = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'))
 const { label, inScope, outScope, threshold = 87, questions = [], dangerKeywords } = cfg
@@ -75,10 +92,10 @@ function adjustScore(score, answer, question = '') {
   return Math.max(0, a)
 }
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-async function callGroq(sys, user, tries = 4) {
+async function callModel(sys, user, tries = 4) {
   for (let i = 0; i < tries; i++) {
-    const res = await fetch(GROQ_API_URL, { method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+    const res = await fetch(API_URL, { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
       body: JSON.stringify({ model: MODEL, messages: [ { role: 'system', content: sys }, { role: 'user', content: user } ], max_tokens: 1024 }) })
     if (res.ok) return ((await res.json()).choices?.[0]?.message?.content ?? '').trim()
     // 429(レート/無料枠超過) や 5xx はバックオフして再試行（本番キー共用なので優しく）
@@ -97,7 +114,7 @@ const results = []
 for (const q of questions) {
   const id = q.id ?? q.text.slice(0, 24)
   try {
-    const raw = await callGroq(sys, q.text)
+    const raw = await callModel(sys, q.text)
     const { score, answer, inScope: scopeOk } = parse(raw)
     const adj = adjustScore(score, answer, q.text)
     results.push({ id, text: q.text, score, adj, inScope: scopeOk, correct: q.correct ?? null, answer })
@@ -134,10 +151,11 @@ if (labeled.length) {
   console.log('正誤ラベル未記入。各回答をレビューし、configの各質問に "correct": true/false を付けて再実行してください。')
 }
 
-// 結果を蓄積保存（学習用）
-const outPath = CONFIG_PATH.replace(/\.json$/, '') + '.results.json'
+// 結果を蓄積保存（学習用）。Gemini分はGroqの蓄積を汚さないよう別ファイルに分ける。
+const suffix = PROVIDER === 'gemini' ? '.gemini.results.json' : '.results.json'
+const outPath = CONFIG_PATH.replace(/\.json$/, '') + suffix
 let history = []
 if (existsSync(outPath)) { try { history = JSON.parse(readFileSync(outPath, 'utf8')) } catch {} }
-history.push({ label, threshold, ranAt: 'see-git', results })
+history.push({ label, provider: PROVIDER, model: MODEL, threshold, ranAt: 'see-git', results })
 writeFileSync(outPath, JSON.stringify(history, null, 2))
 console.log(`\n結果を ${outPath} に保存（学習用に蓄積）`)
