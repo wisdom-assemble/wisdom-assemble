@@ -27,6 +27,13 @@ const GROQ_MODEL = 'llama-3.3-70b-versatile'
 const USE_GEMINI = !!GEMINI_API_KEY
 
 // ジャンル設定：新ジャンル追加はここに1エントリ追加するだけ
+export type GenreConfig = {
+  label: string
+  threshold: number
+  inScope: string
+  outScope: string
+  dangerKeywords?: RegExp
+}
 const GENRE_CONFIG: Record<string, {
   label: string        // AIに渡す日本語ジャンル名
   threshold: number    // 信頼度閾値（これ以上でAI回答表示）
@@ -153,7 +160,9 @@ export function groqCost(usage: { prompt: number; completion: number }): number 
 }
 
 // RPM超過をその場で待って再試行する上限秒数。これを超える待ちはRPD(日次)超過とみなす。
-const RETRY_INLINE_MAX_SEC = 20
+// 質問投稿APIの応答時間に直接積まれる（AI回答＋8言語翻訳のawaitと直列）ため、
+// ユーザーが長時間スピナーを見ないよう10秒に抑える。超える場合は人間ルーティングへ。
+const RETRY_INLINE_MAX_SEC = 10
 
 // 429レスポンスから復活までの秒数を取り出す。
 // Geminiは本文に "Please retry in 10.714179895s." や retryDelay:"11s" を返す。
@@ -168,7 +177,8 @@ function parseRetryAfterSec(body: string): number | null {
 
 async function callGroq(
   messages: { role: string; content: string }[],
-  maxTokens = 1024
+  maxTokens = 1024,
+  jsonMode = false
 ): Promise<{ content: string; usage: { prompt: number; completion: number }; model: string }> {
   // GeminiもGroqもOpenAI互換エンドポイントなのでリクエスト形は共通。
   // Geminiは内部thinkingがトークンを消費するため上限を広めに取る。
@@ -177,10 +187,18 @@ async function callGroq(
   const tokens = USE_GEMINI ? Math.max(maxTokens, 2048) : maxTokens
   let model = USE_GEMINI ? GEMINI_MODEL : GROQ_MODEL
 
+  // JSON構造化出力を強制する。指定しないとGeminiが ```json フェンスを付けることがあり、
+  // パースに失敗してscore0（人間ルート）に落ちる事故が起きる（実測1/65件）。
+  const payload = JSON.stringify(
+    USE_GEMINI && jsonMode
+      ? { model, messages, max_tokens: tokens, response_format: { type: 'json_object' } }
+      : { model, messages, max_tokens: tokens }
+  )
+
   let res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model, messages, max_tokens: tokens }),
+    body: payload,
   })
 
   // 固定ピンしたGeminiモデルが廃止された(404)ときだけ -latest へ自動退避。
@@ -194,7 +212,11 @@ async function callGroq(
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages, max_tokens: tokens }),
+      body: JSON.stringify(
+        jsonMode
+          ? { model, messages, max_tokens: tokens, response_format: { type: 'json_object' } }
+          : { model, messages, max_tokens: tokens }
+      ),
     })
   }
 
@@ -209,7 +231,7 @@ async function callGroq(
       res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model, messages, max_tokens: tokens }),
+        body: payload,
       })
     } else {
       // 待ちが長い/不明＝RPD(日次)超過の可能性が高い。復活秒数を添えて人間ルーティングへ。
@@ -289,12 +311,23 @@ export type AiScopedResult = AiResult & { inScope: boolean; tags: string[] }
 // 判定部分の挙動は checkInScope と同一（ジャンル外なら inScope=false）。
 // JSONパース失敗・inScopeキー欠落時はフェイルオープン（inScope=true扱い、score=0で人間ルート）。
 export async function askWithScoreInScope(tenantId: string, question: string): Promise<AiScopedResult> {
-  const { label, threshold, inScope, outScope, dangerKeywords } = getConfig(tenantId)
+  return askWithScoreInScopeCfg(getConfig(tenantId), question)
+}
 
-  const { content: raw, usage, model: usedModel } = await callGroq([
-    { role: 'system', content: buildScopedSystemPrompt(label, inScope, outScope) },
-    { role: 'user', content: question },
-  ])
+// 任意のジャンル設定で実行する版。GENRE_CONFIGに未登録の新テナントを較正するために
+// scripts/calibrate-threshold.mts が使う。プロンプト・adjustScore・モデル・料金を
+// 本番と共有するための単一ソース（スクリプト側にコピーを持たせない）。
+export async function askWithScoreInScopeCfg(cfg: GenreConfig, question: string): Promise<AiScopedResult> {
+  const { label, threshold, inScope, outScope, dangerKeywords } = cfg
+
+  const { content: raw, usage, model: usedModel } = await callGroq(
+    [
+      { role: 'system', content: buildScopedSystemPrompt(label, inScope, outScope) },
+      { role: 'user', content: question },
+    ],
+    1024,
+    true // JSON構造化出力（```jsonフェンスによるパース失敗を防ぐ）
+  )
 
   const match = raw.match(/\{[\s\S]*\}/)
   let scopeOk = true
@@ -334,10 +367,14 @@ export async function askWithScoreInScope(tenantId: string, question: string): P
 export async function askWithScore(tenantId: string, question: string): Promise<AiResult> {
   const { label, threshold, dangerKeywords } = getConfig(tenantId)
 
-  const { content: raw, usage, model: usedModel } = await callGroq([
-    { role: 'system', content: buildSystemPrompt(label) },
-    { role: 'user', content: question },
-  ])
+  const { content: raw, usage, model: usedModel } = await callGroq(
+    [
+      { role: 'system', content: buildSystemPrompt(label) },
+      { role: 'user', content: question },
+    ],
+    1024,
+    true
+  )
 
   const match = raw.match(/\{[\s\S]*\}/)
   let score = 0

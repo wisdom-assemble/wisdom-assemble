@@ -714,6 +714,9 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 - **429の扱いを二段構えに**: GeminiはRPM15(Groqの半分)で分単位の一時429が起きる。`retryDelay`を解析し**20秒以内はその場で待って再試行**（ユーザーには成功として返る）、長い/不明ならRPD超過として実際の復活秒数を`aiRetryAfterSec`でモーダルへ渡す。「翌0時まで使えません」と誤表示しない。
 - **層③の是正（重要）**: **GCPの「予算アラート」は通知するだけで課金を止めない。** 実際の蓋は**Generative Language APIの割り当て(Quota)**で1日のリクエスト数に上限を入れること。ダッシュボードの説明・リンクもこれに合わせて修正済み。
 - **ロールバック手段**: `USE_GEMINI = !!process.env.GEMINI_API_KEY`。**Cloudflare Secretの`GEMINI_API_KEY`を消せば即座にGroqへ戻る**（コード変更・再デプロイ不要）。Secret未登録の環境でも停止しない安全策も兼ねる。
+  - ⚠️ **ロールバック時は閾値も87に戻すこと**。閾値91はGeminiのスコア分布に合わせた値で、Groqは95がほぼ出ない（65問中1問）ため、91のままGroqへ戻すと**事実上AI回答ゼロで全部人間ルート**になる（安全側だがAIが機能しない）。`GENRE_CONFIG`と`DEFAULT_THRESHOLD`を87へ。
+- **較正ツールは本番コードを共有すること**: `scripts/calibrate-threshold.mts`（`npx tsx`で実行）が本番の`askWithScoreInScopeCfg()`を直接importする。旧`.mjs`はプロンプト・adjustScore・モデルを自前コピーしていて**必ず本番とズレた**（実例: 長文減点500字 vs 1200字で較正結果が9件/13件と食い違った）ため廃止スタブ化済み。**新テナント較正時に自前コピーを作らないこと**。ツールはRPM15に合わせ4.5秒間隔で実行する。
+- **正誤ラベルは必ずconfigに書き戻す**: `scripts/calibration.{music,guitar}.json`の各質問に`correct: true/false`を記入済み（95点帯13問=正、G02/G23=誤）。これによりツールが推奨thresholdを自動算出でき、第三者が再現・検証できる。
 - **モデル寿命対策**: 固定ピン＋**404時のみ`gemini-flash-lite-latest`へ自動退避＋ログ出力**。`-latest`常用はしない（実測で`3.5-flash-lite`=RC3403DB／`-latest`=RC4558Pと**別の答えを返す**＝中身が違い閾値較正が無効化されるため）。
 - **ハイブリッド構成**: 回答生成=Gemini／**翻訳=Groq(`llama-3.1-8b-instant`, `translate.ts`)は据え置き**（8bが最安・品質十分）。**GROQ_API_KEYは削除しないこと**。
 - **プラポリ8言語を実態に修正**: AI処理の主体を「Google Gemini・Groq」に。※**無料枠はプロンプトがGoogleの学習に使われる可能性**があるため、実ユーザー公開前に「有料枠/Vertexへ切替」か「学習利用をプラポリに明記」のいずれかを判断すること。
