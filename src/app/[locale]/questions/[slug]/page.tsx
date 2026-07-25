@@ -19,13 +19,18 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result
 // Google推奨のQAPage構造化データ(schema.org)を生成する。
 // XSS対策として`<`をエスケープし、ユーザー投稿文に`</script>`等が
 // 含まれていてもタグを閉じてしまわないようにする。
-function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster: any, displayNameByUser: Record<string, string>): string {
+// pageUrl: この質問ページの絶対URL。GSCが「urlがありません」と指摘する
+// Question/Answer/author の url を埋めるために使う（回答は #answer-<id> で該当箇所を指す）。
+// upvoteCount は投票機能が無いため 0 固定（Googleは項目自体の存在を推奨するため明示する）。
+function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster: any, displayNameByUser: Record<string, string>, pageUrl: string): string {
   const answerAuthorName = (a: any) => displayNameByUser[a.user_id] ?? a.profiles?.username ?? 'Anonymous'
   const toAnswer = (a: any) => ({
     '@type': 'Answer',
     text: a.body_i18n?.[locale] ?? a.body,
     dateCreated: a.created_at,
-    author: { '@type': 'Person', name: answerAuthorName(a) },
+    url: `${pageUrl}#answer-${a.id}`,
+    upvoteCount: 0,
+    author: { '@type': 'Person', name: answerAuthorName(a), url: pageUrl },
   })
   const accepted = answers.find((a) => a.is_accepted)
   const others = answers.filter((a) => !a.is_accepted)
@@ -39,7 +44,8 @@ function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster
       text: question.body_i18n?.[locale] ?? question.body,
       answerCount: answers.length,
       dateCreated: question.created_at,
-      author: { '@type': 'Person', name: displayNameByUser[question.user_id] ?? poster?.username ?? 'Anonymous' },
+      url: pageUrl,
+      author: { '@type': 'Person', name: displayNameByUser[question.user_id] ?? poster?.username ?? 'Anonymous', url: pageUrl },
       ...(accepted ? { acceptedAnswer: toAnswer(accepted) } : {}),
       ...(others.length > 0 ? { suggestedAnswer: others.map(toAnswer) } : {}),
     },
@@ -102,6 +108,8 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const locale = await getLocale()
   const tenantId = await getTenantId()
   const supabase = await createClient()
+  // 構造化データ(JSON-LD)のurl項目用。generateMetadataのcanonicalと同じ組み立て方。
+  const pageUrl = `https://${(await headers()).get('host') ?? 'bug.wisdomassemble.com'}/${locale}/questions/${encodeURIComponent(slug)}`
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -214,7 +222,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
       {hasAnswers && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: buildQAPageJsonLd(question, answers ?? [], locale, poster, displayNameByUser) }}
+          dangerouslySetInnerHTML={{ __html: buildQAPageJsonLd(question, answers ?? [], locale, poster, displayNameByUser, pageUrl) }}
         />
       )}
       <Header />
@@ -325,6 +333,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                 return (
                   <li
                     key={a.id}
+                    id={`answer-${a.id}`}
                     className={`p-4 rounded-lg border ${
                       a.is_accepted
                         ? 'border-green-300 bg-green-50'
