@@ -118,11 +118,16 @@ export function getScoreThreshold(tenantId: string): number {
   return getConfig(tenantId).threshold
 }
 
-// Groqが「一時的に使えない」状態（無料枠/レート超過429・Spend Limit到達blocked_api_access）を表す。
+// AIが「一時的に使えない」状態を表す（Groq/Gemini共通）。
 // 呼び出し側はこれを検知したらAI回答をスキップし人間ルーティングへ切り替える。
+//
+// retryAfterSec: 復活までの秒数がAPIから判明した場合に入る。
+//   Geminiは RPM(分あたり) と RPD(日あたり) の両方で429を返すため、これが重要。
+//   RPM超過は数十秒で回復するのに「翌0時まで使えません」と表示するのは誤りになる。
+//   呼び出し側は、短ければその秒数を、長い/不明なら翌JST0時をモーダルに渡すこと。
 export class GroqUnavailableError extends Error {
-  constructor(public code: string) {
-    super(`Groq unavailable: ${code}`)
+  constructor(public code: string, public retryAfterSec?: number) {
+    super(`AI unavailable: ${code}`)
     this.name = 'GroqUnavailableError'
   }
 }
@@ -145,6 +150,20 @@ export function groqCost(usage: { prompt: number; completion: number }): number 
     ? [RATE_GEMINI_FL_IN, RATE_GEMINI_FL_OUT]
     : [RATE_70B_IN, RATE_70B_OUT]
   return (usage.prompt / 1_000_000) * ri + (usage.completion / 1_000_000) * ro
+}
+
+// RPM超過をその場で待って再試行する上限秒数。これを超える待ちはRPD(日次)超過とみなす。
+const RETRY_INLINE_MAX_SEC = 20
+
+// 429レスポンスから復活までの秒数を取り出す。
+// Geminiは本文に "Please retry in 10.714179895s." や retryDelay:"11s" を返す。
+function parseRetryAfterSec(body: string): number | null {
+  const m =
+    body.match(/retry in ([\d.]+)s/i) ??
+    body.match(/"retryDelay"\s*:\s*"?([\d.]+)s/i)
+  if (!m) return null
+  const sec = Number(m[1])
+  return Number.isFinite(sec) ? Math.ceil(sec) : null
 }
 
 async function callGroq(
@@ -179,20 +198,50 @@ async function callGroq(
     })
   }
 
+  // 429(レート/クォータ超過)は、GeminiではRPM(分)超過とRPD(日)超過の両方で返る。
+  // RPM超過は十数秒で回復するので、その場で1回だけ待って再試行し、ユーザーには
+  // 「AIが使えない」と見せずに回答を返す（Geminiは無料枠RPM15とGroqより厳しいため必須）。
+  if (USE_GEMINI && res.status === 429) {
+    const body = await res.text().catch(() => '')
+    const wait = parseRetryAfterSec(body)
+    if (wait != null && wait <= RETRY_INLINE_MAX_SEC) {
+      await new Promise((r) => setTimeout(r, (wait + 1) * 1000))
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, messages, max_tokens: tokens }),
+      })
+    } else {
+      // 待ちが長い/不明＝RPD(日次)超過の可能性が高い。復活秒数を添えて人間ルーティングへ。
+      throw new GroqUnavailableError('rate_limited', wait ?? undefined)
+    }
+  }
+
   if (!res.ok) {
-    // 429(無料枠/レート超過) と blocked_api_access(Spend Limit到達) は「AI一時停止」として扱う
+    // AI一時停止として扱うもの:
+    //   429            … レート/クォータ超過（Groq・Gemini共通）
+    //   403            … Geminiでキー無効化・API未有効化等。復旧に人手が要るが、
+    //                    500で落とすより人間ルーティングに逃がす方が質問が失われない
+    //   blocked_api_access … Groq固有（Spend Limit到達）
     let code = `http_${res.status}`
+    let retryAfter: number | undefined
     try {
-      const err = await res.json()
-      const m = String(err?.error?.code ?? err?.error?.type ?? '')
+      const raw = await res.text()
+      const err = JSON.parse(raw)
+      const e = Array.isArray(err) ? err[0]?.error : err?.error
+      const m = String(e?.code ?? e?.type ?? e?.status ?? '')
       if (m === 'blocked_api_access' || m.includes('blocked')) code = 'blocked_api_access'
+      retryAfter = parseRetryAfterSec(raw) ?? undefined
     } catch {
       /* ボディが読めなくてもステータスで判定する */
     }
-    if (res.status === 429 || code === 'blocked_api_access') {
-      throw new GroqUnavailableError(res.status === 429 ? 'rate_limited' : 'blocked_api_access')
+    if (res.status === 429 || res.status === 403 || code === 'blocked_api_access') {
+      throw new GroqUnavailableError(
+        res.status === 429 ? 'rate_limited' : code === 'blocked_api_access' ? 'blocked_api_access' : 'forbidden',
+        retryAfter
+      )
     }
-    throw new Error(`Groq API error: ${res.status}`)
+    throw new Error(`AI API error: ${res.status}`)
   }
   const json = await res.json()
   return {

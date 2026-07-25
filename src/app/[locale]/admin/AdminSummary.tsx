@@ -4,7 +4,11 @@
 import { TENANT_NAME_MAP, getPublicSubdomain } from '@/lib/tenantNames'
 import AiBudgetEditor from './AiBudgetEditor'
 
-// Groqの利用上限（Spend Limit）設定ページ。有料化後にここで請求の物理的な蓋をかける。
+// 層③の設定先（2026-07-22 Gemini移行）。
+// 重要: GCPの「予算アラート」は通知するだけで課金を止めない。実際に止められるのは
+// Generative Language API の割り当て(Quota)で1日のリクエスト数に上限を設けること。
+const GCP_QUOTA_URL = 'https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas'
+// 翻訳は引き続きGroqを使うため、Groq側のSpend Limitも残しておく。
 const GROQ_LIMITS_URL = 'https://console.groq.com/settings/billing/limits'
 
 export type DashboardStats = {
@@ -47,7 +51,7 @@ export type DashboardStats = {
 
 const TENANT_TARGET = 100 // 目標テナント数
 // 人間ルーティング率は「低いほど健全」（AIが大半を解決するのが理想）。
-// 逆に高すぎる＝Groq障害やバグで質問が全部人間へ落ちている兆候なので、
+// 逆に高すぎる＝AI障害やバグで質問が全部人間へ落ちている兆候なので、
 // この閾値を超えたときだけ異常としてハイライトする（低い側は正常なので出さない）。
 const ROUTING_SUSPICIOUS_HIGH = 80
 
@@ -117,7 +121,7 @@ export default function AdminSummary({
             <div className="p-4 border border-gray-100 rounded-lg">
               <p className="text-2xl font-bold text-gray-800 leading-none">{stats.ai_today.calls}<span className="text-base text-gray-400"> 件</span></p>
               <p className="text-xs text-gray-500 mt-1.5">本日のAI質問数（推定 {`$${stats.ai_today.cost_usd.toFixed(3)}`}）</p>
-              <p className="text-[10px] text-gray-400 mt-1.5">無料プラン・制限なし（Groqの無料枠で自然に頭打ち）</p>
+              <p className="text-[10px] text-gray-400 mt-1.5">無料プラン・制限なし（Geminiの無料枠で自然に頭打ち）</p>
             </div>
           )}
         </div>
@@ -130,14 +134,20 @@ export default function AdminSummary({
           {/* 層②: ダッシュボードから変更できる自主上限 */}
           <AiBudgetEditor initialCap={stats.ai_today.cap} initialEnabled={stats.ai_today.cap_enabled} />
 
-          {/* 三層の説明＋Groqリンク（層③） */}
+          {/* 三層の説明＋層③の設定リンク */}
           <div className="border-t border-gray-100 pt-4 space-y-2 text-xs text-gray-500">
             <p className="font-medium text-gray-600">3つの蓋（①②は挙動制御・③だけが請求を物理的に止める）</p>
             <p>① アプリのレート制限：1人1日3件/テナント・10件/全体（荒らし対策・常時有効）</p>
-            <p>② アプリの自主上限：上の設定。<b>無料の今はオフ＝制限なし</b>（Groq無料枠で自然に頭打ち）。有料化したらオンにして上限を設定。</p>
+            <p>② アプリの自主上限：上の設定。<b>無料の今はオフ＝制限なし</b>（Geminiの無料枠 RPM15 で自然に頭打ち）。有料化したらオンにして上限を設定。</p>
             <p>
-              ③ Groq Spend Limit：<b>請求を物理的に止める唯一の蓋</b>。有料化時にGroq側で設定する（¥1,000スタート推奨）。
-              <a href={GROQ_LIMITS_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">Groqコンソールで設定 ↗</a>
+              ③ Google Cloud の割り当て(Quota)：<b>請求を物理的に止める蓋</b>。有料化時に Generative Language API の
+              「1日あたりリクエスト数」に上限を入れる。
+              <b className="text-amber-700">※GCPの「予算アラート」は通知するだけで課金は止まらない</b>ので、必ず割り当て側で設定すること。
+              <a href={GCP_QUOTA_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">GCPの割り当て設定 ↗</a>
+            </p>
+            <p className="text-gray-400">
+              （翻訳は引き続きGroqを使用。Groq側を有料化する場合はSpend Limitも設定する
+              <a href={GROQ_LIMITS_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">Groqコンソール ↗</a>）
             </p>
           </div>
         </div>
@@ -248,7 +258,7 @@ export default function AdminSummary({
           <Stat label="アフィリエイト" value="—" sub="承認後に接続" />
           <Stat label="合計（¥）" value={stats.revenue.total_jpy > 0 ? `¥${stats.revenue.total_jpy.toLocaleString()}` : '—'} sub="daily_revenue" />
         </div>
-        <p className="text-[10px] text-gray-400 mt-2">※ 収益データの箱（daily_revenue表）は用意済み。AdSense/Stripe承認後にAPI連携して数字を入れる。黒字額（収益−Groqコスト）もその時に表示。</p>
+        <p className="text-[10px] text-gray-400 mt-2">※ 収益データの箱（daily_revenue表）は用意済み。AdSense/Stripe承認後にAPI連携して数字を入れる。黒字額（収益−AIコスト）もその時に表示。</p>
       </section>
     </div>
   )

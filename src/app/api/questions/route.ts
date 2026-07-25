@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
   // 予算RPCが返す reset_at（翌JST0時）は上限オン/オフに関わらず常に返る。
   // 無料モードでGroq自身が429で止まった時も、この時刻をモーダルの「次に使える時刻」に流用する。
   let budgetResetAt: string | null = null
+  // AI側(Gemini)が返す復活までの秒数。RPM超過なら数十秒、RPD超過なら長時間。
+  let aiRetryAfterSec: number | null = null
   try {
     const { data: budget } = await admin.rpc('check_and_reserve_ai_budget', { p_tenant_id: tenantId })
     const b = budget as { allowed?: boolean; enabled?: boolean; remaining?: number; cap?: number; reset_at?: string } | null
@@ -135,7 +137,10 @@ export async function POST(request: NextRequest) {
       console.error('Scope check error:', e)
       // Groqが一時停止(429/blocked)ならAI不可として人間ルーティングへ（reset時刻は不明=曖昧UX）。
       // それ以外のエラーはaiResult=nullのまま後段askWithScoreで再試行する。
-      if (isGroqUnavailable(e)) aiUnavailable = true
+      if (isGroqUnavailable(e)) {
+        aiUnavailable = true
+        aiRetryAfterSec = (e as { retryAfterSec?: number }).retryAfterSec ?? aiRetryAfterSec
+      }
     }
   }
 
@@ -279,7 +284,10 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('Groq error:', e)
       // Groqが一時停止(429/blocked)ならAI不可扱い。いずれにせよ下の孤立防止で人間へ回す。
-      if (isGroqUnavailable(e)) aiUnavailable = true
+      if (isGroqUnavailable(e)) {
+        aiUnavailable = true
+        aiRetryAfterSec = (e as { retryAfterSec?: number }).retryAfterSec ?? aiRetryAfterSec
+      }
     }
   }
 
@@ -300,10 +308,13 @@ export async function POST(request: NextRequest) {
   const { title_i18n, body_i18n } = await translationPromise
   await admin.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
 
-  // AIが使えなかった場合は、理由（自主上限/Groqの無料枠429）に関わらず必ず具体的な
+  // AIが使えなかった場合は、理由（自主上限/レート超過）に関わらず必ず具体的な
   // 復活時刻をモーダルへ渡す。ユーザーには無料/有料の区別は見せない（同じ体験にする）。
+  // AI側が復活秒数を返していればそれを優先する（GeminiのRPD超過等。翌0時より正確）。
   if (aiUnavailable && !aiResetAt) {
-    aiResetAt = budgetResetAt ?? nextJstMidnightIso()
+    aiResetAt = aiRetryAfterSec != null
+      ? new Date(Date.now() + aiRetryAfterSec * 1000).toISOString()
+      : (budgetResetAt ?? nextJstMidnightIso())
   }
 
   return NextResponse.json({ slug: question.slug, result: resultType, aiCapped: aiUnavailable, aiResetAt })
