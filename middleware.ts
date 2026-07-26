@@ -32,8 +32,25 @@ const PUBLIC_ALIAS_BY_INTERNAL: Record<string, string> = Object.fromEntries(
 const ROOT_TENANT_ID = 'root'
 const ROOT_HOSTS = ['wisdomassemble.com', 'www.wisdomassemble.com']
 
+// ブラウザが実体の有無に関わらず自動で取りに来るアイコンのプローブパス。
+// 実体が無いためNextのカスタム404ページ(46KB)をフルレンダリングしており、
+// 1リクエストでCPUを大きく使う＝無料プランの上限(10ms/リクエスト)を超えて
+// 1102(HTTP 503)になる主要因になっていた（2026-07-27に実測で確認）。
+// テナント別アイコンはHTMLの<link rel="icon" href="/icon">で配っているので、
+// ここは中身なし(204)を即返す。レンダリングもテナント解決も走らせない。
+const ICON_PROBE_PATHS = ['/favicon.ico', '/apple-touch-icon']
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  if (ICON_PROBE_PATHS.some((p) => pathname === p || pathname.startsWith(p))) {
+    return new NextResponse(null, {
+      status: 204,
+      // 1日キャッシュさせて、そもそも取りに来る回数自体を減らす
+      headers: { 'cache-control': 'public, max-age=86400' },
+    })
+  }
+
   const isUnlocalized = UNLOCALIZED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 
   // --- テナント解決 ---
@@ -134,6 +151,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // favicon.ico と .png を除外から外している理由：この2つはアイコンのプローブ
+    // (/favicon.ico・/apple-touch-icon*.png)で使われ、実体が無いためNextの
+    // カスタム404ページ(46KB)をフルレンダリングしてCPUを大きく食っていた。
+    // ICON_PROBE_PATHS で204を即返すため、middlewareに届かせる必要がある。
+    // public/ に .png は無い（.svgのみ）ので静的アセットへの影響はない。
+    '/((?!_next/static|_next/image|.*\\.(?:svg|jpg|jpeg|gif|webp)$).*)',
   ],
 }
