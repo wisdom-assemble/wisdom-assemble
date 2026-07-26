@@ -225,6 +225,7 @@
     "displayNameRejected": "显示名称不能包含电子邮件地址或URL",
     "languageLabel": "显示语言",
     "languageHint": "此设置将改变整个网站的显示语言。选择后立即生效，无需点击保存按钮。",
+    "languageMismatchNote": "您保存的语言与当前页面显示的语言不同。在下方重新选择，即可让全站显示和通知邮件的语言保持一致。",
     "noTasks": "目前没有分配给你的问题",
     "assignedToYou": "指派给你",
     "remainingHours": "剩余{hours}小时",

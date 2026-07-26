@@ -225,6 +225,7 @@
     "displayNameRejected": "表示名にメールアドレスやURLは使用できません",
     "languageLabel": "表示言語",
     "languageHint": "この設定はサイト全体の表示言語に反映されます。選択するとすぐに反映され、保存ボタンを押す必要はありません。",
+    "languageMismatchNote": "保存された言語と、いま表示しているページの言語が違います。下から選び直すと、サイト全体の表示とお知らせメールの言語がそろいます。",
     "noTasks": "現在、依頼されている質問はありません",
     "assignedToYou": "あなたに依頼",
     "remainingHours": "残り {hours}時間",

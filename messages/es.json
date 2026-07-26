@@ -225,6 +225,7 @@
     "displayNameRejected": "El nombre visible no puede contener una dirección de correo o URL",
     "languageLabel": "Idioma de visualización",
     "languageHint": "Esto cambia el idioma de visualización en todo el sitio. Se aplica de inmediato al seleccionarlo — no es necesario pulsar Guardar.",
+    "languageMismatchNote": "El idioma guardado es distinto del idioma en que se muestra esta página. Vuelve a elegirlo abajo para que coincidan la visualización del sitio y los correos de notificación.",
     "noTasks": "Actualmente no tienes preguntas asignadas",
     "assignedToYou": "Asignada a ti",
     "remainingHours": "{hours}h restantes",

@@ -225,6 +225,7 @@
     "displayNameRejected": "Tên hiển thị không được chứa địa chỉ email hoặc URL",
     "languageLabel": "Ngôn ngữ hiển thị",
     "languageHint": "Thay đổi này áp dụng cho ngôn ngữ hiển thị trên toàn bộ trang web. Áp dụng ngay khi chọn — không cần nhấn nút Lưu.",
+    "languageMismatchNote": "Ngôn ngữ đã lưu khác với ngôn ngữ đang hiển thị trên trang này. Hãy chọn lại bên dưới để đồng bộ ngôn ngữ hiển thị của toàn bộ trang web và email thông báo.",
     "noTasks": "Hiện không có câu hỏi nào được giao cho bạn",
     "assignedToYou": "Được giao cho bạn",
     "remainingHours": "Còn lại {hours} giờ",

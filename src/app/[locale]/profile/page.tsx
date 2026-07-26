@@ -133,19 +133,12 @@ export default function ProfilePage() {
         setActiveTitle(tenantProfile.active_title_id ?? null)
       }
       if (profile?.language) setLanguage(profile.language)
-      // ログイン後にブラウザ言語/デフォルトで別ロケール(/en等)へ着地した場合、
-      // 保存済みの表示言語(profiles.language)でこのページを開き直し、本文とセレクタの
-      // 言語不一致を解消する。loading解除前に遷移するので英語表示のちらつきは出ない。
-      // 言語スイッチャー(下部)と同じ実績あるフルリロード遷移。無限ループ防止に
-      // 「有効なロケール かつ 現在のURLロケールと異なる」ときだけ実行する。
-      if (
-        profile?.language &&
-        profile.language !== locale &&
-        LANGUAGE_OPTIONS.some(o => o.code === profile.language)
-      ) {
-        window.location.href = `/${profile.language}/profile`
-        return
-      }
+      // 【2026-07-27】以前はここで保存済みの表示言語(profiles.language)へフルリロード
+      // していたが、副作用が大きいため廃止した。next-intlは訪れたロケールを
+      // NEXT_LOCALEクッキーへ書くので、英語で閲覧中にマイページを開くと/jaへ飛ばされ、
+      // 以後サイト全体（/への着地も）が日本語に戻ってしまっていた＝保存値がURLを
+      // 上書きしてしまう挙動だった。現在はURL側のロケールを尊重し、保存値と違うときは
+      // 下部の言語欄で理由を説明するだけにしている（勝手に遷移させない・DBも書き換えない）。
       if (userTitles && userTitles.length > 0) {
         const titleIds = userTitles.map((ut: any) => ut.title_id)
         const { data: titleData } = await supabase
@@ -451,6 +444,11 @@ export default function ProfilePage() {
             <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
               <p className="text-sm font-medium text-gray-700 mb-0.5">{t('languageLabel')}</p>
               <p className="text-xs text-gray-400 mb-3">{t('languageHint')}</p>
+              {/* 保存値とURLのロケールが違うとき（例: 英語で閲覧中だが保存値が日本語）に
+                  理由を説明する。以前はここで強制遷移していたが副作用があったため文言に変更 */}
+              {language !== locale && (
+                <p className="text-xs text-amber-600 mb-3">{t('languageMismatchNote')}</p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {LANGUAGE_OPTIONS.map(opt => (
                   <button

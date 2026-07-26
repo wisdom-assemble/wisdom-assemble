@@ -225,6 +225,7 @@
     "displayNameRejected": "Nama tampilan tidak boleh berisi alamat email atau URL",
     "languageLabel": "Bahasa tampilan",
     "languageHint": "Ini mengubah bahasa tampilan di seluruh situs. Diterapkan langsung saat dipilih — tidak perlu menekan tombol Simpan.",
+    "languageMismatchNote": "Bahasa yang tersimpan berbeda dengan bahasa yang ditampilkan di halaman ini. Pilih ulang di bawah agar tampilan situs dan email notifikasi memakai bahasa yang sama.",
     "noTasks": "Saat ini tidak ada pertanyaan yang ditugaskan padamu",
     "assignedToYou": "Ditugaskan untukmu",
     "remainingHours": "Sisa {hours} jam",
