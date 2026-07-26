@@ -22,9 +22,32 @@
  *
  * 使用モデル・料金・補正ルールはすべて本番 gemini.ts 側の設定に従う
  * （GEMINI_API_KEY があればGemini、無ければGroqへフォールバック）。
+ * APIキーは .env.local から自動で読み込む（下の loadEnvLocal 参照）。
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { askWithScoreInScopeCfg, type GenreConfig } from '../src/lib/gemini'
+
+// ⚠️ .env.local の読み込みは gemini.ts の import より前に行う必要がある。
+// Next.jsは.env.localを自動で読むが、npx tsxで直接動かすスクリプトは読まない。
+// さらに gemini.ts はモジュール読み込み時に process.env を参照して USE_GEMINI を決めるため、
+// 静的importだと（importは巻き上げられて先に実行されるので）キーが未設定のまま評価され、
+// Gemini→Groqへフォールバック→そちらも未設定で `Bearer undefined` → 全問401になる。
+// そのため env を注入してから動的importする。
+function loadEnvLocal() {
+  const path = new URL('../.env.local', import.meta.url)
+  if (!existsSync(path)) return
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/)
+    if (!m) continue // 空行・コメント行は無視
+    const key = m[1]
+    // インラインで `GEMINI_API_KEY=... npx tsx ...` と渡された場合はそちらを優先する
+    if (process.env[key] !== undefined) continue
+    process.env[key] = m[2].trim().replace(/^["']|["']$/g, '')
+  }
+}
+loadEnvLocal()
+
+const { askWithScoreInScopeCfg } = await import('../src/lib/gemini')
+type GenreConfig = Parameters<typeof askWithScoreInScopeCfg>[0]
 
 const CONFIG_PATH = process.argv[2]
 if (!CONFIG_PATH) {
