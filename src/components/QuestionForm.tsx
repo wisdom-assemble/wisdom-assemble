@@ -24,7 +24,7 @@ function Overlay({ phase, aiLabel, matchingLabel }: { phase: OverlayPhase; aiLab
 type SimilarQuestion = { id: string; title: string; slug: string; status: string }
 
 // AI利用上限モーダル。resetAtがあれば「あとHH:MM:SS」をライブ表示（時刻計算のみ＝AIコストゼロ）。
-// resetAtが無い(Groq自身の429/ブロック等)場合は曖昧文言にフォールバック。
+// resetAtが無い場合のみ曖昧文言にフォールバック（現在はAPI側の復活秒数か翌JST0時を必ず渡すのでほぼ発生しない）。
 function AiCapModal({
   resetAt,
   onClose,
