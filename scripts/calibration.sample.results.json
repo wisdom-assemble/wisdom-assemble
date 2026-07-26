@@ -32,5 +32,115 @@
         "answer": "個人向けのハイエンドオーディオインターフェースには、RME UFX+、Antelope Audio Orion、Universal Audio Apollo x6などがあります。これらの機種は高い音質と豊富なコネクタを備えており、プロフェッショナルな音楽制作やレコーディングに適しています。"
       }
     ]
+  },
+  {
+    "label": "DTM・音楽制作",
+    "threshold": 91,
+    "results": [
+      {
+        "id": "M13-DAW初心者",
+        "text": "初心者にも分かりやすい、一番使いやすいDAWソフトってなんですか？",
+        "error": "AI API error: 401"
+      },
+      {
+        "id": "M19-M4Lデバッグ",
+        "text": "Max for Liveで、条件を満たしているはずなのに、自動発火しない時があります。もっと楽にデバッグ出来る方法はないですか？",
+        "error": "AI API error: 401"
+      },
+      {
+        "id": "M01-最強IF",
+        "text": "個人向けで、最強のオーディオインターフェースって、ハイエンドだとどういった機種を選ぶといいですか？",
+        "error": "AI API error: 401"
+      }
+    ]
+  },
+  {
+    "label": "DTM・音楽制作",
+    "model": "gemini-3.5-flash-lite",
+    "threshold": 91,
+    "results": [
+      {
+        "id": "M13-DAW初心者",
+        "text": "初心者にも分かりやすい、一番使いやすいDAWソフトってなんですか？",
+        "score": 95,
+        "inScope": true,
+        "correct": true,
+        "answer": "初心者にとって最も使いやすいDAWソフトの一つは「GarageBand」（Mac/iOS標準搭載で無料）またはその上位版である「Logic Pro」です。また、Windows・Mac両対応でポップスやEDM制作に向く「Ableton Live」や「Cubase」も人気があります。まずは無料の体験版やスマホアプリから試すのがおすすめです。",
+        "model": "gemini-3.5-flash-lite"
+      },
+      {
+        "id": "M19-M4Lデバッグ",
+        "text": "Max for Liveで、条件を満たしているはずなのに、自動発火しない時があります。もっと楽にデバッグ出来る方法はないですか？",
+        "score": 90,
+        "inScope": true,
+        "correct": false,
+        "answer": "Max for Liveのデバッグには、パッチャーウィンドウ右上の虫眼鏡アイコン（Enable Max Debugging）をオンにし、各オブジェクトのインスペクターで「Print to Max Console」にチェックを入れるのが最も手軽です。また、`print` オブジェクトを主要なルートに配置してMax Console（[Ctrl+M] または [Cmd+M]）でデータの流れや値を確認すること、`live.path` や `live.object` の結果を `print` で監視することで条件分岐のどこで止まっているかが一目でわかります。",
+        "model": "gemini-3.5-flash-lite"
+      },
+      {
+        "id": "M01-最強IF",
+        "text": "個人向けで、最強のオーディオインターフェースって、ハイエンドだとどういった機種を選ぶといいですか？",
+        "score": 90,
+        "inScope": true,
+        "correct": true,
+        "answer": "個人のハイエンド制作環境における最強のオーディオインターフェースとしては、音質、レイテンシー、信頼性の面で以下の機種が定番かつ最高峰とされています。1. **RME / Fireface UFX III または UCX II**: 抜群のドライバ安定性とTotalMix FXによる圧倒的なルーティング柔軟性を誇ります。2. **Apogee / Symphony Desktop**: プロスタジオのサウンドを手軽に導入でき、高品位なマイクプリとDSPを搭載しています。3. **Universal Audio / Apollo Twin X または x4**: 実機をエミュレートしたDSPプラグイン（UAD）をリアルタイムで使用しながらトラックメイキングが可能です。用途（AD/DAの音質重視、DSPの活用、あるいはドライバの安定性と入出力数）に合わせて選ぶのが最適です。",
+        "model": "gemini-3.5-flash-lite"
+      }
+    ]
+  },
+  {
+    "label": "DTM・音楽制作",
+    "threshold": 91,
+    "results": [
+      {
+        "id": "M13-DAW初心者",
+        "text": "初心者にも分かりやすい、一番使いやすいDAWソフトってなんですか？",
+        "error": "AI API error: 400"
+      },
+      {
+        "id": "M19-M4Lデバッグ",
+        "text": "Max for Liveで、条件を満たしているはずなのに、自動発火しない時があります。もっと楽にデバッグ出来る方法はないですか？",
+        "error": "AI API error: 400"
+      },
+      {
+        "id": "M01-最強IF",
+        "text": "個人向けで、最強のオーディオインターフェースって、ハイエンドだとどういった機種を選ぶといいですか？",
+        "error": "AI API error: 400"
+      }
+    ]
+  },
+  {
+    "label": "DTM・音楽制作",
+    "model": "gemini-3.5-flash-lite",
+    "threshold": 91,
+    "results": [
+      {
+        "id": "M13-DAW初心者",
+        "text": "初心者にも分かりやすい、一番使いやすいDAWソフトってなんですか？",
+        "score": 90,
+        "inScope": true,
+        "correct": true,
+        "answer": "初心者にとって最も使いやすいとされるDAWソフトの代表例は「GarageBand」（Mac/iOS標準搭載で無料、直感的な操作が可能）と「Ableton Live」（ループ素材を使った曲作りに最適で、体験版から始められる）です。また、Windows・Mac両対応でポップスやバンド録音をしたい方には「Studio One」も直感的で人気があります。まずはご自身のOSや作りたい音楽ジャンルに合わせて選ぶのがおすすめです。",
+        "model": "gemini-3.5-flash-lite"
+      },
+      {
+        "id": "M19-M4Lデバッグ",
+        "text": "Max for Liveで、条件を満たしているはずなのに、自動発火しない時があります。もっと楽にデバッグ出来る方法はないですか？",
+        "score": 85,
+        "inScope": true,
+        "correct": false,
+        "answer": "Max for Liveのデバッグには、コンソール出力を行う「print」オブジェクトや、データの流れを視覚的に確認できる「live.step」「scope」などのUIオブジェクトをパッチ内に配置するのが効果的です。また、Maxウィンドウ（Command + M / Ctrl + M）を開き、エラーログや「print」の出力をリアルタイムで確認することで、どのタイミングで処理が止まっているかを容易に特定できます。",
+        "model": "gemini-3.5-flash-lite"
+      },
+      {
+        "id": "M01-最強IF",
+        "text": "個人向けで、最強のオーディオインターフェースって、ハイエンドだとどういった機種を選ぶといいですか？",
+        "score": 90,
+        "inScope": true,
+        "correct": true,
+        "answer": "個人向けハイエンドのオーディオインターフェースとしては、圧倒的な音質と安定性を誇るApogee Symphony Desktop、DSPパワーと名機プリアンプのエミュレーションが使えるUniversal Audio Apollo Twin/Xシリーズ、圧倒的な入出力数と低レイテンシーを誇るRME Fireface UCX IIなどが定番かつ最強の選択肢として挙げられます。音質重視ならApogee、プラグイン駆動ならUAFX、ドライバの安定性と拡張性ならRMEが最適です。",
+        "model": "gemini-3.5-flash-lite"
+      }
+    ]
   }
 ]
