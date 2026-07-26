@@ -142,5 +142,39 @@
         "model": "gemini-3.5-flash-lite"
       }
     ]
+  },
+  {
+    "label": "DTM・音楽制作",
+    "model": "gemini-3.5-flash-lite",
+    "threshold": 91,
+    "results": [
+      {
+        "id": "M13-DAW初心者",
+        "text": "初心者にも分かりやすい、一番使いやすいDAWソフトってなんですか？",
+        "score": 90,
+        "inScope": true,
+        "correct": true,
+        "answer": "初心者にとって一番使いやすいDAWは、目的に合わせて選ぶのがベストですが、特に人気が高いのは「Image-Line FL Studio」と「Apple GarageBand（無料）」です。FL Studioは直感的なパターンベースの打ち込みができるためEDMやヒップホップ制作に最適で、生涯無料アップデートの特典もあります。Macユーザーであれば、無料で高機能な「GarageBand」から始めて、同じ操作感のプロ向け「Logic Pro」へステップアップするのが最もスムーズです。",
+        "model": "gemini-3.5-flash-lite"
+      },
+      {
+        "id": "M19-M4Lデバッグ",
+        "text": "Max for Liveで、条件を満たしているはずなのに、自動発火しない時があります。もっと楽にデバッグ出来る方法はないですか？",
+        "score": 85,
+        "inScope": true,
+        "correct": false,
+        "answer": "Max for Liveのデバッグには、コンソール出力を行う「print」オブジェクトや、データの流れを視覚的に確認できる「live.step」や「zl.reg」、パッチ内の信号を監視する「probe」機能が有効です。また、Maxウィンドウ（Cmd+M / Ctrl+M）を開いてエラーログやプリント結果を確認し、特定のイベントが発火しているかをリアルタイムで追跡するのが最も手軽で確実な方法です。",
+        "model": "gemini-3.5-flash-lite"
+      },
+      {
+        "id": "M01-最強IF",
+        "text": "個人向けで、最強のオーディオインターフェースって、ハイエンドだとどういった機種を選ぶといいですか？",
+        "score": 90,
+        "inScope": true,
+        "correct": true,
+        "answer": "個人向けハイエンドのオーディオインターフェースとしては、圧倒的な音質と安定性を誇る「RME (Babyface Pro FS / UFXシリーズ)」や、AD/DAコンバーターの最高峰とされる「Apogee (Symphony Desktop)」、DSPパワーとマイクプリのエミュレーションが強力な「Universal Audio (Apollo x4など)」が定番かつ最強クラスの選択肢となります。求めるワークフロー（機動性、DSPの有無、音のキャラクター）に合わせて選びます。",
+        "model": "gemini-3.5-flash-lite"
+      }
+    ]
   }
 ]
