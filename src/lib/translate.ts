@@ -14,11 +14,14 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
 const GEMINI_TRANSLATE_MODEL = 'gemini-3.5-flash-lite'
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY!
+const GROQ_API_KEY = process.env.GROQ_API_KEY
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_TRANSLATE_MODEL = 'llama-3.1-8b-instant'
 
 const USE_GEMINI = !!GEMINI_API_KEY
+// GroqキーはGemini障害時のフォールバックに必要。消すと保険が静かに死ぬので残すこと。
+// 未設定の場合はフォールバック経路自体を外す（Bearer undefined で401を撃たないため）。
+const HAS_GROQ = !!GROQ_API_KEY
 
 // 翻訳の料金（USD / 1Mトークン、2026-07-22に公式料金ページで確認）:
 //   Gemini 3.5 Flash-Lite : 入力$0.30 / 出力$2.50
@@ -58,9 +61,12 @@ const LOCALE_NAMES: Record<string, string> = {
 // 固定4096を指定すると1回で枠の7割を食い、2問目以降が必ず429になる（実測で判明）。
 // 実測値: 113文字の質問を7言語へ訳して completion 524 → 1文字×1言語あたり約0.66トークン。
 // それに安全率1.8を掛け、下限800・上限4096でクランプする。
-// 翻訳の再試行に使える合計時間（ミリ秒）。
+// 翻訳の再試行に使える時間（ミリ秒）。
+// ※これは「1回の翻訳呼び出しあたり」の予算。質問翻訳とAI回答翻訳は別々に予算を持つが、
+//   両者は並行して走る（route.tsが185行でPromiseを開始し312行で待つ）ため、
+//   リクエスト全体の実効的な最悪値は合計36秒ではなく20秒程度になる。
 // 翻訳は質問投稿APIのレスポンス前にawaitされる＝この時間ぶんユーザーが待つ。
-// プロバイダ2つ×再試行を無制限に許すと最悪50秒超になるため、全体を予算で縛る。
+// プロバイダ2つ×再試行を無制限に許すと最悪50秒超になるため予算で縛る。
 // 予算切れの場合は翻訳を諦める（質問の投稿自体は成功し、多言語ページが後回しになるだけ）。
 const TRANSLATE_BUDGET_MS = 18_000
 
@@ -112,7 +118,9 @@ async function callGroqJson(
   maxTokens = 4096,
   deadline = Date.now() + TRANSLATE_BUDGET_MS
 ): Promise<string> {
-  const order: Array<'gemini' | 'groq'> = USE_GEMINI ? ['gemini', 'groq'] : ['groq']
+  const order: Array<'gemini' | 'groq'> = USE_GEMINI
+    ? (HAS_GROQ ? ['gemini', 'groq'] : ['gemini'])
+    : ['groq']
   let lastErr = ''
 
   for (const provider of order) {
