@@ -5,6 +5,15 @@ import { getTenantDisplayName, LOGO_STYLE_OVERRIDES } from '@/lib/tenantNames'
 import { getLogoShadowShades } from '@/lib/logoColor'
 
 export const size = { width: 32, height: 32 }
+
+// 【2026-07-27追加】ファビコンの中身はテナントごとに固定なのに、実測で
+// `cache-control: public, max-age=0, must-revalidate` が返っており、タブを開くたびに
+// Satoriでの画像生成＋Google Fontsの取得をやり直していた（純粋な無駄＝CPUを食う）。
+// ブラウザ1日／エッジ30日でキャッシュし、stale-while-revalidateで色や名前の変更も
+// 裏側で自然に反映させる（即時に反映したい場合はCloudflareでキャッシュをパージする）。
+const IMAGE_CACHE_HEADERS = {
+  'cache-control': 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800',
+}
 export const contentType = 'image/png'
 
 // next/og(Satori)はシステムフォントを使えない（実フォントデータが要る）ため、
@@ -20,7 +29,11 @@ async function loadGoogleFont(family: string, weight: number, text: string) {
 // LOGO_STYLE_OVERRIDES.fontFamily（システムフォント名）を、埋め込み可能な近いGoogle Fontへ対応付ける。
 // ファビコンは小さいので完全一致でなく「雰囲気」で似せる（Century Gothic→Jost=Futura系 等）。
 function faviconFont(fontFamily: string): { family: string; weight: number } {
-  const f = fontFamily.toLowerCase()
+  // 【2026-07-27修正】fontFamilyはCSSのフォントスタックなので末尾に総称名が付く
+  // （例: "'Century Gothic', Futura, 'Segoe UI', sans-serif"）。下のセリフ判定の
+  // includes('serif')が"sans-serif"の部分文字列に誤反応し、幾何学サンセリフの
+  // MUSIC PRODUCTIONのファビコンが明朝系(Lora)で描かれていた。判定前に潰す。
+  const f = fontFamily.toLowerCase().replace(/sans[-\s]?serif/g, 'sans')
   // 手書き・スクリプト・カジュアル
   if (f.includes('brush') || f.includes('snell') || f.includes('bradley') || f.includes('marker felt') || f.includes('chalkboard') || f.includes('comic') || f.includes('script') || f.includes('cursive')) return { family: 'Caveat', weight: 700 }
   // 等幅
@@ -71,7 +84,7 @@ export default async function Icon() {
           <div style={{ fontSize: 26, fontWeight: 800, color: '#5B5B5B', fontFamily: 'Mincho Icon' }}>W</div>
         </div>
       ),
-      { ...size, fonts: [{ name: 'Mincho Icon', data: minchoFont, weight: 800, style: 'normal' }] }
+      { ...size, headers: IMAGE_CACHE_HEADERS, fonts: [{ name: 'Mincho Icon', data: minchoFont, weight: 800, style: 'normal' }] }
     )
   }
 
@@ -130,7 +143,7 @@ export default async function Icon() {
           <div style={letterStyle}>{letter}</div>
         </div>
       ),
-      { ...size, fonts: [{ name: 'FaviconFont', data: fontData, weight: font.weight as 400 | 700, style: 'normal' }] }
+      { ...size, headers: IMAGE_CACHE_HEADERS, fonts: [{ name: 'FaviconFont', data: fontData, weight: font.weight as 400 | 700, style: 'normal' }] }
     )
   }
 
@@ -171,6 +184,6 @@ export default async function Icon() {
         </div>
       </div>
     ),
-    { ...size, fonts: [{ name: 'ImpactFont', data: impactFont, weight: 400, style: 'normal' }] }
+    { ...size, headers: IMAGE_CACHE_HEADERS, fonts: [{ name: 'ImpactFont', data: impactFont, weight: 400, style: 'normal' }] }
   )
 }

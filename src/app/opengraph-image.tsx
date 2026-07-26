@@ -5,6 +5,13 @@ import { TENANT_NAME_MAP } from '@/lib/tenantNames'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
+// 【2026-07-27追加】OGP画像もテナントごとに内容が固定なのに毎リクエストで生成し直して
+// いた（46KB・Satori）。SNSやクローラーが取りに来るたびCPUを使うため、icon.tsxと同じ
+// キャッシュ方針にする（ブラウザ1日／エッジ30日／stale-while-revalidateで変更を反映）。
+const IMAGE_CACHE_HEADERS = {
+  'cache-control': 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800',
+}
+
 // テナント別のロゴ色（サイトのcolor_themeに準拠）。未定義テナントは既定色。
 const OG_COLORS: Record<string, string> = {
   debug: '#10B981',
@@ -91,6 +98,6 @@ export default async function OgImage() {
         </div>
       </div>
     ),
-    { ...size }
+    { ...size, headers: IMAGE_CACHE_HEADERS }
   )
 }
