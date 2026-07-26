@@ -190,6 +190,7 @@ export default function AdminSummary({
                 <Th>高難度</Th>
                 <Th>7日</Th>
                 <Th>30日</Th>
+                <Th>勢い</Th>
                 <Th>閲覧</Th>
                 <Th>AI/人</Th>
                 <Th>回答者</Th>
@@ -199,7 +200,7 @@ export default function AdminSummary({
             </thead>
             <tbody>
               {stats.per_tenant.length === 0 && (
-                <tr><td colSpan={11} className="text-center text-gray-400 py-8">データなし</td></tr>
+                <tr><td colSpan={14} className="text-center text-gray-400 py-8">データなし</td></tr>
               )}
               {stats.per_tenant.map((r) => (
                 <tr key={r.tenant_id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
@@ -222,6 +223,7 @@ export default function AdminSummary({
                   <Td>{r.hard}</Td>
                   <Td>{r.q_7d}</Td>
                   <Td>{r.q_30d}</Td>
+                  <MomentumTd q7={r.q_7d} q30={r.q_30d} />
                   <Td>{r.views.toLocaleString()}</Td>
                   <Td>{r.ai_answers}/{r.human_answers}</Td>
                   <Td>{r.answerers}</Td>
@@ -271,6 +273,29 @@ function RoutingTd({ routed, total }: { routed: number; total: number }) {
   return (
     <td className={`px-2 py-2.5 text-right tabular-nums whitespace-nowrap ${abnormal ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
       {total ? `${rate}%` : '—'}{abnormal ? ' ⚠️' : ''}
+    </td>
+  )
+}
+
+// テナントの「勢い」＝直近7日の質問数を、その前3週間の週平均と比べる。
+// 月1の棚卸しで「伸びている / 停滞 / 休眠」を一目で判断するための列。
+// q_7d・q_30d は既存の集計値なのでSQL変更なしで出せる（新テーブルも不要）。
+// テナント追加を続けると、どこを伸ばしどこを畳むかの判断材料が必要になるため用意した。
+function MomentumTd({ q7, q30 }: { q7: number; q30: number }) {
+  if (q30 === 0) {
+    // 30日間まったく質問が増えていない＝休眠。放置か統合かを検討する対象。
+    return <td className="px-2 py-2.5 text-right whitespace-nowrap text-gray-400">💤 休眠</td>
+  }
+  const prevWeeklyAvg = (q30 - q7) / 3 // 直近7日を除いた3週間の週平均
+  if (prevWeeklyAvg === 0) {
+    return <td className="px-2 py-2.5 text-right whitespace-nowrap text-green-600 font-semibold">📈 新規</td>
+  }
+  const ratio = q7 / prevWeeklyAvg
+  const label = ratio >= 1.2 ? '📈 伸び' : ratio <= 0.5 ? '📉 減速' : '→ 横ばい'
+  const color = ratio >= 1.2 ? 'text-green-600 font-semibold' : ratio <= 0.5 ? 'text-amber-600' : 'text-gray-500'
+  return (
+    <td className={`px-2 py-2.5 text-right whitespace-nowrap ${color}`} title={`直近7日 ${q7}問 / 前3週の週平均 ${prevWeeklyAvg.toFixed(1)}問`}>
+      {label}
     </td>
   )
 }
