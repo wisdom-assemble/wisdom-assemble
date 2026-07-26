@@ -105,7 +105,7 @@
     "step1Description": "Đăng vấn đề bạn muốn giải quyết. AI sẽ kiểm tra trước xem có phù hợp với chủ đề của trang này không, nếu không sẽ không được chấp nhận. Bạn có thể đăng tối đa 3 câu hỏi mỗi ngày.",
     "step2Title": "AI cố gắng trả lời",
     "step2Description": "AI sẽ thử trả lời trước. Nếu tự tin, câu trả lời sẽ được hiển thị ngay; nếu không, sẽ chuyển sang bước tiếp theo.",
-    "step2Note": "AI đã được điều chỉnh để chống ảo giác, nhưng nội dung không được đảm bảo chính xác hoàn toàn. Vui lòng tự xác minh các quyết định quan trọng.",
+    "step2Note": "AI được tinh chỉnh để giảm ảo giác (hallucination), nhưng vui lòng tự kiểm chứng những thông tin quan trọng.",
     "step3Title": "Ghép nối với chuyên gia con người",
     "step3Description": "Chuyên gia có kỹ năng phù hợp với từ khóa câu hỏi của bạn sẽ được thông báo. Nếu câu trả lời của họ giải quyết được vấn đề, hãy chọn làm câu trả lời hay nhất. Nếu không, hoặc không có câu trả lời nào trong vòng 8 giờ, bạn có thể yêu cầu chuyên gia thứ hai (nâng cấp) hoặc công khai thành câu hỏi khó để mọi người cùng giúp giải quyết.",
     "step4Title": "Nâng cấp lên chuyên gia thứ hai",

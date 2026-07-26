@@ -20,19 +20,26 @@ export default async function HowItWorksPage({ params }: Props) {
         <p className="text-gray-500 text-sm mb-2">
           {t('intro2')}
         </p>
-        <p className="text-xs text-gray-400 mb-1">{t('loginNote')}</p>
-        <p className="text-xs text-gray-400 mb-1">{t('aiLimitNote')}</p>
-        <p className="text-xs text-gray-400 mb-1">{t('aiAccuracyNote')}</p>
-        <p className="text-xs text-gray-400 mb-10">{t('translationNote')}</p>
+        <p className="text-xs text-gray-400 mb-10">{t('loginNote')}</p>
 
         <div className="space-y-10">
           <Step number={1} title={t('step1Title')} description={t('step1Description')} icon="●" />
-          <Step number={2} title={t('step2Title')} description={t('step2Description')} note={t('step2Note')} icon="●" />
+          <Step
+            number={2}
+            title={t('step2Title')}
+            description={t('step2Description')}
+            /* AIの精度・上限に関する注記はここ（AIが回答する場面）に集約する */
+            notes={[t('step2Note'), t('aiAccuracyNote'), t('aiLimitNote')]}
+            icon="●"
+          />
           <Step number={3} title={t('step3Title')} description={t('step3Description')} icon="●" />
           <Step number={4} title={t('step4Title')} description={t('step4Description')} icon="●" />
           <Step number={5} title={t('step5Title')} description={t('step5Description')} icon="▲" />
           <Step number={6} title={t('step6Title')} description={t('step6Description')} icon="●" />
         </div>
+
+        {/* 多言語翻訳はサービス全体に関わる注記なのでステップ一覧の直後に置く */}
+        <p className="text-xs text-gray-400 mt-6 leading-relaxed">{t('translationNote')}</p>
 
         <div className="mt-12 p-6 bg-gray-50 rounded-xl">
           <h2 className="font-bold text-base mb-2">{t('expertHeading')}</h2>
@@ -81,12 +88,14 @@ function Step({
   description,
   icon,
   note,
+  notes,
 }: {
   number: number
   title: string
   description: string
   icon: string
   note?: string
+  notes?: string[]
 }) {
   return (
     <div className="flex gap-4">
@@ -99,6 +108,9 @@ function Step({
         {note && (
           <p className="text-xs text-gray-400 mt-2 leading-relaxed">{note}</p>
         )}
+        {notes?.filter(Boolean).map((n, i) => (
+          <p key={i} className="text-xs text-gray-400 mt-2 leading-relaxed">{n}</p>
+        ))}
       </div>
     </div>
   )

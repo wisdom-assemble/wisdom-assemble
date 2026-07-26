@@ -105,7 +105,7 @@
     "step1Description": "Kirim masalah yang ingin kamu selesaikan. AI akan memeriksa dulu apakah sesuai dengan topik situs ini, jika tidak sesuai maka tidak akan diterima. Kamu bisa mengajukan hingga 3 pertanyaan per hari.",
     "step2Title": "AI mencoba menjawab",
     "step2Description": "AI akan mencoba menjawab lebih dulu. Jika yakin, jawabannya langsung ditampilkan; jika tidak, akan lanjut ke tahap berikutnya.",
-    "step2Note": "AI telah disetel untuk mengurangi halusinasi, tetapi kontennya tidak dijamin akurat. Mohon verifikasi sendiri untuk keputusan penting.",
+    "step2Note": "AI disetel untuk mengurangi halusinasi, tetapi harap verifikasi sendiri hal-hal yang penting.",
     "step3Title": "Dicocokkan dengan ahli manusia",
     "step3Description": "Ahli yang keahliannya sesuai dengan kata kunci pertanyaanmu akan mendapat notifikasi. Jika jawabannya menyelesaikan masalah, pilih sebagai jawaban terbaik. Jika tidak, atau tidak ada jawaban dalam 8 jam, kamu bisa meminta ahli kedua (eskalasi) atau mempublikasikannya sebagai pertanyaan sulit untuk dibantu semua orang.",
     "step4Title": "Eskalasi ke ahli kedua",

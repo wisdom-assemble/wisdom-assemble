@@ -105,7 +105,7 @@
     "step1Description": "Post the problem you want solved. AI first checks whether it fits the site's genre and won't accept it if not. You can post up to 3 questions per day.",
     "step2Title": "AI tries to answer",
     "step2Description": "AI tries to answer first. If it's confident, its answer is shown as-is; otherwise, it moves to the next step.",
-    "step2Note": "AI is tuned against hallucination, but its content isn't guaranteed to be accurate. Please verify important decisions yourself.",
+    "step2Note": "The AI is tuned to reduce hallucinations, but please verify anything important yourself.",
     "step3Title": "Matched with a human expert",
     "step3Description": "An expert whose skills match your question's keywords gets notified. If their answer solves it, pick it as the best answer. If it doesn't, or no answer arrives within 8 hours, you can ask a second expert (escalate) or publish it as a hard question for everyone to help solve.",
     "step4Title": "Escalate to a second expert",

@@ -105,7 +105,7 @@
     "step1Description": "Publica el problema que quieres resolver. La IA primero comprueba si encaja con el tema del sitio, y no la aceptará si no encaja. Puedes publicar hasta 3 preguntas al día.",
     "step2Title": "La IA intenta responder",
     "step2Description": "La IA intentará responder primero. Si tiene confianza, su respuesta se muestra tal cual; si no, pasa al siguiente paso.",
-    "step2Note": "La IA está ajustada contra alucinaciones, pero su contenido no está garantizado como preciso. Verifica tú mismo las decisiones importantes.",
+    "step2Note": "La IA está ajustada para reducir las alucinaciones, pero verifique usted mismo cualquier información importante.",
     "step3Title": "Emparejada con un experto humano",
     "step3Description": "Un experto cuyas habilidades coincidan con las palabras clave de tu pregunta recibirá una notificación. Si su respuesta la resuelve, elígela como mejor respuesta. Si no, o si no llega ninguna respuesta en 8 horas, puedes pedir un segundo experto (escalar) o publicarla como pregunta difícil para que todos ayuden a resolverla.",
     "step4Title": "Escalar a un segundo experto",
