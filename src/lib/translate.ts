@@ -1,19 +1,42 @@
+// ============================================================
+// 多言語翻訳（2026-07-22〜 Groq 8b → Gemini 3.5 Flash-Lite へ移行）
+// ------------------------------------------------------------
+// 移行理由は品質。Groq 8bには実害のある誤訳があった（実測）:
+//   韓国語「op-ampの"音"の違い」→「소음(騒音)의 차이」＝意味が変わる
+//   中国語「ケンタウロス」→「オペ阿姆」＝日本語カタカナが混入
+// Geminiは同一条件で7/7言語成功し、型番(RC3403ADB/uPC4741C)・製品名
+// (Quad Cortex Mini/Genelec G Three)・Markdownを全言語で保持することを検証済み。
+//
+// Groqはフォールバックとして残す。単一プロバイダにするとGemini障害時に翻訳が
+// 全滅するため、保険として経路を維持する（GEMINI_API_KEY未設定時もGroqで動く）。
+// ============================================================
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+const GEMINI_TRANSLATE_MODEL = 'gemini-3.5-flash-lite'
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY!
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-// AI回答（askWithScore）とはモデルを分けてコストを抑える。翻訳は複雑な推論が不要な軽いタスクのため。
-const TRANSLATE_MODEL = 'llama-3.1-8b-instant'
+const GROQ_TRANSLATE_MODEL = 'llama-3.1-8b-instant'
 
-// 翻訳(Groq 8b-instant)の料金（USD / 1Mトークン、2026-07時点）: 入力$0.05 / 出力$0.08。
+const USE_GEMINI = !!GEMINI_API_KEY
+
+// 翻訳の料金（USD / 1Mトークン、2026-07-22に公式料金ページで確認）:
+//   Gemini 3.5 Flash-Lite : 入力$0.30 / 出力$2.50
+//   Groq 8b-instant       : 入力$0.05 / 出力$0.08（フォールバック時用）
+// フォールバックが発生した回はGemini単価で計上されるが、稀なうえ推定値なので許容する。
 // 回答生成がGeminiになりコストの請求先が2つに割れたため、翻訳分も計上しないと
 // ダッシュボードの金額が実コストより過小に見える（プランナー指摘・2026-07-22）。
 const RATE_8B_IN = 0.05
 const RATE_8B_OUT = 0.08
+const RATE_GEMINI_IN = 0.30
+const RATE_GEMINI_OUT = 2.50
 
 // 呼び出し側が任意で渡すトークン集計用アキュムレータ。
 // 渡さなければ従来どおり何も起きない（既存の呼び出しは無改修で動く）。
 export type TokenUsage = { prompt: number; completion: number }
 export function translateCost(u: TokenUsage): number {
-  return (u.prompt / 1_000_000) * RATE_8B_IN + (u.completion / 1_000_000) * RATE_8B_OUT
+  const [ri, ro] = USE_GEMINI ? [RATE_GEMINI_IN, RATE_GEMINI_OUT] : [RATE_8B_IN, RATE_8B_OUT]
+  return (u.prompt / 1_000_000) * ri + (u.completion / 1_000_000) * ro
 }
 
 export const SUPPORTED_LOCALES = ['en', 'ja', 'zh', 'id', 'vi', 'ko', 'es', 'pt'] as const
@@ -40,37 +63,82 @@ function estimateMaxTokens(text: string, localeCount: number): number {
   return Math.min(4096, Math.max(800, est))
 }
 
-async function callGroqJson(systemPrompt: string, userText: string, attempt = 0, usageOut?: TokenUsage, maxTokens = 4096): Promise<string> {
-  const res = await fetch(GROQ_API_URL, {
+// 1回分のAPI呼び出し。GeminiもGroqもOpenAI互換なのでリクエスト形は共通。
+async function callOnce(
+  provider: 'gemini' | 'groq',
+  systemPrompt: string,
+  userText: string,
+  maxTokens: number
+): Promise<Response> {
+  const isGem = provider === 'gemini'
+  return fetch(isGem ? GEMINI_API_URL : GROQ_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROQ_API_KEY}`,
+      Authorization: `Bearer ${isGem ? GEMINI_API_KEY : GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: TRANSLATE_MODEL,
+      model: isGem ? GEMINI_TRANSLATE_MODEL : GROQ_TRANSLATE_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userText },
       ],
       response_format: { type: 'json_object' },
-      max_tokens: maxTokens,
+      // Geminiは内部thinkingがトークンを食うので下限を確保する
+      max_tokens: isGem ? Math.max(maxTokens, 1200) : maxTokens,
     }),
   })
-  if (res.status === 429 && attempt < 4) {
-    await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
-    return callGroqJson(systemPrompt, userText, attempt + 1, usageOut, maxTokens)
+}
+
+// 429の本文から復活までの秒数を取り出す（Geminiは "retry in 10.7s" / retryDelay を返す）
+function parseRetrySec(body: string): number | null {
+  const m = body.match(/retry in ([\d.]+)s/i) ?? body.match(/"retryDelay"\s*:\s*"?([\d.]+)s/i)
+  const sec = m ? Number(m[1]) : NaN
+  return Number.isFinite(sec) ? Math.ceil(sec) : null
+}
+
+// 翻訳を実行する。Geminiを優先し、429は短時間だけ待って再試行、
+// それでも駄目ならGroqへフォールバックする（Gemini障害時に翻訳が全滅しないための保険）。
+async function callGroqJson(
+  systemPrompt: string,
+  userText: string,
+  attempt = 0,
+  usageOut?: TokenUsage,
+  maxTokens = 4096
+): Promise<string> {
+  const order: Array<'gemini' | 'groq'> = USE_GEMINI ? ['gemini', 'groq'] : ['groq']
+  let lastErr = ''
+
+  for (const provider of order) {
+    for (let i = 0; i <= 2; i++) {
+      const res = await callOnce(provider, systemPrompt, userText, maxTokens)
+      if (res.ok) {
+        const json = await res.json()
+        if (usageOut) {
+          usageOut.prompt += json.usage?.prompt_tokens ?? 0
+          usageOut.completion += json.usage?.completion_tokens ?? 0
+        }
+        return (json.choices?.[0]?.message?.content ?? '').trim()
+      }
+      const bodyText = await res.text().catch(() => '')
+      lastErr = `${provider} ${res.status} ${bodyText.slice(0, 160)}`
+      // 429は短い待ちなら1回だけその場で待つ。長い/繰り返すなら次のプロバイダへ。
+      if (res.status === 429 && i < 2) {
+        const wait = parseRetrySec(bodyText)
+        if (wait != null && wait <= 12) {
+          await new Promise((r) => setTimeout(r, (wait + 1) * 1000))
+          continue
+        }
+        await new Promise((r) => setTimeout(r, 1500 * (i + 1)))
+        continue
+      }
+      break // 429以外、または再試行を使い切ったら次のプロバイダへ
+    }
+    if (provider === 'gemini') {
+      console.error('translate: Gemini failed, falling back to Groq:', lastErr)
+    }
   }
-  if (!res.ok) {
-    const bodyText = await res.text().catch(() => '')
-    throw new Error(`Groq translate API error: ${res.status} ${bodyText}`)
-  }
-  const json = await res.json()
-  if (usageOut) {
-    usageOut.prompt += json.usage?.prompt_tokens ?? 0
-    usageOut.completion += json.usage?.completion_tokens ?? 0
-  }
-  return (json.choices?.[0]?.message?.content ?? '').trim()
+  throw new Error(`translate API error: ${lastErr}`)
 }
 
 // sourceLocaleを除く対応言語へ翻訳し、{locale: 翻訳文} のオブジェクトを返す。

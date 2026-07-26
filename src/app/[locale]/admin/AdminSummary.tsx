@@ -8,7 +8,8 @@ import AiBudgetEditor from './AiBudgetEditor'
 // 重要: GCPの「予算アラート」は通知するだけで課金を止めない。実際に止められるのは
 // Generative Language API の割り当て(Quota)で1日のリクエスト数に上限を設けること。
 const GCP_QUOTA_URL = 'https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas'
-// 翻訳は引き続きGroqを使うため、Groq側のSpend Limitも残しておく。
+// 翻訳もGeminiに移行済み。GroqはGemini障害時のフォールバックとしてのみ残しているため、
+// Groq側のSpend Limitは任意（有料化するなら設定してもよい程度）。
 const GROQ_LIMITS_URL = 'https://console.groq.com/settings/billing/limits'
 
 export type DashboardStats = {
@@ -146,7 +147,7 @@ export default function AdminSummary({
               <a href={GCP_QUOTA_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">GCPの割り当て設定 ↗</a>
             </p>
             <p className="text-gray-400">
-              （翻訳は引き続きGroqを使用。Groq側を有料化する場合はSpend Limitも設定する
+              （回答生成・翻訳ともGemini。GroqはGemini障害時のフォールバックとしてのみ使用するため通常は課金されない。念のため設定するなら
               <a href={GROQ_LIMITS_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">Groqコンソール ↗</a>）
             </p>
           </div>
