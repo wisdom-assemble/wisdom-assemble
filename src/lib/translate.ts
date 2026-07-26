@@ -30,7 +30,17 @@ const LOCALE_NAMES: Record<string, string> = {
 }
 
 // 429(レート制限)の時は間隔を空けて最大4回リトライする。それ以外のエラーは即座に投げる。
-async function callGroqJson(systemPrompt: string, userText: string, attempt = 0, usageOut?: TokenUsage): Promise<string> {
+// 出力に必要なトークン数を入力量から見積もる。
+// GroqはTPM(6000/分)を「実際の使用量」ではなく「要求したmax_tokens」で予約するため、
+// 固定4096を指定すると1回で枠の7割を食い、2問目以降が必ず429になる（実測で判明）。
+// 実測値: 113文字の質問を7言語へ訳して completion 524 → 1文字×1言語あたり約0.66トークン。
+// それに安全率1.8を掛け、下限800・上限4096でクランプする。
+function estimateMaxTokens(text: string, localeCount: number): number {
+  const est = Math.ceil(text.length * localeCount * 1.2)
+  return Math.min(4096, Math.max(800, est))
+}
+
+async function callGroqJson(systemPrompt: string, userText: string, attempt = 0, usageOut?: TokenUsage, maxTokens = 4096): Promise<string> {
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -44,12 +54,12 @@ async function callGroqJson(systemPrompt: string, userText: string, attempt = 0,
         { role: 'user', content: userText },
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 4096,
+      max_tokens: maxTokens,
     }),
   })
   if (res.status === 429 && attempt < 4) {
     await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
-    return callGroqJson(systemPrompt, userText, attempt + 1, usageOut)
+    return callGroqJson(systemPrompt, userText, attempt + 1, usageOut, maxTokens)
   }
   if (!res.ok) {
     const bodyText = await res.text().catch(() => '')
@@ -69,14 +79,18 @@ async function callGroqJson(systemPrompt: string, userText: string, attempt = 0,
 export async function translateToLocales(
   text: string,
   sourceLocale: string,
-  usageOut?: TokenUsage
+  usageOut?: TokenUsage,
+  onlyLocales?: string[]
 ): Promise<Record<string, string>> {
-  const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
+  const targets = SUPPORTED_LOCALES.filter(
+    (locale) => locale !== sourceLocale && (!onlyLocales || onlyLocales.includes(locale))
+  )
+  if (targets.length === 0) return {}
   const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
   const systemPrompt = `You are a professional translator. Translate the user's text into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}) and whose values are the translated text for that locale. No explanations, no extra keys.`
 
   try {
-    const content = await callGroqJson(systemPrompt, text, 0, usageOut)
+    const content = await callGroqJson(systemPrompt, text, 0, usageOut, estimateMaxTokens(text, targets.length))
     const parsed = JSON.parse(content) as Record<string, string>
     const result: Record<string, string> = {}
     for (const locale of targets) {
@@ -109,7 +123,7 @@ export async function translateQuestionToLocales(
   const userText = JSON.stringify({ title, body })
 
   try {
-    const content = await callGroqJson(systemPrompt, userText, 0, usageOut)
+    const content = await callGroqJson(systemPrompt, userText, 0, usageOut, estimateMaxTokens(title + body, targets.length))
     const parsed = JSON.parse(content) as Record<string, string>
     const title_i18n: Record<string, string> = {}
     const body_i18n: Record<string, string> = {}
@@ -119,13 +133,30 @@ export async function translateQuestionToLocales(
       if (typeof t === 'string' && t.trim()) title_i18n[locale] = t.trim()
       if (typeof b === 'string' && b.trim()) body_i18n[locale] = b.trim()
     }
+
+    // モデルが一部の言語を出し忘れることがある（実測で6回中1回、7言語中5言語しか返らず）。
+    // 欠けた言語だけを対象に1回ずつ補完する。全言語を訳し直すより軽く、TPMも節約できる。
+    const missTitle = targets.filter((l) => !title_i18n[l])
+    const missBody = targets.filter((l) => !body_i18n[l])
+    if (missTitle.length) {
+      Object.assign(title_i18n, await translateToLocales(title, sourceLocale, usageOut, missTitle).catch((e) => {
+        console.error('translateQuestionToLocales: title gap-fill failed for', missTitle, e)
+        return {}
+      }))
+    }
+    if (missBody.length) {
+      Object.assign(body_i18n, await translateToLocales(body, sourceLocale, usageOut, missBody).catch((e) => {
+        console.error('translateQuestionToLocales: body gap-fill failed for', missBody, e)
+        return {}
+      }))
+    }
     return { title_i18n, body_i18n }
   } catch (e) {
     console.error('translateQuestionToLocales: batch translation failed, falling back to separate calls', e)
-    const [title_i18n, body_i18n] = await Promise.all([
-      translateToLocales(title, sourceLocale, usageOut),
-      translateToLocales(body, sourceLocale, usageOut),
-    ])
+    // 直列で実行する。Promise.allで同時に投げるとTPM(6000/分)を二重に消費し、
+    // バッチ失敗直後に必ず429が連鎖してタイトル・本文の両方が空になっていた（実測）。
+    const title_i18n = await translateToLocales(title, sourceLocale, usageOut)
+    const body_i18n = await translateToLocales(body, sourceLocale, usageOut)
     return { title_i18n, body_i18n }
   }
 }
