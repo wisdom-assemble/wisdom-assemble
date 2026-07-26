@@ -58,6 +58,12 @@ const LOCALE_NAMES: Record<string, string> = {
 // 固定4096を指定すると1回で枠の7割を食い、2問目以降が必ず429になる（実測で判明）。
 // 実測値: 113文字の質問を7言語へ訳して completion 524 → 1文字×1言語あたり約0.66トークン。
 // それに安全率1.8を掛け、下限800・上限4096でクランプする。
+// 翻訳の再試行に使える合計時間（ミリ秒）。
+// 翻訳は質問投稿APIのレスポンス前にawaitされる＝この時間ぶんユーザーが待つ。
+// プロバイダ2つ×再試行を無制限に許すと最悪50秒超になるため、全体を予算で縛る。
+// 予算切れの場合は翻訳を諦める（質問の投稿自体は成功し、多言語ページが後回しになるだけ）。
+const TRANSLATE_BUDGET_MS = 18_000
+
 function estimateMaxTokens(text: string, localeCount: number): number {
   const est = Math.ceil(text.length * localeCount * 1.2)
   return Math.min(4096, Math.max(800, est))
@@ -102,14 +108,19 @@ function parseRetrySec(body: string): number | null {
 async function callGroqJson(
   systemPrompt: string,
   userText: string,
-  attempt = 0,
   usageOut?: TokenUsage,
-  maxTokens = 4096
+  maxTokens = 4096,
+  deadline = Date.now() + TRANSLATE_BUDGET_MS
 ): Promise<string> {
   const order: Array<'gemini' | 'groq'> = USE_GEMINI ? ['gemini', 'groq'] : ['groq']
   let lastErr = ''
 
   for (const provider of order) {
+    // 予算を使い切っていたら次のプロバイダも試さず終了する
+    if (Date.now() >= deadline) {
+      lastErr = lastErr || 'translate budget exceeded'
+      break
+    }
     for (let i = 0; i <= 2; i++) {
       const res = await callOnce(provider, systemPrompt, userText, maxTokens)
       if (res.ok) {
@@ -124,12 +135,11 @@ async function callGroqJson(
       lastErr = `${provider} ${res.status} ${bodyText.slice(0, 160)}`
       // 429は短い待ちなら1回だけその場で待つ。長い/繰り返すなら次のプロバイダへ。
       if (res.status === 429 && i < 2) {
-        const wait = parseRetrySec(bodyText)
-        if (wait != null && wait <= 12) {
-          await new Promise((r) => setTimeout(r, (wait + 1) * 1000))
-          continue
-        }
-        await new Promise((r) => setTimeout(r, 1500 * (i + 1)))
+        const suggested = parseRetrySec(bodyText)
+        const waitMs = suggested != null && suggested <= 12 ? (suggested + 1) * 1000 : 1500 * (i + 1)
+        // 待つと予算を超えるなら、待たずに次のプロバイダへ回す
+        if (Date.now() + waitMs >= deadline) break
+        await new Promise((r) => setTimeout(r, waitMs))
         continue
       }
       break // 429以外、または再試行を使い切ったら次のプロバイダへ
@@ -148,7 +158,8 @@ export async function translateToLocales(
   text: string,
   sourceLocale: string,
   usageOut?: TokenUsage,
-  onlyLocales?: string[]
+  onlyLocales?: string[],
+  deadline = Date.now() + TRANSLATE_BUDGET_MS
 ): Promise<Record<string, string>> {
   const targets = SUPPORTED_LOCALES.filter(
     (locale) => locale !== sourceLocale && (!onlyLocales || onlyLocales.includes(locale))
@@ -158,7 +169,7 @@ export async function translateToLocales(
   const systemPrompt = `You are a professional translator. Translate the user's text into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}) and whose values are the translated text for that locale. No explanations, no extra keys.`
 
   try {
-    const content = await callGroqJson(systemPrompt, text, 0, usageOut, estimateMaxTokens(text, targets.length))
+    const content = await callGroqJson(systemPrompt, text, usageOut, estimateMaxTokens(text, targets.length), deadline)
     const parsed = JSON.parse(content) as Record<string, string>
     const result: Record<string, string> = {}
     for (const locale of targets) {
@@ -182,7 +193,8 @@ export async function translateQuestionToLocales(
   title: string,
   body: string,
   sourceLocale: string,
-  usageOut?: TokenUsage
+  usageOut?: TokenUsage,
+  deadline = Date.now() + TRANSLATE_BUDGET_MS
 ): Promise<{ title_i18n: Record<string, string>; body_i18n: Record<string, string> }> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
   const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
@@ -191,7 +203,7 @@ export async function translateQuestionToLocales(
   const userText = JSON.stringify({ title, body })
 
   try {
-    const content = await callGroqJson(systemPrompt, userText, 0, usageOut, estimateMaxTokens(title + body, targets.length))
+    const content = await callGroqJson(systemPrompt, userText, usageOut, estimateMaxTokens(title + body, targets.length), deadline)
     const parsed = JSON.parse(content) as Record<string, string>
     const title_i18n: Record<string, string> = {}
     const body_i18n: Record<string, string> = {}
@@ -207,13 +219,13 @@ export async function translateQuestionToLocales(
     const missTitle = targets.filter((l) => !title_i18n[l])
     const missBody = targets.filter((l) => !body_i18n[l])
     if (missTitle.length) {
-      Object.assign(title_i18n, await translateToLocales(title, sourceLocale, usageOut, missTitle).catch((e) => {
+      Object.assign(title_i18n, await translateToLocales(title, sourceLocale, usageOut, missTitle, deadline).catch((e) => {
         console.error('translateQuestionToLocales: title gap-fill failed for', missTitle, e)
         return {}
       }))
     }
     if (missBody.length) {
-      Object.assign(body_i18n, await translateToLocales(body, sourceLocale, usageOut, missBody).catch((e) => {
+      Object.assign(body_i18n, await translateToLocales(body, sourceLocale, usageOut, missBody, deadline).catch((e) => {
         console.error('translateQuestionToLocales: body gap-fill failed for', missBody, e)
         return {}
       }))
@@ -223,8 +235,8 @@ export async function translateQuestionToLocales(
     console.error('translateQuestionToLocales: batch translation failed, falling back to separate calls', e)
     // 直列で実行する。Promise.allで同時に投げるとTPM(6000/分)を二重に消費し、
     // バッチ失敗直後に必ず429が連鎖してタイトル・本文の両方が空になっていた（実測）。
-    const title_i18n = await translateToLocales(title, sourceLocale, usageOut)
-    const body_i18n = await translateToLocales(body, sourceLocale, usageOut)
+    const title_i18n = await translateToLocales(title, sourceLocale, usageOut, undefined, deadline)
+    const body_i18n = await translateToLocales(body, sourceLocale, usageOut, undefined, deadline)
     return { title_i18n, body_i18n }
   }
 }
