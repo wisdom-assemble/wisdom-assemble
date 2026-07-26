@@ -51,7 +51,7 @@ export default function AiBudgetEditor({
           <p className="text-[11px] text-gray-400 mt-0.5">
             {enabled
               ? '有料プラン：上限を超えたらAIを止めて人間へ回します'
-              : '無料プラン：制限なし（Geminiの無料枠 RPM15 で自然に頭打ち）'}
+              : '無料プラン：制限なし（Geminiの無料枠で自然に頭打ち）'}
           </p>
         </div>
         {/* オン/オフトグル */}
@@ -90,7 +90,8 @@ export default function AiBudgetEditor({
         )}
       </div>
       <p className="text-[11px] text-gray-400">
-        目安：Geminiの無料枠は 15リクエスト/分。有料化したら上限を余裕を持たせて設定（反映に10〜15分ラグあり）。
+        目安：Geminiの無料枠は 15リクエスト/分。1問につき回答生成＋翻訳で約2.2回使うので
+        <b>実質7問/分</b>。有料化したら上限を余裕を持たせて設定（反映に10〜15分ラグあり）。
       </p>
     </div>
   )

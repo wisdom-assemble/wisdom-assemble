@@ -139,7 +139,7 @@ export default function AdminSummary({
           <div className="border-t border-gray-100 pt-4 space-y-2 text-xs text-gray-500">
             <p className="font-medium text-gray-600">3つの蓋（①②は挙動制御・③だけが請求を物理的に止める）</p>
             <p>① アプリのレート制限：1人1日3件/テナント・10件/全体（荒らし対策・常時有効）</p>
-            <p>② アプリの自主上限：上の設定。<b>無料の今はオフ＝制限なし</b>（Geminiの無料枠 RPM15 で自然に頭打ち）。有料化したらオンにして上限を設定。</p>
+            <p>② アプリの自主上限：上の設定。<b>無料の今はオフ＝制限なし</b>（Geminiの無料枠 RPM15＝回答生成と翻訳で1問あたり約2.2回使うため実質7問/分 で自然に頭打ち）。有料化したらオンにして上限を設定。</p>
             <p>
               ③ Google Cloud の割り当て(Quota)：<b>請求を物理的に止める蓋</b>。有料化時に Generative Language API の
               「1日あたりリクエスト数」に上限を入れる。
