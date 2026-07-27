@@ -830,6 +830,32 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 3. **Guitar & Effector テナントの新規作成**：テナントビルダーの出力を5ファイルへ反映＋タグライン等を7言語へ翻訳＋閾値較正＋Cloudflareドメイン追加の案内（ビルダーの入力は一項目ずつ確認しながら進める）
 4. その後の実環境への質問投入は、**プランナーが作るタイムスケジュールに従う**（エンジニアは貼るだけパケット等の技術支援のみ）
 
+### 🔎 2026-07-27 本番エラー(1102)の調査と、アイコン/OGPの無駄削減（エンジニア）
+
+**きっかけ**: ユーザーがスマホで`music-prod`にアクセスした際に `Error 1102 Worker exceeded resource limits` が一瞬出た。Observabilityで追跡した記録。
+
+**分かったこと（実測）**
+- エラーは **7/27 02:40:14〜02:40:53 の40秒間に6件**が集中。2ホスト・5パス（`/ja/profile` `/en/profile` `/en/questions/...` `/ja`×2 `/favicon.ico`）に散っており、**特定ページのバグではなくインスタンス単位の一過性事象**。
+- `GET /favicon.ico` の invocation は **CPU Time 10ms / HTTP 503 / "Worker exceeded CPU time limit."**。
+- ⚠️ ただし **「CPU上限は10ms（無料プラン）」という推測は誤り**。同じログの `GET /ja` は **CPU Time 73ms で HTTP 200（成功）**。10msが上限なら通らない＝**上限は73ms以上のどこか（未確定）**。月間平均も約39ms/リクエストで整合する。**Workers Paidへのアップグレードは解決策として根拠がないので撤回**。GSCのクロール統計も「問題ありません」（5日で1.05万リクエスト・平均応答375ms）。
+- 本番への**同時200×400件のバースト（デプロイ直後含む2回）では1102は再現しない**。＝「普通に使うと壊れる」状態ではない。コールドスタート説も未確認。
+- 7/25〜7/27で **level=error は271件**。中身は少なくとも3種類（①1102 ②`translateToLocales: batch translation failed` ③エラー名のない生スタックトレース）。
+
+**確定した別件**: ログの `translateToLocales: batch translation failed`（7/26 02:32:04・02:39:40）が、DBで`title_i18n`が空だった投稿（7/26 02:32:01・02:39:23）と**秒単位で一致**。＝翻訳欠落は**Groq時代＋TPMバグ（7/26 12:39の`abb6159`で修正）**が原因と確定。修正後の3投稿は全て7言語そろっており、**この件はクローズ**。
+
+**入れた修正（すべて本番反映済み）**
+1. `middleware.ts`：`/favicon.ico`・`/apple-touch-icon*` は**実体が無くNextのカスタム404(46KB)をフルレンダリング**していた（プローブ3種＝iPhoneは特に踏む）。先頭で**204+1日キャッシュを即返す**ようにし、matcherの除外から`favicon.ico`と`.png`を外して届かせた。※`public/`のファイルはCloudflareのAsset Workerが先に返す（`run_worker_first`未設定＝既定）ので、将来PNGを置いても壊れない
+2. `icon.tsx`/`opengraph-image.tsx`：**毎リクエストでSatori生成し直していた**（実測`max-age=0, must-revalidate`）のでキャッシュヘッダーを付与（上のチェックリスト参照）
+3. `icon.tsx`：`faviconFont()`のセリフ判定 `includes('serif')` が **`"...sans-serif"`の部分文字列に誤反応**し、MUSIC PRODUCTIONのファビコンが明朝(Lora)で描かれていた。判定前に`sans-serif`を潰して解消（`\bline\b`のLINE ID誤検知と同型のバグ）。修正前後の画像を拡大して目視確認済み
+
+**未解決・次にやること**
+- **1102の真因は未特定**。次の一手は「**翌日以降に同じ`Jul 25 – Today`でエラー件数を比較**」。今回の修正で1閲覧あたりの無駄（46KBの404×最大3回＋アイコン生成）が消えたので、大きく減れば決着。減らなければページ自体のCPU（`/ja`で73ms）やエッジキャッシュ化を検討する
+- 271件を種類別に集計したい場合は、`.env.local`に`CF_ACCOUNT_ID`＋Workers Observability読み取り権限のトークンを置いてもらえばエンジニア側でAPIから引ける（件数が多いのでスクショより効率的）
+- 7/26 11:33の**エラー名のないスタックトレース2件**は未特定（`worker.js:133290`をソースへ対応付ける作業が必要なため後回し）
+- **ファビコンの静的化**（テナント作成時に1枚作って`public/`に置き、`/icon`をやめる）は方針としては合意済みだが、**今回のキャッシュで実行時のメリットが小さくなった**ため、質問投稿・AdSense申請の後に回す判断
+
+**同時に入れた別の修正**: マイページを開くと**サイト全体の表示言語が保存値(`profiles.language`)へ引き戻される**問題を解消（`/en`で見ていても`/ja/profile`へ強制リダイレクトされ、next-intlが`NEXT_LOCALE=ja`を書くため以降ずっと日本語になっていた）。強制遷移を廃止しURL側のロケールを尊重、保存値と違うときは言語欄に注記を出す（`languageMismatchNote`・8言語）。`profiles.language`は通知メールの言語として引き続き使用。
+
 ## マッチングフロー
 ```
 質問投稿
@@ -887,6 +913,7 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 | Supabase | `tenants` INSERT | 下記#1 | ★必須 |
 
 - **favicon(`src/app/icon.tsx`)はDBの`name`/`color_theme`＋`LOGO_STYLE_OVERRIDES`から自動生成**＝コード編集不要。2026-07-20〜ロゴのstyle(treatment)に追従(gradient/3d/solid)＋30書体をGoogle Font代替で近似
+- ⚠️**【2026-07-27】ファビコン/OGP画像はキャッシュされる**。`/icon`・`/opengraph-image`に`max-age=86400`(ブラウザ1日)・`s-maxage=2592000`(エッジ30日)・`stale-while-revalidate=604800`を付けたので、**テナントの`color_theme`や`name`を変えても最大1日〜30日は古い画像が出る**。「変えたのに反映されない」はバグではない。即時反映したいときはCloudflareでキャッシュをパージする。加えて**ブラウザはファビコンをcache-controlとは別枠で強くキャッシュ**するので、確認するときは`https://<host>/icon`を直接開いてからスーパーリロードする（それでも残るならブラウザ再起動）
 - **ロゴを崩さないコツ**: ロゴビルダーで作ったら `canvas.measureText(表示名).width / 表示名.length / fontSizePx` を `LOGO_STYLE_OVERRIDES[newid].widthEmPerChar` に入れる（viewBox幅が実測でぴったり合い、右切れ・中央ズレしない）。指定しなくても`maxWidth:100%`で溢れはしないが、フォントによっては見た目が寄る
 - **ロゴのtreatment(2026-07-20〜)**: `LOGO_STYLE_OVERRIDES[newid].treatment`に25スタイル指定可(`globals.css`のfx-*をSiteLogoが`foreignObject`で適用)。未指定は平面グラデ(後方互換)。テナントビルダー(Artifact)で30書体×25スタイルを組んで出力するのが基本
 - **テナント別ダークモード(2026-07-20〜)**: `tenants.theme='dark'`で`<html data-theme="dark">`＝全ページダーク(`globals.css`のダーク上書き層)。`tenants.bg_color`で背景色を個別変更。ルートポータルのカードもtheme/bg_colorに追従。INSERTの`theme`/`bg_color`列(migration `20260720000001`)をお忘れなく
