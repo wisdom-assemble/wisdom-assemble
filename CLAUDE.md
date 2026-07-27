@@ -859,6 +859,13 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 - 7/26 11:33の**エラー名のないスタックトレース2件**は未特定（`worker.js:133290`をソースへ対応付ける作業が必要なため後回し）
 - **ファビコンの静的化**（テナント作成時に1枚作って`public/`に置き、`/icon`をやめる）は方針としては合意済みだが、**今回のキャッシュで実行時のメリットが小さくなった**ため、質問投稿・AdSense申請の後に回す判断
 
+**🔥 追加で判明した最大の増幅要因＝Link先読み（同日23:30に修正・本番検証済み）**
+- ログの`11:33:40.397〜.704`（0.3秒）に`?_rsc=`が20本以上並んでいた。`/ja?tag=...`・`/ja/questions/...`・`/ja?q=...`・`/ja/questions/new`＝**Next.jsのLink先読み**で、**1本ごとにサーバーでページ生成**が走っていた。＝**1回の閲覧が20〜30回のページ生成**に膨らんでいた
+- ヘッダー・フッターには既に`prefetch={false}`があったが、**一覧の質問リンク・タグchip・キーワードchip・ページ送り・Cookieバナー**には無かった（ログのURLと完全一致）。**20箇所に`prefetch={false}`を追加**（home 8／profile 5／hard 2／HardQuestionList 1／admin 1／AdminActions 1／質問詳細のパンくず 1／CookieConsentBanner 1）
+- **Googlebotは先読みしないので、人が閲覧している時だけ負荷が20倍**になっていた＝エラーがmtさんのクリック中に固まった理由の説明がつく
+- 本番検証: HTMLに`prefetch":false`が51箇所／新規タブで`/ja`を開くと**`_rsc`の先読みゼロ**（HTML1本＋静的チャンク13本＋フォントのみ）／質問リンクのクリック遷移は正常（クリック時に`_rsc`を1本だけ取得しページ描画も確認）
+- **スタックトレース2件（7/26 11:33）の正体もほぼ判明**: 先読みのキャンセルで`net::ERR_ABORTED`が多発しており（ブラウザのネットワークログで実際に確認）、中断エラーがメッセージ無しのスタックだけで記録されたものと考えられる。**無害**（`/ja`は200を返している）
+
 **同時に入れた別の修正**: マイページを開くと**サイト全体の表示言語が保存値(`profiles.language`)へ引き戻される**問題を解消（`/en`で見ていても`/ja/profile`へ強制リダイレクトされ、next-intlが`NEXT_LOCALE=ja`を書くため以降ずっと日本語になっていた）。強制遷移を廃止しURL側のロケールを尊重、保存値と違うときは言語欄に注記を出す（`languageMismatchNote`・8言語）。`profiles.language`は通知メールの言語として引き続き使用。
 
 ## マッチングフロー
@@ -945,6 +952,7 @@ GRANT SELECT ON public.tenants TO service_role;
 ---
 
 ## 重要な実装メモ
+- ⚠️**【2026-07-27】新しく`<Link>`を追加するときは原則`prefetch={false}`を付ける**。Next.jsの既定（`auto`）だとリンクがビューポートに入るだけで先読みが走り、**その1本ごとにサーバーでページ生成**される。実測でトップページを1回開くと0.3秒間に20本以上の`?_rsc=`が飛び、**1閲覧が20〜30回のページ生成に膨らんでいた**（1102の主要因）。修正後は`_rsc`の先読みゼロ・クリック時に1本だけ取得＝クリック遷移は従来どおり動く。**先読みは本番のみ有効なのでローカルでは再現しない**（確認は本番でブラウザのネットワークログを見る）
 - **【2026-07-17〜】questions/answersへの書き込み(INSERT/UPDATE)・全security definer RPCは必ずservice_role(admin)クライアント経由で行うこと**。一般ロール(anon/authenticated)向けのRLSは`questions_insert`/`answers_insert`=`with check(false)`、`questions_update`=`auth.uid()=user_id`のみに締めてあり、userクライアントで新規に書き込むと権限エラーになる。共通ヘルパー`createAdminClient()`（`src/lib/supabase/admin.ts`）を使う。`profiles`はlanguage列のみ、`tenant_profiles`は本人編集列(display_name/skill_tags/is_available/email_notify/active_title_id)のみ列単位GRANT済み（実績カウント等はRPCのみが更新）
 - **AI回答生成はaskWithScoreInScope()に統合済み**（ジャンル判定＋回答＋スコア＋tagsを1回のGroq呼び出しで取得）。checkInScope/askWithScoreは後方互換で残置。質問投稿フローは①askWithScoreInScope→②質問INSERT(tags含む)→③結果を再利用してAI回答/マッチング、の順
 - **自動高難度移行はpg_cronの`auto_escalate_expired()`（15分ごと）**。旧`auto_escalate_to_hard`は削除済み。B/C両段階で「担当者が期限切れまで未回答」の質問をhard化
