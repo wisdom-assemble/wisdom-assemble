@@ -25,7 +25,7 @@ export default function CookieConsentBanner() {
       <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 leading-relaxed">
           {t('message')}{' '}
-          <Link href="/privacy" className="underline hover:text-gray-700">
+          <Link prefetch={false} href="/privacy" className="underline hover:text-gray-700">
             {t('privacyLink')}
           </Link>
         </p>

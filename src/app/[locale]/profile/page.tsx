@@ -480,6 +480,7 @@ export default function ProfilePage() {
                   return (
                     <li key={q.id}>
                       <Link
+                        prefetch={false}
                         href={`/questions/${q.slug}`}
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
@@ -514,6 +515,7 @@ export default function ProfilePage() {
                   return (
                     <li key={q.id}>
                       <Link
+                        prefetch={false}
                         href={`/questions/${q.slug}`}
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
@@ -549,6 +551,7 @@ export default function ProfilePage() {
                   return (
                     <li key={a.id}>
                       <Link
+                        prefetch={false}
                         href={`/questions/${q.slug}`}
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
@@ -570,7 +573,7 @@ export default function ProfilePage() {
             {myQuestions.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
                 <p>{t('noQuestionsYet')}</p>
-                <Link href="/questions/new" className="text-sm underline mt-2 inline-block hover:text-gray-600">
+                <Link prefetch={false} href="/questions/new" className="text-sm underline mt-2 inline-block hover:text-gray-600">
                   {t('postFirstQuestion')}
                 </Link>
               </div>
@@ -581,6 +584,7 @@ export default function ProfilePage() {
                   return (
                     <li key={q.id}>
                       <Link
+                        prefetch={false}
                         href={`/questions/${q.slug}`}
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >

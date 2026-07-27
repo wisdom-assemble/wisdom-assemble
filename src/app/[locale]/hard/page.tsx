@@ -69,6 +69,7 @@ export default async function HardQuestPage({
         {/* タブ */}
         <div className="flex gap-4 border-b mb-6">
           <Link
+            prefetch={false}
             href="/hard?tab=unsolved"
             className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
               tab === 'unsolved' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -77,6 +78,7 @@ export default async function HardQuestPage({
             {t('tabUnsolved')} {unsolved && unsolved.length > 0 && <span className="ml-1 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{unsolved.length}</span>}
           </Link>
           <Link
+            prefetch={false}
             href="/hard?tab=solved"
             className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
               tab === 'solved' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'

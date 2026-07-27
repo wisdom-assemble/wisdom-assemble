@@ -134,7 +134,7 @@ export function QuestionList({ questions, adminUserId }: { questions: Question[]
         {filtered.map(item => (
           <div key={item.id} className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
             <div className="flex-1 min-w-0">
-              <Link href={`/questions/${encodeURIComponent(item.slug ?? item.id)}`} className="text-sm font-medium text-gray-900 hover:underline truncate block">
+              <Link prefetch={false} href={`/questions/${encodeURIComponent(item.slug ?? item.id)}`} className="text-sm font-medium text-gray-900 hover:underline truncate block">
                 {item.title}
               </Link>
               <p className="text-xs text-gray-400 mt-0.5">

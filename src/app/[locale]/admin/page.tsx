@@ -147,6 +147,7 @@ export default async function AdminPage({
 function TabLink({ href, active, label }: { href: string; active: boolean; label: string }) {
   return (
     <Link
+      prefetch={false}
       href={href}
       className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
         active ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'

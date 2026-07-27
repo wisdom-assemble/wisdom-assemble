@@ -230,7 +230,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
 
         {/* パンくずリスト */}
         <nav aria-label="breadcrumb" className="mb-4 text-xs text-gray-400 truncate">
-          <Link href="/" className="hover:text-gray-600 hover:underline">
+          <Link prefetch={false} href="/" className="hover:text-gray-600 hover:underline">
             {t('breadcrumbHome')}
           </Link>
           <span className="mx-1.5">/</span>

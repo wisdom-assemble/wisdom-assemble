@@ -60,6 +60,7 @@ export default function HardQuestionList({
         return (
           <li key={q.id}>
             <Link
+              prefetch={false}
               href={`/questions/${q.slug}`}
               className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
             >

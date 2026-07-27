@@ -80,6 +80,7 @@ export default async function HomePage({
 
         <div className="sticky top-[73px] z-[9] bg-white py-2 flex flex-wrap gap-3 mb-3 border-b border-gray-200">
           <Link
+            prefetch={false}
             href="/questions/new"
             className="shrink-0 px-4 py-2 rounded font-medium text-white text-sm"
             style={{ backgroundColor: 'var(--color-primary)' }}
@@ -94,6 +95,7 @@ export default async function HomePage({
             <span className="text-gray-400 shrink-0">{t('suggestedKeywords')}</span>
             {getSuggestedKeywords(tenantId).map((keyword) => (
               <Link
+                prefetch={false}
                 key={keyword}
                 href={`/?q=${encodeURIComponent(keyword)}`}
                 className="px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
@@ -169,7 +171,7 @@ async function QuestionResults({
       {q && (
         <p className="text-sm text-gray-500 mb-4">
           {t('searchResult', { query: q, count: count ?? 0 })}
-          <Link href="/" className="ml-2 underline text-gray-400 hover:text-gray-600 text-xs">
+          <Link prefetch={false} href="/" className="ml-2 underline text-gray-400 hover:text-gray-600 text-xs">
             {t('clear')}
           </Link>
         </p>
@@ -178,7 +180,7 @@ async function QuestionResults({
       {tag && (
         <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
           <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-xs">#{tag}</span>
-          <Link href="/" className="underline text-gray-400 hover:text-gray-600 text-xs">
+          <Link prefetch={false} href="/" className="underline text-gray-400 hover:text-gray-600 text-xs">
             {t('clear')}
           </Link>
         </p>
@@ -190,6 +192,7 @@ async function QuestionResults({
             {questions.map((question) => (
               <li key={question.id}>
                 <Link
+                  prefetch={false}
                   href={`/questions/${question.slug}`}
                   className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                 >
@@ -210,6 +213,7 @@ async function QuestionResults({
                   <div className="flex flex-wrap gap-1 mt-0.5 mb-1.5 px-2">
                     {(question as any).tags.slice(0, 3).map((tg: string) => (
                       <Link
+                        prefetch={false}
                         key={tg}
                         href={`/?tag=${encodeURIComponent(tg)}`}
                         className="text-[11px] px-1.5 py-0.5 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
@@ -288,6 +292,7 @@ function Pagination({ currentPage, totalPages, q, t }: { currentPage: number; to
     <div className="flex items-center justify-center gap-2 mt-4">
       {currentPage > 1 && (
         <Link
+          prefetch={false}
           href={params(currentPage - 1)}
           className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
         >
@@ -299,6 +304,7 @@ function Pagination({ currentPage, totalPages, q, t }: { currentPage: number; to
       </span>
       {currentPage < totalPages && (
         <Link
+          prefetch={false}
           href={params(currentPage + 1)}
           className="px-2.5 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
         >
