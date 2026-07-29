@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
@@ -34,15 +35,18 @@ const FALLBACK_DESCRIPTION_MAP: Record<string, string> = {
   pt: 'Um serviço de perguntas e respostas que conecta perguntas que a IA não consegue responder com confiança a especialistas humanos reais.',
 }
 
+// 【2026-07-30】generateMetadata と layout 本体が同じ tenants 行を別々に取得していて、
+// 1リクエストでDB往復とCPUが二重になっていた。Reactのcache()でリクエスト内メモ化し1回にする。
+const getTenantRecord = cache(async (tenantId: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase.from('tenants').select('*').eq('id', tenantId).single()
+  return data
+})
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const tenantId = await getTenantId()
-  const supabase = await createClient()
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('name, description, description_i18n')
-    .eq('id', tenantId)
-    .single()
+  const tenant = await getTenantRecord(tenantId)
   const siteUrl = tenantId === ROOT_TENANT_ID
     ? 'https://wisdomassemble.com'
     : `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`
@@ -59,6 +63,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     metadataBase: new URL(siteUrl),
     title: displayName,
     description,
+    // 【2026-07-30】ファビコンを静的ファイルへ。実測で「Workerが生成したレスポンスは
+    // Cache-Controlを付けてもエッジにキャッシュされない」（/icon に s-maxage を付けても
+    // cf-cache-status が付かない）一方、public/配下の静的ファイルは Asset Worker が返し
+    // MISS→HIT する＝Workerを一切通らない。よって src/app/icon.tsx を廃止し、
+    // テナントごとのPNGを public/icons/ に置いて指す方式に変更した。
+    // ※ファイル規約(app/icon.tsx)はこの指定を上書きするため、必ず併存させないこと。
+    // ※新テナント追加時は public/icons/<id>.png と public/og/<id>.png を用意する
+    //   （生成手順は scripts/image-templates/ とテナント追加チェックリスト参照）
+    icons: { icon: [{ url: `/icons/${tenantId}.png`, type: 'image/png', sizes: '32x32' }] },
     // en/ja以外の機械翻訳ロケールはnoindex（follow）。このrobotsはlayout配下の
     // 全ページ（トップ・質問詳細・利用規約等）に継承される。ページ側でrobotsを
     // 上書きしていないため、ここ1箇所で当該ロケール全体をnoindexにできる。
@@ -76,13 +89,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       // or twitter images」の警告とともに og:image / twitter:image が
       // 出力から丸ごと落ちていた（実測: og:titleやog:urlは出るのに画像だけ無い＝
       // SNSにURLを貼ってもサムネイルが出ない）。絶対URLで直接指定して解消する。
-      images: [{ url: `${siteUrl}/opengraph-image`, width: 1200, height: 630, alt: displayName }],
+      images: [{ url: `${siteUrl}/og/${tenantId}.png`, width: 1200, height: 630, alt: displayName }],
     },
     twitter: {
       card: 'summary_large_image',
       title: displayName,
       description,
-      images: [`${siteUrl}/opengraph-image`],
+      images: [`${siteUrl}/og/${tenantId}.png`],
     },
   }
 }
@@ -105,10 +118,10 @@ export default async function RootLayout({
   setRequestLocale(locale)
 
   const tenantId = await getTenantId()
-  const supabase = await createClient()
 
-  const [{ data: tenant }, messages] = await Promise.all([
-    supabase.from('tenants').select('*').eq('id', tenantId).single(),
+  // getTenantRecord は cache() 済みなので、generateMetadata で取得済みなら再取得しない
+  const [tenant, messages] = await Promise.all([
+    getTenantRecord(tenantId),
     getMessages(),
   ])
 

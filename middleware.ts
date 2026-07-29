@@ -6,7 +6,8 @@ import { routing } from '@/i18n/routing'
 const intlMiddleware = createIntlMiddleware(routing)
 
 // ロケールプレフィックスの対象外（[locale]配下に存在しないルート）
-const UNLOCALIZED_PREFIXES = ['/api', '/auth/callback', '/icon', '/opengraph-image', '/sitemap.xml', '/robots.txt']
+// 2026-07-30: /icon・/opengraph-image は静的ファイル(public/icons・public/og)へ移行し廃止
+const UNLOCALIZED_PREFIXES = ['/api', '/auth/callback', '/sitemap.xml', '/robots.txt']
 
 const VALID_SUBDOMAINS = [
   'debug', 'tax-japan', 'australia-whv', 'bali',
@@ -156,6 +157,10 @@ export const config = {
     // カスタム404ページ(46KB)をフルレンダリングしてCPUを大きく食っていた。
     // ICON_PROBE_PATHS で204を即返すため、middlewareに届かせる必要がある。
     // public/ に .png は無い（.svgのみ）ので静的アセットへの影響はない。
-    '/((?!_next/static|_next/image|.*\\.(?:svg|jpg|jpeg|gif|webp)$).*)',
+    // icons/ og/ を除外：テナント別のファビコン/OGP画像の静的ファイル置き場。
+    // 静的アセットは Asset Worker が先に返すため通常middlewareには届かないが、
+    // .png を matcher に含めている構成なので、万一届いてロケールリダイレクトに
+    // 巻き込まれないよう明示的に除外しておく（画像が壊れる事故の予防）。
+    '/((?!_next/static|_next/image|icons/|og/|.*\\.(?:svg|jpg|jpeg|gif|webp)$).*)',
   ],
 }
