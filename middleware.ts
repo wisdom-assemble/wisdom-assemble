@@ -95,6 +95,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 【2026-07-30】/icon・/opengraph-image は静的ファイル(public/icons・public/og)へ移行した。
+  // ただしブラウザに旧HTMLが残っていたり、SNSが og:image のURLをキャッシュしているため、
+  // 旧URLへのアクセスは残る。放置するとロケールリダイレクト(307)を経て
+  // 46KBの404ページをフルレンダリングしてしまうので、301で新しい静的パスへ寄せる。
+  if (pathname === '/icon' || pathname === '/opengraph-image') {
+    const target = pathname === '/icon' ? `/icons/${tenantId}.png` : `/og/${tenantId}.png`
+    return NextResponse.redirect(new URL(target, request.url), 301)
+  }
+
   // next-intlミドルウェアを呼ぶ前にrequest.headersへ直接書き込んでおく。
   // next-intlは内部で`new Headers(request.headers)`により現在のヘッダーを
   // 複製した上でX-NEXT-INTL-LOCALEを追加してNextResponse.next/rewriteに渡すため、
