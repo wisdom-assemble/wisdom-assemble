@@ -935,6 +935,15 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
   - 記録: `~/.claude/coldstart-probe.log`
 - **⛔ 打ち切り線（ユーザーとプランナーの合意）**: 3セットで0件なら**調査終了**。出たら**B①（翻訳メッセージ32KBの絞り込み＝ページ描画のCPUを下げる唯一の手）**のみ検討。それ以上は追わない。理由＝3%はリロードで回復する軽症、AdSenseは何度でも再申請できる、一方でコンテンツ側（旧seed削除・BUG休眠化・未解決比率）の方が審査に効く。
 
+**📐 B①（翻訳メッセージの絞り込み）の設計 — 実装はAdSense申請の1回目の結果が出た後（2026-07-30 確定）**
+- **現状の無駄**: `messages/ja.json` は29.7KB・24名前空間。`[locale]/layout.tsx` が `<NextIntlClientProvider messages={messages}>` で**24個すべてをどのページでもブラウザへ送っている**。利用規約を開いただけで質問投稿フォームやマイページの文言まで落ちてくる。**これがHTMLが61〜114KBある主因**で、表示速度＝Core Web Vitals＝SEOに効く（CPU削減より効果が大きい可能性あり）。
+- **⭐採用する設計（実測で確定）**: 「ページごとに必要な名前空間を選ぶ」のではなく、**「クライアントコンポーネント(`'use client'`)で使われている名前空間だけ送る」**。サーバーコンポーネントは `getTranslations()` でサーバー側から読むのでクライアントに送る必要がない。**全ページ共通の1ルール**で済み、ページ×名前空間の組み合わせを間違える余地がないため**構造的にリスクが低い**（プランナーも当初案よりこちらが優れていると同意）。
+- **実測値（24クライアントファイルを走査）**: クライアントで使用 **12.3KB**（profilePage/portalPage/questionForm/contactPage/questionActions/tutorial/home/titles/signupPage/hardPage/loginPage/answerForm/cookieConsent/header/common/footer/skillTags）／**サーバー専用 17.5KB＝59%削減可能**（privacyPage 5.3・termsPage 3.8・howItWorksPage 3.4・**questionPage 3.4**・apiErrors 1.3・notFound 0.2・newQuestionPage 0.0）。
+- **リスク**: 唯一の壊れ方は「渡し忘れ→その文言が出ない」。言語数(8)・質問回答の翻訳(title_i18n/body_i18n)・表示内容そのものには**一切影響しない**。
+  - ⚠️`useMessages()` を直接使う箇所（マイページの `skillTags` など）は `t()` を使わないので**機械的なgrepで見落としやすい**。実装時に手で確認する。
+  - ⚠️名前空間が足りないときに「キー名がそのまま出る」のか「エラーで真っ白」なのかは next-intl の設定次第。**実装前にどちらの挙動か確認する**（後者なら影響が大きい）。
+- **⭐確認の優先順位（プランナー指摘・リスクの重み順）**: ①**質問詳細（`/ja/questions/...`・`/en/questions/...`）← `questionPage` がサーバー専用側にあり、壊れると67問全滅**で影響最大 ②トップ（`/ja` `/en`）③`/hard`・マイページ ④terms/privacy/contact/how-it-works（壊れても影響は小さい）。**言語は en/ja を優先**し、他6言語はnoindexなので順位を下げる（「8言語×全ページを均等に見る」より同じ時間で効果が高い）。
+
 **📝 投稿フェーズの運用ルール（2026-07-30 確定）**
 - **1問投稿 → `node scripts/verify-latest-post.mjs <tenant> 1` で確認 → OKなら次の1問**。1問目で欠落があれば投稿を止めて原因を追う（7/26に翻訳が無音で欠落した前例があるため／プランナー指摘）。
 - スクリプトの確認内容: `title_i18n`/`body_i18n`が7言語そろっているか、AI回答の有無とその翻訳、AI回答が無い場合は**人間ルーティングが割当済みか（宙ぶらりん検知）**。
