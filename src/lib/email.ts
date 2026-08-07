@@ -104,7 +104,11 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;')
 }
 
-async function sendEmail(params: { to: string; subject: string; htmlContent: string; replyTo?: string }): Promise<void> {
+// senderName: 受信者のメールボックスに表示される差出人名。
+//   各テナントは独立したサービスとして見せる方針なので、テナント宛の通知では
+//   テナント名（例: MUSIC PRODUCTION）を出す。運営宛の内部メールは既定のまま。
+//   ドメイン認証の都合上、アドレス自体は noreply@wisdomassemble.com で固定。
+async function sendEmail(params: { to: string; subject: string; htmlContent: string; replyTo?: string; senderName?: string }): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY
   if (!apiKey) {
     console.error('BREVO_API_KEY未設定のためメール送信をスキップしました')
@@ -119,7 +123,7 @@ async function sendEmail(params: { to: string; subject: string; htmlContent: str
       Accept: 'application/json',
     },
     body: JSON.stringify({
-      sender: { name: 'Wisdom Assemble', email: 'noreply@wisdomassemble.com' },
+      sender: { name: params.senderName ?? 'Wisdom Assemble', email: 'noreply@wisdomassemble.com' },
       to: [{ email: params.to }],
       subject: params.subject,
       htmlContent: params.htmlContent,
@@ -218,5 +222,8 @@ export async function notifyMatchedUser(params: {
     to: email,
     subject: template.subject(siteName),
     htmlContent: template.body({ questionTitle, url, siteName }),
+    // 差出人名もテナント名にする（受信箱に「Wisdom Assemble」ではなく
+    // 「MUSIC PRODUCTION」等が並ぶようにし、テナントの独立性を保つ）
+    senderName: siteName,
   })
 }

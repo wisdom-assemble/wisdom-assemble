@@ -95,7 +95,11 @@ export default function Header() {
 
   async function handleLogout() {
     const supabase = createClient(tenantId)
-    await supabase.auth.signOut()
+    // scope:'local' はこのテナント（このホスト）のセッションだけを終了する。
+    // 既定の 'global' はサーバー側でリフレッシュトークンを全て失効させるため、
+    // music-prod でログアウトすると guitar や bug のログインまで切れてしまう。
+    // 各テナントは独立したサービスとして扱う方針なので 'local' が正しい。
+    await supabase.auth.signOut({ scope: 'local' })
     window.location.href = '/'
   }
 

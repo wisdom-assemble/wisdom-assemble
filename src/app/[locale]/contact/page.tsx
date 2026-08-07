@@ -51,7 +51,9 @@ export default function ContactPage() {
   }
 
   async function handleLogout() {
-    await createClient().auth.signOut()
+    // scope:'local' はこのテナント（このホスト）のセッションだけを終了する。
+    // 既定の 'global' は他テナントのログインまで失効させてしまう（Header.tsx参照）。
+    await createClient().auth.signOut({ scope: 'local' })
     window.location.reload()
   }
 
