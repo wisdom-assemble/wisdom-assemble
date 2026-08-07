@@ -1124,14 +1124,18 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 | `src/lib/gemini.ts` | `GENRE_CONFIG` | AIジャンル判定（label/threshold/inScope/outScope/dangerKeywords）。未設定は汎用フォールバック。**thresholdは必ず91から始めること**（Gemini基準。テナントビルダーが古い87を出力する場合は差し替える）。新ジャンルは`calibrate-threshold.mts`で較正して確定する | ジャンル |
 | `src/lib/skillTags.ts` | `TENANT_SKILL_OPTIONS` | 専門家が選ぶスキルタグ。未設定はdebug（プログラミング）にフォールバック＝別ジャンルで誤り | ジャンル |
 | `src/lib/skillTags.ts` | `TENANT_SUGGESTED_KEYWORDS` | トップ検索の候補キーワード。同上フォールバック注意 | ジャンル |
-| `src/app/opengraph-image.tsx` | `OG_COLORS` | OGP画像の色。未設定はindigo | 任意 |
+| `public/icons/{newid}.png` | （画像ファイル） | **32x32のファビコン。無いと404**（2026-07-30に静的ファイル化） | ★必須 |
+| `public/og/{newid}.png` | （画像ファイル） | **1200x630のOGP。無いと404**（同上）。生成手順は下記 | ★必須 |
+| `scripts/image-templates/opengraph-image.tsx` | `OG_COLORS` | OGP画像の色。**このファイルは退避中のテンプレート**で、実配信は上の静的PNG。色を変えたらPNGを書き出し直す | 任意 |
+| `src/app/[locale]/admin/AdminVisitors.tsx` | `tenantKeyOf` の `alias` | 公開名≠内部IDのときだけ。Cloudflare Analyticsはホスト名別集計なので、ここに書かないと**訪問者ダッシュボードで同じテナントが2行に割れる** | 条件付 |
 | `src/components/PortalHome.tsx` | `REVIEW_TENANT_IDS` | ルートポータルに掲載する場合に追加 | ポータル |
 | `src/components/PortalHome.tsx` | `FALLBACK_COLOR_THEME` | ポータルカードの色フォールバック | ポータル |
 | `messages/*.json`（8言語） | `{newid}CardTagline` | ポータルカードのタグライン（8言語ぶん） | ポータル |
 | Cloudflare | Custom Domain | `newpub.wisdomassemble.com` を追加 | ★必須 |
 | Supabase | `tenants` INSERT | 下記#1 | ★必須 |
 
-- **favicon(`src/app/icon.tsx`)はDBの`name`/`color_theme`＋`LOGO_STYLE_OVERRIDES`から自動生成**＝コード編集不要。2026-07-20〜ロゴのstyle(treatment)に追従(gradient/3d/solid)＋30書体をGoogle Font代替で近似
+- ⚠️**favicon/OGPは「自動生成」ではない（2026-07-30〜）**。`src/app/icon.tsx`・`opengraph-image.tsx` は `scripts/image-templates/` へ退避済みで、配信されるのは `public/icons/<id>.png`・`public/og/<id>.png` の**静的ファイル**。新テナントでは次の手順で書き出す（**順番厳守**）: ①テンプレート2枚を `src/app/` へ一時的に戻す →②デプロイ →③新テナントのホストで `/icon`・`/opengraph-image` を保存して `public/` へ置く →④テンプレートを `scripts/image-templates/` へ**戻す（退避）** →⑤再デプロイ。**④を忘れるとファイル規約がmetadata指定を上書きして静的ファイル化が無効になり、Workerが毎回画像を生成する状態（1102の原因だったもの）に逆戻りする**
+- 画像の中身のロジック自体は従来どおりDBの`name`/`color_theme`＋`LOGO_STYLE_OVERRIDES`から生成される（ロゴのtreatmentに追従・30書体をGoogle Font代替で近似）
 - ⚠️**【2026-07-27】ファビコン/OGP画像はキャッシュされる**。`/icon`・`/opengraph-image`に`max-age=86400`(ブラウザ1日)・`s-maxage=2592000`(エッジ30日)・`stale-while-revalidate=604800`を付けたので、**テナントの`color_theme`や`name`を変えても最大1日〜30日は古い画像が出る**。「変えたのに反映されない」はバグではない。即時反映したいときはCloudflareでキャッシュをパージする。加えて**ブラウザはファビコンをcache-controlとは別枠で強くキャッシュ**するので、確認するときは`https://<host>/icon`を直接開いてからスーパーリロードする（それでも残るならブラウザ再起動）
 - **ロゴを崩さないコツ**: ロゴビルダーで作ったら `canvas.measureText(表示名).width / 表示名.length / fontSizePx` を `LOGO_STYLE_OVERRIDES[newid].widthEmPerChar` に入れる（viewBox幅が実測でぴったり合い、右切れ・中央ズレしない）。指定しなくても`maxWidth:100%`で溢れはしないが、フォントによっては見た目が寄る
 - **ロゴのtreatment(2026-07-20〜)**: `LOGO_STYLE_OVERRIDES[newid].treatment`に25スタイル指定可(`globals.css`のfx-*をSiteLogoが`foreignObject`で適用)。未指定は平面グラデ(後方互換)。テナントビルダー(Artifact)で30書体×25スタイルを組んで出力するのが基本
