@@ -1,3 +1,12 @@
+// 【2026-08-08】現在このコンポーネントはどこからも使われていない。
+//   質問詳細の loading.tsx で使っていたが、loading.tsx があるとページが
+//   ストリーミングされ、HTTPヘッダー(200)が送信済みになるため notFound() が
+//   404を返せず「削除済み質問URLが200を返すソフト404」になっていた。
+//   実験で loading.tsx を外すと404になることを確認したうえで削除した
+//   （generateMetadata 側で notFound() を呼ぶ案も試したが200のままで効かなかった）。
+//   将来スケルトンを戻すなら、回答一覧だけをページ内 Suspense で包む形にすること。
+//   ただし answers はページ全体の権限判定・JSON-LDにも使われているため、
+//   切り出すには page.tsx の構造変更が必要で、相応に手が入る。
 export default function QuestionDetailSkeleton() {
   return (
     <div className="animate-pulse">
