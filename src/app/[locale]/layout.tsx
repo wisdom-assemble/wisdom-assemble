@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server'
 import { TenantProvider } from '@/components/TenantProvider'
 import Footer from '@/components/Footer'
 import CookieConsentBanner from '@/components/CookieConsentBanner'
-import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
+import { getTenantDisplayName, getPublicSubdomain, isDormantTenant } from '@/lib/tenantNames'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
@@ -72,10 +72,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     // ※新テナント追加時は public/icons/<id>.png と public/og/<id>.png を用意する
     //   （生成手順は scripts/image-templates/ とテナント追加チェックリスト参照）
     icons: { icon: [{ url: `/icons/${tenantId}.png`, type: 'image/png', sizes: '32x32' }] },
-    // en/ja以外の機械翻訳ロケールはnoindex（follow）。このrobotsはlayout配下の
-    // 全ページ（トップ・質問詳細・利用規約等）に継承される。ページ側でrobotsを
-    // 上書きしていないため、ここ1箇所で当該ロケール全体をnoindexにできる。
-    ...(INDEXABLE_LOCALES.includes(locale) ? {} : { robots: { index: false, follow: true } }),
+    // このrobotsはlayout配下の全ページ（トップ・質問詳細・利用規約等）に継承される。
+    // ページ側でrobotsを上書きしていないため、ここ1箇所で全体を制御できる。
+    //   ・休眠テナント → 全ロケールでnoindex（follow:falseでリンク先も辿らせない）
+    //   ・en/ja以外の機械翻訳ロケール → noindex（follow:true）
+    // 休眠判定を先に評価し、休眠テナントでは言語に関係なく確実に外す。
+    ...(isDormantTenant(tenantId)
+      ? { robots: { index: false, follow: false } }
+      : INDEXABLE_LOCALES.includes(locale)
+      ? {}
+      : { robots: { index: false, follow: true } }),
     openGraph: {
       title: displayName,
       description,

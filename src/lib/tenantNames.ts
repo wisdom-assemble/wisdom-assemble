@@ -32,7 +32,32 @@ export function getPublicSubdomain(tenantId: string): string {
 }
 
 // ルートポータルに掲載する、実際にサブドメインが稼働済みのテナントID
+// ※ポータル掲載の実体は PortalHome.tsx の REVIEW_TENANT_IDS。この定数はどこからも
+//   参照されていない（2026-07-14に判明）。掲載の切り替えは PortalHome.tsx 側で行う。
 export const LIVE_TENANT_IDS = ['debug', 'dtm']
+
+// 休眠テナント（サブドメイン・DBは残すが、検索エンジンから見えないようにする）。
+//
+// ここに入れると次の3つが同時に効く:
+//   1. 全ページに noindex（[locale]/layout.tsx の generateMetadata）
+//   2. sitemap.xml が空になる（sitemap.ts）
+//   3. robots.txt が全体を Disallow（robots.ts）
+// あわせて PortalHome.tsx の REVIEW_TENANT_IDS からも外すことで、
+// ルートポータルのカードも消える＝人からも検索からも入口が無くなる。
+//
+// 復活させるときはこの配列から外して REVIEW_TENANT_IDS に戻すだけでよい。
+// URL・DBのデータ・Cloudflareのドメイン設定は一切壊さない。
+//
+// 【用途】
+//   - リリース前のジャンル（中身が薄いままインデックスされるのを防ぐ）
+//   - 質問数が開設ラインに達していないテナント
+//   Googleは中身の薄いページを「低品質」と見なし、ドメイン全体の評価を下げるため、
+//   出せる状態になるまでは検索結果に載せない方が安全。
+export const DORMANT_TENANT_IDS = ['debug']
+
+export function isDormantTenant(tenantId: string): boolean {
+  return DORMANT_TENANT_IDS.includes(tenantId)
+}
 
 // テナントごとのロゴスタイル上書き（Sample Logo builderで作った組み合わせをそのまま反映する用途）。
 // 未指定のテナントは SiteLogo.tsx のデフォルト（Impact系・3D押し出し）のまま。

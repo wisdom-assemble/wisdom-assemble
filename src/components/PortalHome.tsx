@@ -9,7 +9,9 @@ import WisdomAssembleWordmark from '@/components/WisdomAssembleWordmark'
 // 実際に稼働中の2テナントのみをカード表示する（他ジャンルへの言及なし）。
 // 検索バー自体はPortalTenantSearchで維持しつつ、対象を2テナントに絞っている。
 // 審査通過後、残りのテナントを追加していく際はこの配列に追加していくだけでよい。
-const REVIEW_TENANT_IDS = ['debug', 'dtm']
+// 掲載するテナント。休眠中(DORMANT_TENANT_IDS)のものはここから外す＝カードが消える。
+// 復活させるときは戻すだけでよい（サブドメイン・DBは触らない）。
+const REVIEW_TENANT_IDS = ['dtm']
 
 // DB取得が万一失敗した場合の保険（本来はtenants.color_themeが正）
 const FALLBACK_COLOR_THEME: Record<string, string> = {

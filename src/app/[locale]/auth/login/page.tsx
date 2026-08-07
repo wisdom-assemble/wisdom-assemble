@@ -30,7 +30,14 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        // prompt=select_account を付けないと、ブラウザにGoogleのセッションが残って
+        // いる場合にアカウント選択画面が出ず、前回と同じアカウントで自動ログイン
+        // される（ログアウトしても同じアカウントにしか入れない）。
+        // 1台のブラウザで複数のGoogleアカウントを使い分けるために必須。
+        queryParams: { prompt: 'select_account' },
+      },
     })
     if (error) { setError(t('googleLoginFailed')); setLoading(false) }
   }

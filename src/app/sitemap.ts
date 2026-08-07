@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { routing, INDEXABLE_LOCALES } from '@/i18n/routing'
 import { getTenantId } from '@/lib/tenant'
+import { isDormantTenant } from '@/lib/tenantNames'
 
 const STATIC_PATHS = ['', '/how-it-works', '/hard', '/terms', '/privacy', '/contact']
 
@@ -18,6 +19,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const host = headersList.get('host') ?? 'wisdomassemble.com'
   const baseUrl = `https://${host}`
   const tenantId = await getTenantId()
+
+  // 休眠テナントは検索エンジンに出さないので、sitemapを空にする。
+  // （noindexだけだと既存のインデックスが残るため、sitemapからも外して
+  //   クロール対象から確実に落とす）
+  if (isDormantTenant(tenantId)) return []
 
   const entries: MetadataRoute.Sitemap = []
 
