@@ -36,14 +36,18 @@ export function getPublicSubdomain(tenantId: string): string {
 //   参照されていない（2026-07-14に判明）。掲載の切り替えは PortalHome.tsx 側で行う。
 export const LIVE_TENANT_IDS = ['debug', 'dtm']
 
-// 休眠テナント（サブドメイン・DBは残すが、検索エンジンから見えないようにする）。
+// 休眠テナント（サブドメイン・DBは残すが、検索結果から消す）。
 //
-// ここに入れると次の3つが同時に効く:
-//   1. 全ページに noindex（[locale]/layout.tsx の generateMetadata）
+// ここに入れると次の2つが同時に効く:
+//   1. 全ページに noindex, follow（[locale]/layout.tsx の generateMetadata）
 //   2. sitemap.xml が空になる（sitemap.ts）
-//   3. robots.txt が全体を Disallow（robots.ts）
 // あわせて PortalHome.tsx の REVIEW_TENANT_IDS からも外すことで、
-// ルートポータルのカードも消える＝人からも検索からも入口が無くなる。
+// ルートポータルのカードも消える＝人からの入口が無くなる。
+//
+// ⚠️ robots.txt では絶対にブロックしないこと（2026-08-08に一度やって取り消した）。
+//    robots.txtでブロックするとGooglebotがページを取得できず、HTML内のnoindexを
+//    読めないため、既にインデックスされたURLが消えずに残る＝noindexが無効化される。
+//    インデックスから消すには、クロールさせてnoindexを読ませる必要がある。
 //
 // 復活させるときはこの配列から外して REVIEW_TENANT_IDS に戻すだけでよい。
 // URL・DBのデータ・Cloudflareのドメイン設定は一切壊さない。

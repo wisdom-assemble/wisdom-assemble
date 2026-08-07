@@ -74,14 +74,17 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     icons: { icon: [{ url: `/icons/${tenantId}.png`, type: 'image/png', sizes: '32x32' }] },
     // このrobotsはlayout配下の全ページ（トップ・質問詳細・利用規約等）に継承される。
     // ページ側でrobotsを上書きしていないため、ここ1箇所で全体を制御できる。
-    //   ・休眠テナント → 全ロケールでnoindex（follow:falseでリンク先も辿らせない）
-    //   ・en/ja以外の機械翻訳ロケール → noindex（follow:true）
+    //   ・休眠テナント → 全ロケールでnoindex
+    //   ・en/ja以外の機械翻訳ロケール → noindex
     // 休眠判定を先に評価し、休眠テナントでは言語に関係なく確実に外す。
-    ...(isDormantTenant(tenantId)
-      ? { robots: { index: false, follow: false } }
-      : INDEXABLE_LOCALES.includes(locale)
-      ? {}
-      : { robots: { index: false, follow: true } }),
+    //
+    // どちらも follow:true にする理由: 既にインデックスされているURLを消すには、
+    // Googlebotに各ページを取得させて noindex を読ませる必要がある。nofollow に
+    // するとトップから下層ページへ辿らなくなり、noindex の認識が遅れる。
+    // 同じ理由で robots.txt でのブロックもしない（robots.ts のコメント参照）。
+    ...(isDormantTenant(tenantId) || !INDEXABLE_LOCALES.includes(locale)
+      ? { robots: { index: false, follow: true } }
+      : {}),
     openGraph: {
       title: displayName,
       description,
