@@ -973,6 +973,69 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 4. ~~**質問詳細のソフト404**~~ → **2026-08-08 対応済み**（`loading.tsx` を削除して404を返すよう修正）
 5. その後の実環境への質問投入は、**プランナーが作るタイムスケジュールに従う**（エンジニアは貼るだけパケット等の技術支援のみ）
 
+### 🎸 2026-08-08 GUITAR & PEDALS テナント作成の準備（次セッションはここから）
+
+**確定事項**
+- 表示名 `GUITAR & PEDALS` / 公開サブドメイン `guitar.` / **内部IDも `guitar`**（別名を作らない＝`SUBDOMAIN_ALIASES` と `AdminVisitors` の alias が不要になる）
+- 説明文のジャンル表現は **A案「ギター・エフェクター」で確定**（mtさん・プランナー合意）。テナント名をそのまま日本語にしただけで、テナント名に無い要素（ビンテージ・マルチ等）を足していないため、canadaの「留学・ワーホリ」結合事故とは性質が違う。**範囲の定義は inScope の仕事**で、説明文は「何のサイトか」を伝えるだけに絞る
+- 閾値は **91**（Gemini基準・`DEFAULT_THRESHOLD`）
+
+**分担**
+| 誰 | 何を |
+|---|---|
+| mtさん | **スキルタグの最終決定**（マッチングの入口。自分が実際に答えられる範囲で線を引く） |
+| エンジニア | 案の作成・コード反映・画像・検証 |
+| プランナー | 案の確認（説明文がテンプレートに沿っているか／ジャンルを結合していないか／inScope・outScopeの広さ）＋**タグラインの7言語翻訳** |
+
+⚠️**「エフェクター」は和製英語**（英語では `pedals` / `effects pedals`。`effector` は生物学用語）。`description_i18n` の英語版が `pedals` になっているか**必ず目視すること**。テナント名が GUITAR & PEDALS なのに説明文が effector だと意味が通じない。
+
+**エンジニアの案（プランナー確認待ち）**
+
+```
+説明文（日本語・共通テンプレート）
+  AIが答えられない・不確かなギター・エフェクターの質問・問題を、人間のエキスパートに繋げるQ&Aサービス
+
+タグライン（ポータルカード・日本語）※既存2件とトーンを揃えた
+  ギターやエフェクターの疑問に、AIがまず答え、足りなければ弾き手が応える。
+  （参考 debug: コードのバグや不具合に、AIがまず答え、足りなければ現役の開発者が応える。）
+  （参考 dtm  : DAWや音作りの疑問に、AIがまず答え、足りなければ現役の作り手が応える。）
+
+GENRE_CONFIG
+  label     : ギター・エフェクター
+  threshold : 91
+  inScope   : エレキギター・アコースティックギター・エフェクター・ペダル・マルチエフェクター・
+              アンプ・真空管アンプ・アンプシミュレーター・ピックアップ・配線・改造・
+              ビンテージ機材・セットアップ・調整・弦・レコーディング・ペダルボード
+  outScope  : 料理・スポーツ・恋愛・プログラミング・税金など、ギターや機材と無関係な話題
+  danger    : 感電|高電圧|発火|やけど
+              （真空管アンプの内部は電源を切っても致命的な電圧が残る。該当時はAIスコアを下げて人間へ回す）
+
+TENANT_SKILL_OPTIONS（15件・全ユーザーがマイページで選ぶ選択肢）★mtさんが最終決定
+  エレキギター / アコースティックギター / エフェクター / マルチエフェクター / アンプ /
+  真空管アンプ / アンプシミュレーター / ピックアップ / 配線・改造 / ビンテージ機材 /
+  セットアップ・調整 / ペダルボード / 弦・ピック / レコーディング / リペア
+
+TENANT_SUGGESTED_KEYWORDS（トップの検索候補・8件）
+  オーバードライブ / ファズ / 真空管 / ハムバッカー / ピックアップ / 配線 / ビンテージ / マルチエフェクター
+
+TENANT_SEARCH_TAGS（ルートポータルの検索用・日英両方）
+  guitar, pedals, effects, amp, vintage, ギター, エフェクター, ペダル, アンプ, ビンテージ
+```
+
+※ `TENANT_SKILL_OPTIONS` は「全ユーザーが選べる選択肢の一覧」。**mtさん個人がどれを持つかは、テナント公開後にマイページで選ぶ**（そこで `tenant_profiles` の行ができ、`is_available=true` で候補になる）。
+
+**次セッションの手順（トークン節約のため順序を固定）**
+1. mtさんがスキルタグを確定（上の15件から増減）
+2. プランナーが説明文・タグライン・inScope/outScopeを確認
+3. **テナントビルダーで画像2枚をダウンロード** → `public/icons/guitar.png`（32×32）・`public/og/guitar.png`（1200×630）に配置 ★ここだけmtさんの手作業
+4. エンジニアがコード6ファイルへ反映（下記）＋7言語翻訳を `messages/*.json` へ
+5. Supabase `tenants` へ INSERT（SQLはエンジニアが用意・mtさんが実行）
+6. **Cloudflare で Custom Domain `guitar.wisdomassemble.com` を追加** ★mtさんの手作業
+7. デプロイ → 単発5〜10回＋Error Rate 確認 → `?tenant=guitar` 相当（`curl -H "x-tenant-id: guitar"`）で目視
+
+**触るファイル（内部ID＝サブドメインなので別名まわりは不要）**
+`middleware.ts`（VALID_SUBDOMAINS）／`src/lib/tenantNames.ts`（TENANT_NAME_MAP・TENANT_SEARCH_TAGS・必要ならLOGO_STYLE_OVERRIDES）／`src/lib/gemini.ts`（GENRE_CONFIG）／`src/lib/skillTags.ts`（2つのマップ）／`src/components/PortalHome.tsx`（REVIEW_TENANT_IDS・FALLBACK_COLOR_THEME）／`messages/*.json`×8（`guitarCardTagline`）／`public/icons/guitar.png`・`public/og/guitar.png`
+
 ### 🧹 2026-08-08 旧seed全削除・テナント独立性の是正・BUG休眠化（エンジニア）
 
 **このセッションでやったこと。すべて本番反映済み・実データで検証済み。**
