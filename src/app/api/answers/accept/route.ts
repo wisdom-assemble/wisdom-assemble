@@ -61,10 +61,17 @@ export async function POST(request: NextRequest) {
 
   // 人間の回答者なら実績加算 + タグ蓄積 + 称号チェック
   if (!answer.is_ai && answer.user_id) {
-    // answer_countをインクリメント
-    await admin.rpc('increment_answer_count', { uid: answer.user_id, p_tenant_id: tenantId })
+    // 【2026-08-08】ここにあった increment_answer_count は削除した。
+    //   answers の after insert トリガー(handle_new_answer)が回答を投稿した時点で
+    //   加算するようになったため、ここでも呼ぶと1回の回答で +2 されてしまう
+    //   （マッチングの加点 answer_count*0.3 が実質0.6になり、称号も半分の
+    //     回答数で付いてしまう）。
+    //   マッチングの設計は「総回答数」であって「ベストアンサーに選ばれた数」では
+    //   ないので、回答した時点で増えるトリガー側に一本化するのが定義どおり。
+    //   投稿経路によらず確実に動く点でもトリガーの方が確実。
 
     // 高難度クエストの解決数をインクリメント
+    // （こちらは「高難度を解決した数」なのでベストアンサー選択時が正しい）
     if (question.status === 'hard') {
       await admin.rpc('increment_hard_quest_count', { uid: answer.user_id, p_tenant_id: tenantId })
     }
