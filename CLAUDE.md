@@ -1028,6 +1028,40 @@ Groqコスト暴走/赤字対策の三層防御。①アプリレート制限(�
 - `QuestionDetailSkeleton.tsx` は未使用になったが、**経緯と復活方法をコメントに残してファイルは保持**。Median CPU が 141ms→44ms まで下がっておりページ自体が速いため、スケルトンを失う影響は小さいと判断
 - ⚠️**今後 `loading.tsx` を追加するときは、そのルートで `notFound()` を使っていないか必ず確認すること**（同じソフト404が再発する）
 
+#### ⑥【重大・未適用】人間の回答が一切INSERTできない状態を発見（`20260808000001_fix_answer_trigger_tenant.sql`）
+プランナーの指摘（「実在する質問の詳細ページが未検証」）を受けて検証用データを入れたところ、**人間回答のINSERTが必ず失敗する**ことが判明した。
+
+```
+AI回答   （user_id なし・is_ai=true） → ✅ 成功
+人間回答 （user_id あり・is_ai=false）→ ❌ 23502
+   null value in column "tenant_id" of relation "user_titles" violates not-null constraint
+```
+
+**原因の連鎖**
+1. `answers` の after insert トリガー `on_answer_created` → `handle_new_answer()` が2026-06-26の初期スキーマのまま
+2. その中で **1引数版の `check_and_award_titles(new.user_id)`** を呼んでいる
+3. 1引数版は `insert into user_titles (user_id, title_id)` と **tenant_id を入れずにINSERT**する
+4. 2026-07-13に `user_titles` へ tenant_id が追加され複合キー（＝NOT NULL）になったため必ず違反
+5. トリガーが失敗 → **回答のINSERT自体が巻き戻る**
+
+**なぜ今まで気づかなかったか**: seedの回答はすべて2026-07-13より前にSQLで投入されており、**それ以降に実際の人間回答が1件も投稿されていなかった**ため。
+
+**同時に見つかった副次バグ**: `handle_new_answer()` は `profiles.answer_count`（2026-07-14以降は凍結カラム）を更新しており、**マッチングが見る `tenant_profiles.answer_count` は一度も増えていなかった**（スコア加点 `answer_count*0.3` が機能していない）。
+
+**修正**: トリガー関数をテナント対応に差し替える（`increment_answer_count(user_id, tenant_id)` ＋ `check_and_award_titles(user_id, tenant_id)`）。これで①回答INSERTが通る ②回答数が正しく増える ③称号がテナント別に付く、が同時に直る。
+
+⚠️**このマイグレーションはまだ適用していない。適用しないと妻→本人の人間回答フローが動かない＝67問の投稿計画が止まる。**
+
+#### ⑦ 実在する質問の詳細ページの描画確認（loading.tsx 削除後）
+プランナーの指摘どおり、sitemapが質問0件のため静的ページしか検証できていなかった。**休眠中のBUGテナント**（noindex・ポータル非掲載・アクセスゼロ）に一時データを入れて検証し、直後に削除した。
+
+- HTTP 200・59.8KB・タイトル/本文/改行/パンくず/回答/ステータスバッジ/JSON-LD(`QAPage`,`suggestedAnswer`)すべて正常
+- 英語版（`/en`）も200で、`title_i18n` の英訳が表示される
+- 休眠テナントなので `noindex, follow` が付いている
+- ブラウザで目視確認済み。**`loading.tsx` を外したことによる表示崩れは無い**
+- 検証後に削除し、質問0件/回答0件/カウンタ0件に復帰。削除したURLは404を返す
+- ⚠️**人間回答の描画（ベストアンサーのバッジ等）だけは未検証**。上記⑥のトリガーバグで人間回答をINSERTできなかったため。**マイグレーション適用後、投稿1問目で目視すること**
+
 #### ⑥ sitemap URL数のベースライン記録（再発防止）
 今回 music-prod 側の削除前URL数を測っておらず、後から確認できなくなった。**投稿前後で比較できるよう記録する運用にする。**
 
