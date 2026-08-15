@@ -57,6 +57,9 @@ export default function ProfilePage() {
   const [titles, setTitles] = useState<{ id: string; name: string; rarity: string }[]>([])
   const [activeTitle, setActiveTitle] = useState<string | null>(null)
   const [message, setMessage] = useState('')
+  // メッセージが失敗かどうかは真偽値で持つ。以前は本文に「失敗」/「Failed」が
+  // 含まれるかで色を決めていたため、他6言語では失敗しても緑色で表示されていた。
+  const [messageIsError, setMessageIsError] = useState(false)
   const [myQuestions, setMyQuestions] = useState<any[]>([])
   const [myTasks, setMyTasks] = useState<any[]>([])
   const [reviewItems, setReviewItems] = useState<any[]>([])
@@ -213,7 +216,7 @@ export default function ProfilePage() {
 
   async function save() {
     setSaving(true)
-    setMessage('')
+    setMessage(''); setMessageIsError(false)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -221,7 +224,7 @@ export default function ProfilePage() {
     const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
     const urlRegex = /https?:\/\//
     if (emailRegex.test(displayName) || urlRegex.test(displayName)) {
-      setMessage(t('displayNameRejected'))
+      setMessage(t('displayNameRejected')); setMessageIsError(true)
       setSaving(false)
       return
     }
@@ -255,7 +258,7 @@ export default function ProfilePage() {
 
     setSaving(false)
     if (error) console.error('profile save error:', JSON.stringify(error))
-    setMessage(error ? t('saveFailed') : t('saveSuccess'))
+    setMessage(error ? t('saveFailed') : t('saveSuccess')); setMessageIsError(!!error)
   }
 
   if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400">{tCommon('loading')}</div></>
@@ -435,7 +438,7 @@ export default function ProfilePage() {
             </button>
 
             {message && (
-              <p className={`text-sm text-center ${message.includes('失敗') || message.includes('Failed') ? 'text-red-500' : 'text-green-600'}`}>
+              <p className={`text-sm text-center ${messageIsError ? 'text-red-500' : 'text-green-600'}`}>
                 {message}
               </p>
             )}

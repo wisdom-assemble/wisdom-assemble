@@ -172,8 +172,16 @@ export default function QuestionForm() {
         body: JSON.stringify({ title, body, locale }),
       })
 
+      // 未ログインはステータスコードで判定する。APIのエラー文言は8言語で返るため、
+      // 日本語の文字列と比較していると日本語以外ではログイン画面へ飛ばず、
+      // エラー表示のまま先へ進めなくなる。
+      if (res.status === 401) {
+        setOverlay(null)
+        router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`)
+        return
+      }
       if (!res.ok) {
-        const data = await res.json()
+        const data = await res.json().catch(() => ({} as { error?: string }))
         throw new Error(data.error ?? t('submitFailed'))
       }
 
@@ -201,10 +209,6 @@ export default function QuestionForm() {
       }
     } catch (err: any) {
       setOverlay(null)
-      if (err.message === 'ログインが必要です') {
-        router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`)
-        return
-      }
       setError(err.message)
     } finally {
       setSubmitting(false)
