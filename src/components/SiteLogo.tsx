@@ -75,29 +75,30 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
                   }}
                 >
                   {label}
-                  {/* TMは親のfx-*から color:transparent を継承してしまい、自分では背景を
-                      持たないため見えなくなる（background-clip:text を使う gradient/split/
-                      diagsplit/stripe 系すべてで発生。2026-08-15に本番で確認）。
-                      塗り・影・輪郭を明示的に打ち消して、どのtreatmentでも必ず出るようにする。
-                      色はSVG版(tspan fill=gradientFrom)と揃える。 */}
-                  <sup
-                    style={{
-                      fontSize: tmFontSize,
-                      fontWeight: 700,
-                      marginLeft: 2,
-                      letterSpacing: 0,
-                      color: override.gradientFrom,
-                      WebkitTextFillColor: override.gradientFrom,
-                      textShadow: 'none',
-                      WebkitTextStroke: '0',
-                      background: 'none',
-                    }}
-                  >
-                    ™
-                  </sup>
                 </span>
               </div>
             </foreignObject>
+            {/* TMはforeignObjectの外（SVG層）に置く。
+                理由は2つある。
+                ① foreignObjectの中に置くと、親の fx-* から color:transparent を継承し、
+                   自分では背景を持たないため見えなくなる（background-clip:text を使う
+                   gradient/split/diagsplit/stripe 系すべてで発生）。
+                ② 色を明示して見えるようにすると、今度はSafariでズレる。Safariは
+                   max-width:100% で縮小されたSVGのforeignObject内容をviewBoxに合わせて
+                   拡縮しないため、内容がはみ出してTMがSVGの外へ飛ぶ（ルートポータルの
+                   カードのように縮小表示される場所で発生。2026-08-15に実機で確認）。
+                SVGのtext要素ならviewBoxと一緒に必ず拡縮されるので、どのブラウザでも
+                正しい位置に出る。位置はpaddingLeft(8)＋実測テキスト幅の直後。 */}
+            <text
+              x={8 + textWidth + 2}
+              y={fh / 2}
+              fontFamily={override.fontFamily}
+              fontSize={tmFontSize}
+              fontWeight="700"
+              fill={override.gradientFrom}
+            >
+              ™
+            </text>
           </svg>
         </span>
       )
