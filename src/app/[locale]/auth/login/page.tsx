@@ -19,8 +19,6 @@ export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
 
   async function handleGoogleLogin() {
     setLoading(true)
@@ -40,20 +38,6 @@ export default function LoginPage() {
       },
     })
     if (error) { setError(t('googleLoginFailed')); setLoading(false) }
-  }
-
-  async function handleEmailLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(t('emailLoginFailed'))
-      setLoading(false)
-    } else {
-      router.push('/')
-    }
   }
 
   return (
@@ -88,38 +72,10 @@ export default function LoginPage() {
           {loading ? tCommon('processing') : t('googleLogin')}
         </button>
 
-        <div className="flex items-center gap-3 my-5">
-          <hr className="flex-1 border-gray-200" />
-          <span className="text-xs text-gray-400">{t('or')}</span>
-          <hr className="flex-1 border-gray-200" />
-        </div>
-
-        {/* テスト用メール/パスワードログイン */}
-        <form onSubmit={handleEmailLogin} className="space-y-3">
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder={t('emailPlaceholder')}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
-            required
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder={t('passwordPlaceholder')}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 rounded text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? tCommon('processing') : t('emailLogin')}
-          </button>
-        </form>
+        {/* メール/パスワードのログインは廃止（Googleログインのみ）。
+            Supabase側でもEmailプロバイダを無効化済みなので、UIだけでなく
+            認証エンドポイント自体が Email logins are disabled を返す。
+            認証テーブルとアカウントのデータは消していない（2026-08-15）。 */}
 
         <p className="text-xs text-center text-gray-400 mt-6">
           {t('termsAgreement')}
