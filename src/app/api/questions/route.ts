@@ -195,7 +195,13 @@ export async function POST(request: NextRequest) {
 
   // AIが使えない/低スコア時に質問を人間へルーティングする（B→C→hard）。孤立を防ぐ共通処理。
   async function routeToHuman(score: number): Promise<'matched' | 'pending'> {
-    const matchedB = await findMatch(tenantId, q.id, [posterId])
+    // 翻訳もスキルタグの照合に使う（日本語タグが英語の質問に当たらない問題の解消）。
+    // この時点ではまだDBに保存されていないので、Promiseの結果を直接渡す。
+    // 人間ルートではこの下の通知メールでどのみち翻訳を待つため、待ちが増えるのは
+    // 「DB更新＋メール送信」と重ならなくなるぶんだけ（実測で1秒未満）。
+    // 翻訳が失敗しても {} が返るだけで、従来どおり元言語での照合にフォールバックする。
+    const tr = await translationPromise
+    const matchedB = await findMatch(tenantId, q.id, [posterId], tr)
     if (matchedB) {
       await admin.from('questions').update({
         status: 'open',
@@ -217,7 +223,7 @@ export async function POST(request: NextRequest) {
       }
       return 'matched'
     }
-    const matchedC = await findMatch(tenantId, q.id, [posterId])
+    const matchedC = await findMatch(tenantId, q.id, [posterId], tr)
     if (matchedC) {
       await admin.from('questions').update({
         status: 'matched_c',
