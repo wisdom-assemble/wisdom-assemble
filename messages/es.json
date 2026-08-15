@@ -451,10 +451,10 @@
     "ファズ": "Fuzz",
     "マルチエフェクター": "Multiefectos",
     "ピックアップ": "Pastilla",
-    "配線": "Cableado",
     "ノイズ": "Ruido",
-    "弦高": "Cuerdas",
-    "ビンテージ": "Vintage"
+    "ビンテージ": "Vintage",
+    "アンプ": "Amplificador",
+    "アコギ": "Acústica"
   },
   "apiErrors": {
     "loginRequired": "Se requiere iniciar sesión",

@@ -389,7 +389,11 @@ export default function ProfilePage() {
                 placeholder={t('displayNamePlaceholder')}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
               />
-              {displayName.startsWith('ユーザー#') && (
+              {/* 以前は「ユーザー#XXXXXX」という自動生成名かどうかで判定していたが、
+                  その名前を生成するコードは src にもマイグレーションにも既に存在せず
+                  （2026-08-15に確認・DBに残っているのは古いデータだけ）、実質死んだ条件だった。
+                  未設定なら一覧では user_XXXXXX と表示されるので、空のときに出すのが正しい。 */}
+              {!displayName.trim() && (
                 <p className="text-xs text-gray-400 mt-1">{t('displayNameHint')}</p>
               )}
             </div>

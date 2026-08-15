@@ -223,30 +223,12 @@ export async function POST(request: NextRequest) {
       }
       return 'matched'
     }
-    const matchedC = await findMatch(tenantId, q.id, [posterId], tr)
-    if (matchedC) {
-      await admin.from('questions').update({
-        status: 'matched_c',
-        ai_score: score,
-        matched_c_id: matchedC,
-        matched_c_deadline: calcDeadline(8),
-      }).eq('id', q.id)
-      console.log(`[Matching] B=none → C=${matchedC}`)
-      try {
-        await notifyMatchedUser({
-          userId: matchedC,
-          tenantId,
-          questionTitle: title.trim(),
-          questionTitleTranslations: await titleTranslationPromise,
-          questionSlug: q.slug,
-        })
-      } catch (e) {
-        console.error('notifyMatchedUser error:', e)
-      }
-      return 'matched'
-    }
+    // Bが見つからない＝候補が0人ということなので、ここでCを探しても必ず同じ結果になる。
+    // 以前は同じ除外リストでfindMatchをもう一度呼んでいたが、条件が同一なので
+    // 空振りが確定しており、無駄なDB往復が1回増えるだけだった（2026-08-15に指摘を受けて削除）。
+    // Cへの割り当ては「Bが回答したあと、質問者が別のメンバーに依頼する」escalate側の役割。
     await admin.from('questions').update({ status: 'hard', ai_score: score }).eq('id', q.id)
-    console.log(`[Matching] B=none, C=none → hard`)
+    console.log(`[Matching] 候補なし → hard`)
     return 'pending'
   }
 

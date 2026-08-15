@@ -451,10 +451,10 @@
     "ファズ": "Fuzz",
     "マルチエフェクター": "Multi-effect",
     "ピックアップ": "Pickup",
-    "配線": "Đi dây",
     "ノイズ": "Nhiễu",
-    "弦高": "Độ cao dây",
-    "ビンテージ": "Vintage"
+    "ビンテージ": "Vintage",
+    "アンプ": "Ampli",
+    "アコギ": "Acoustic"
   },
   "apiErrors": {
     "loginRequired": "Cần đăng nhập",
