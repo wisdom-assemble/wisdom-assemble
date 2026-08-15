@@ -61,7 +61,7 @@
 - テストユーザー: wisdomassemble@gmail.com
 
 ## テストアカウント（開発用・リリース前削除）
-パスワードは全員 `test1234`（オーナーのみGoogleログイン）
+※パスワードはリポジトリに書かない（公開リポジトリのため。2026-08-15に直書きを削除）。必要ならSupabaseのAuth画面で確認する
 - wisdomassemble@gmail.com（オーナー・Googleログイン）
 - takeshi@test.com / yuki@test.com / ryo@test.com / mia@test.com / shin@test.com
 - hana@test.com / ken@test.com / aoi@test.com / taro@test.com / noa@test.com / john@test.com / anthony@test.com

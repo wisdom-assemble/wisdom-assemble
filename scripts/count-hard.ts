@@ -1,5 +1,8 @@
+// ⚠️ service_roleキーはRLSを完全にバイパスするため、絶対にコードへ直書きしないこと。
+// このファイルには実際に直書きされており、公開リポジトリに載っていた（2026-08-15に発見・鍵はローテート済み）。
+// 環境変数から読む。実行する場合は: set -a; source .env.local; set +a; npx tsx <file>
 import { createClient } from '@supabase/supabase-js'
-const db = createClient('https://scnkpmxvtwtsxzbhfdnf.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjbmtwbXh2dHd0c3h6YmhmZG5mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjM5Njk0MSwiZXhwIjoyMDk3OTcyOTQxfQ.NhV3RuD_St9YhNapBjs9tYi42zO0TS3PwkcdScSPUQY', {auth:{autoRefreshToken:false,persistSession:false}})
+const db = createClient('https://scnkpmxvtwtsxzbhfdnf.supabase.co', process.env.SUPABASE_SERVICE_ROLE_KEY!, {auth:{autoRefreshToken:false,persistSession:false}})
 
 async function main() {
   const {count: hard} = await db.from('questions').select('*', {count:'exact',head:true}).eq('status','hard')

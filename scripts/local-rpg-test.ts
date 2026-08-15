@@ -1,3 +1,6 @@
+// ⚠️ service_roleキーはRLSを完全にバイパスするため、絶対にコードへ直書きしないこと。
+// このファイルには実際に直書きされており、公開リポジトリに載っていた（2026-08-15に発見・鍵はローテート済み）。
+// 環境変数から読む。実行する場合は: set -a; source .env.local; set +a; npx tsx <file>
 /**
  * テスト⑤：ローカル実サイトRPGテスト（テスト④の実DB版）
  * テスト④と同じ 100問×12ペルソナ×ナラティブ を実際のSupabase DBで動かす
@@ -14,7 +17,7 @@ const NOTION_TOKEN = process.env.NOTION_TOKEN ?? ''
 const NOTION_PAGE_ID = '38cf5fa8-bcb9-817a-a247-d57f828700d5'
 
 const SUPABASE_URL = 'https://scnkpmxvtwtsxzbhfdnf.supabase.co'
-const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjbmtwbXh2dHd0c3h6YmhmZG5mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjM5Njk0MSwiZXhwIjoyMDk3OTcyOTQxfQ.NhV3RuD_St9YhNapBjs9tYi42zO0TS3PwkcdScSPUQY'
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const AI_THRESHOLD = 87
 
