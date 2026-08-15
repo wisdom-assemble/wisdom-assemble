@@ -397,7 +397,7 @@
     "chooseGenre": "Elige una comunidad para empezar",
     "comingSoon": "Próximamente",
     "aboutTitle": "Acerca de Wisdom Assemble",
-    "aboutBody": "Wisdom Assemble es una plataforma multilingüe para un conjunto de servicios de preguntas y respuestas por género. Cuando se publica una pregunta, la IA intenta responder primero; cuando la IA no tiene confianza suficiente, un experto humano real se hace cargo. Es el servicio de segunda opinión que la IA no puede ofrecer, pensado para la era de la IA. Para dudas especializadas o personales que la IA no puede resolver por completo, buscamos ayudar aportando conocimiento humano real. Estamos avanzando de forma constante en el desarrollo y la operación, añadiendo nuevos géneros con el tiempo.",
+    "aboutBody": "Wisdom Assemble es una plataforma multilingüe para un conjunto de servicios de preguntas y respuestas por género. Cuando se publica una pregunta, la IA intenta responder primero; cuando la IA no tiene confianza suficiente, un experto humano real se hace cargo. Es el servicio de segunda opinión que la IA no puede ofrecer, pensado para la era de la IA. Para dudas especializadas o personales que la IA no puede resolver por completo, buscamos ayudar aportando conocimiento humano real. Este servicio está gestionado por un particular.",
     "searchPlaceholder": "Buscar por género o palabra clave...",
     "noResults": "No se encontraron géneros que coincidan.",
     "debugCardTagline": "Bugs de código y preguntas técnicas, respondidas primero por IA y luego por developers reales.",

@@ -397,7 +397,7 @@
     "chooseGenre": "Choose a community to get started",
     "comingSoon": "Coming soon",
     "aboutTitle": "About Wisdom Assemble",
-    "aboutBody": "Wisdom Assemble is a multi-language platform for a set of genre-specific Q&A services. When a question is posted, AI attempts to answer first; when AI isn't confident, a real human expert takes over. It's the second opinion service AI can't provide, built for the AI era. For specialized or personal concerns AI alone can't fully resolve, we aim to help by drawing on real human knowledge. We're steadily building out development and operations, adding new genres over time.",
+    "aboutBody": "Wisdom Assemble is a multi-language platform for a set of genre-specific Q&A services. When a question is posted, AI attempts to answer first; when AI isn't confident, a real human expert takes over. It's the second opinion service AI can't provide, built for the AI era. For specialized or personal concerns AI alone can't fully resolve, we aim to help by drawing on real human knowledge. This service is operated by an individual.",
     "searchPlaceholder": "Search by genre or keyword...",
     "noResults": "No genres match your search.",
     "debugCardTagline": "Coding bugs and technical questions, solved by AI first and real developers next.",
