@@ -1271,6 +1271,52 @@ treatment（gradient/split/diagsplit/stripe系）でTMが透明になり見え�
 
 ---
 
+### 🔐 2026-08-15 本番のservice_roleキーが公開リポジトリに出ていた（解消済み・要点だけ残す）
+
+**B1（Googleログインのみ化）の作業中に発見。** CLAUDE.mdに書いてあったテストアカウントの
+パスワードが公開されているか確かめるためリポジトリの公開状態を見たら**公開**だったので、
+秘密情報を総ざらいしたところ出てきた。**7週間（2026-06-28〜）この状態だった＝今日の作業とは無関係。**
+
+| 何が | どこに |
+|---|---|
+| 本番の`service_role`キー（RLSを完全にバイパス） | `scripts/` の4ファイルに直書き（count-hard / local-rpg-test / test6-finish / test6-rpg） |
+| テストアカウント12件＋共通パスワード | CLAUDE.md本文 |
+
+**実際に有効だったことを確認**（漏洩キーでDBを読めた／`takeshi@test.com`でログイン成功）。
+ただし**悪用の形跡はなし**（質問0・回答0・アカウント13件すべて6/27作成・見知らぬ行なし）。
+
+**やったこと（この順番でないと本番が止まる）**
+1. 新しいAPIキー形式へ移行：`sb_secret_...`（旧service_role）／`sb_publishable_...`（旧anon）
+2. `.env.local` → Cloudflareの**Variables and secrets**と**Build variables の両方** → push で再ビルド
+   （`NEXT_PUBLIC_*`は**ビルド時にJSへ焼き込まれる**ので、値を変えたら再デプロイが必須）
+3. 配信中の全JSチャンク・全ホストのHTMLに**旧鍵が0箇所**であることを確認してから
+   Supabase → API Keys → Legacy → **Disable JWT-based API keys**
+4. Authentication → Providers → **Email をオフ**
+5. コードから直書きを削除（`process.env`から読む形へ）／CLAUDE.mdからパスワードを削除
+
+**結果**：漏洩キーは `Legacy API keys are disabled`、テストアカウントは `Email logins are disabled`、
+メール新規登録も `Email signups are disabled`。**Googleログインは正常**（`/auth/v1/authorize?provider=google`が302でGoogleへ）。
+
+**⚠️ 今後の前提（間違えると壊す）**
+- **キーは新形式**。`eyJ...`のJWT形式は**もう使えない**。復活させないこと
+- **`Disable JWT-based API keys` は anon と service_role の両方を落とす**。anonはサイトのほぼ全機能が
+  使っているので、**anonを新形式へ移行する前に押すと全ページが死ぬ**（今回、押す直前に気づいて止めた）
+- **UIを消しても塞がらない**。Supabaseの認証エンドポイントは外部から直接叩けるので、
+  プロバイダ自体を無効化する必要がある。これがB1の本体だった
+
+**✅ B1完了**：Supabase側の無効化に加え、ログイン画面からメール/パスワードのUIを削除。
+`/auth/signup`（どこからもリンクされていないがURL直打ちで到達できた）はログインへリダイレクト。
+全テナント＋ルートで`type="password"`が0箇所・Googleボタンのみになったことを本番で確認。
+**認証テーブルとアカウントのデータは消していない。**
+
+**残タスク（任意）**：テストアカウント13件の削除（ログインできないので急ぎではない）／
+リポジトリを非公開にするか（鍵は無効化済みなので必須ではない）。
+
+**教訓**：リポジトリの公開状態は早い段階で確認する。CLAUDE.mdに「service_roleは絶対に公開しない」と
+書いてあったのに、**7週間誰も実際のファイルを見ていなかった**。方針を書くだけでは守られない。
+
+---
+
 ### 🧹 2026-08-08 旧seed全削除・テナント独立性の是正・BUG休眠化（エンジニア）
 
 **このセッションでやったこと。すべて本番反映済み・実データで検証済み。**
