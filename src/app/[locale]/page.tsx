@@ -57,8 +57,18 @@ export default async function HomePage({
 
   const t = await getTranslations('home')
   const locale = await getLocale()
-  const messages = await getMessages() as { skillTags?: Record<string, string> }
-  const skillLabel = (skill: string) => messages.skillTags?.[skill] ?? skill
+  const messages = await getMessages() as {
+    skillTags?: Record<string, string>
+    searchKeywords?: Record<string, string>
+  }
+  // 検索チップは「表示ラベル」と「検索語」が同じ文字列である必要がある。
+  // 以前は表示だけ翻訳して検索値は日本語のままだったため、英語UIで "Effects pedals" を
+  // 押すと検索欄に「エフェクター」と出ていた（2026-08-15にユーザー指摘・全テナントで発生）。
+  // searchKeywords は skillTags と別に持つ。skillTagsは「得意なこと」の名前として自然な
+  // 語（例: Effects pedals）だが、検索は部分一致なので短い単語（例: Pedal）の方が当たる。
+  // 未定義なら skillTags → 生のキーの順にフォールバックする。
+  const keywordLabel = (kw: string) =>
+    messages.searchKeywords?.[kw] ?? messages.skillTags?.[kw] ?? kw
 
   const admin = getAdminClient()
   const { data: tenant } = await admin
@@ -97,10 +107,10 @@ export default async function HomePage({
               <Link
                 prefetch={false}
                 key={keyword}
-                href={`/?q=${encodeURIComponent(keyword)}`}
+                href={`/?q=${encodeURIComponent(keywordLabel(keyword))}`}
                 className="px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
-                {skillLabel(keyword)}
+                {keywordLabel(keyword)}
               </Link>
             ))}
           </div>
@@ -141,7 +151,20 @@ async function QuestionResults({
     .range(offset, offset + PAGE_SIZE - 1)
 
   if (q.trim()) {
-    query = query.or(`title.ilike.%${q.trim()}%,body.ilike.%${q.trim()}%`)
+    // PostgRESTのor()はカンマで条件を区切り、括弧でグループ化するため、
+    // 検索語にこれらが入ると条件が壊れる。空白に潰してから埋め込む。
+    const safeQ = q.trim().replace(/[,()]/g, ' ')
+    // 閲覧中の言語の翻訳も検索対象にする。
+    // これが無いと、投稿された元言語（seedは全部日本語）でしか当たらず、
+    // 英語UIで英語の語を検索しても必ず0件になっていた（2026-08-15に実データで確認）。
+    // 全言語をまとめて検索すると他言語の質問まで拾ってしまうため、現在のロケールだけに絞る。
+    const conds = [`title.ilike.%${safeQ}%`, `body.ilike.%${safeQ}%`]
+    // localeはフィルタ文字列にそのまま埋まるので、既知のロケール以外は絶対に通さない
+    if ((routing.locales as readonly string[]).includes(locale)) {
+      conds.push(`title_i18n->>${locale}.ilike.%${safeQ}%`)
+      conds.push(`body_i18n->>${locale}.ilike.%${safeQ}%`)
+    }
+    query = query.or(conds.join(','))
   }
   if (tag.trim()) {
     // タグ配列に指定タグを含む質問だけ（No.34タグフィルター）

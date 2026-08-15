@@ -445,6 +445,17 @@
     "弦高": "Tinggi senar",
     "ビンテージ": "Vintage"
   },
+  "searchKeywords": {
+    "エフェクター": "Pedal",
+    "オーバードライブ": "Overdrive",
+    "ファズ": "Fuzz",
+    "マルチエフェクター": "Multi-efek",
+    "ピックアップ": "Pickup",
+    "配線": "Wiring",
+    "ノイズ": "Noise",
+    "弦高": "Senar",
+    "ビンテージ": "Vintage"
+  },
   "apiErrors": {
     "loginRequired": "Diperlukan login",
     "titleAndBodyRequired": "Judul dan detail wajib diisi",

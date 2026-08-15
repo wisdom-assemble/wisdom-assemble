@@ -445,6 +445,17 @@
     "弦高": "String action",
     "ビンテージ": "Vintage"
   },
+  "searchKeywords": {
+    "エフェクター": "Pedal",
+    "オーバードライブ": "Overdrive",
+    "ファズ": "Fuzz",
+    "マルチエフェクター": "Multi-effect",
+    "ピックアップ": "Pickup",
+    "配線": "Wiring",
+    "ノイズ": "Noise",
+    "弦高": "Action",
+    "ビンテージ": "Vintage"
+  },
   "apiErrors": {
     "loginRequired": "Login required",
     "titleAndBodyRequired": "Title and details are required",

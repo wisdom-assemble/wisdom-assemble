@@ -75,7 +75,26 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
                   }}
                 >
                   {label}
-                  <sup style={{ fontSize: tmFontSize, fontWeight: 700, marginLeft: 2 }}>™</sup>
+                  {/* TMは親のfx-*から color:transparent を継承してしまい、自分では背景を
+                      持たないため見えなくなる（background-clip:text を使う gradient/split/
+                      diagsplit/stripe 系すべてで発生。2026-08-15に本番で確認）。
+                      塗り・影・輪郭を明示的に打ち消して、どのtreatmentでも必ず出るようにする。
+                      色はSVG版(tspan fill=gradientFrom)と揃える。 */}
+                  <sup
+                    style={{
+                      fontSize: tmFontSize,
+                      fontWeight: 700,
+                      marginLeft: 2,
+                      letterSpacing: 0,
+                      color: override.gradientFrom,
+                      WebkitTextFillColor: override.gradientFrom,
+                      textShadow: 'none',
+                      WebkitTextStroke: '0',
+                      background: 'none',
+                    }}
+                  >
+                    ™
+                  </sup>
                 </span>
               </div>
             </foreignObject>

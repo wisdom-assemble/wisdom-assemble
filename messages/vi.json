@@ -445,6 +445,17 @@
     "弦高": "Độ cao dây",
     "ビンテージ": "Vintage"
   },
+  "searchKeywords": {
+    "エフェクター": "Pedal",
+    "オーバードライブ": "Overdrive",
+    "ファズ": "Fuzz",
+    "マルチエフェクター": "Multi-effect",
+    "ピックアップ": "Pickup",
+    "配線": "Đi dây",
+    "ノイズ": "Nhiễu",
+    "弦高": "Độ cao dây",
+    "ビンテージ": "Vintage"
+  },
   "apiErrors": {
     "loginRequired": "Cần đăng nhập",
     "titleAndBodyRequired": "Tiêu đề và chi tiết là bắt buộc",

@@ -412,6 +412,7 @@
     "reject": "必須以外を拒否"
   },
   "skillTags": {},
+  "searchKeywords": {},
   "apiErrors": {
     "loginRequired": "ログインが必要です",
     "titleAndBodyRequired": "タイトルと詳細は必須です",

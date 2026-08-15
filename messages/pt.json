@@ -445,6 +445,17 @@
     "弦高": "Altura das cordas",
     "ビンテージ": "Vintage"
   },
+  "searchKeywords": {
+    "エフェクター": "Pedal",
+    "オーバードライブ": "Overdrive",
+    "ファズ": "Fuzz",
+    "マルチエフェクター": "Multiefeitos",
+    "ピックアップ": "Captador",
+    "配線": "Fiação",
+    "ノイズ": "Ruído",
+    "弦高": "Cordas",
+    "ビンテージ": "Vintage"
+  },
   "apiErrors": {
     "loginRequired": "Login necessário",
     "titleAndBodyRequired": "Título e detalhes são obrigatórios",
