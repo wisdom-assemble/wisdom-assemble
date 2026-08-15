@@ -199,12 +199,23 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   // 投稿直後のみ：類似の解決済み質問を取得
   let similarQuestions: { id: string; title: string; slug: string }[] = []
   if (resultParam) {
+    // QuestionForm側と同じ区切り文字にする。()%\ を落とさないと PostgREST の .or() が
+    // 壊れ、タイトルに括弧が入っているだけで無言で0件になる（サーバ側だけ抜けていた）。
     const keywords = question.title
-      .split(/[\s　、。？！,.!?]+/)
+      .split(/[\s　、。？！,.!?()（）*%\\]+/)
       .filter((w: string) => w.length >= 2)
       .slice(0, 5)
     if (keywords.length > 0) {
-      const orFilter = keywords.map((k: string) => `title.ilike.%${k}%`).join(',')
+      // 閲覧中の言語の翻訳も対象にする（元言語だけだと、別の言語で投稿された
+      // 解決済み質問が候補に出てこない）。localeは既知のものだけ埋め込む。
+      const useI18n = (routing.locales as readonly string[]).includes(locale)
+      const orFilter = keywords
+        .flatMap((k: string) =>
+          useI18n
+            ? [`title.ilike.%${k}%`, `title_i18n->>${locale}.ilike.%${k}%`]
+            : [`title.ilike.%${k}%`]
+        )
+        .join(',')
       const { data: similar } = await supabase
         .from('questions')
         .select('id, title, slug')

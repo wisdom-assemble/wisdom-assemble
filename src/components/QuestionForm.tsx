@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTenantId } from '@/components/TenantProvider'
+import { routing } from '@/i18n/routing'
 
 type OverlayPhase = 'ai' | 'matched' | null
 
@@ -109,7 +110,15 @@ export default function QuestionForm() {
         .filter(w => w.length >= 2)
         .slice(0, 4)
       if (!keywords.length) return
-      const orFilter = keywords.map(k => `title.ilike.%${k}%`).join(',')
+      // 閲覧中の言語の翻訳も対象にする。元言語だけだと、別の言語で投稿された
+      // 解決済み質問が「似た質問」として出てこない（照合・検索と同じ問題）。
+      // routing.locales を使う（translate.ts はサーバ側の依存を持つのでクライアントに入れない）
+      const useI18n = (routing.locales as readonly string[]).includes(locale)
+      const orFilter = keywords
+        .flatMap(k => useI18n
+          ? [`title.ilike.%${k}%`, `title_i18n->>${locale}.ilike.%${k}%`]
+          : [`title.ilike.%${k}%`])
+        .join(',')
       const { data } = await supabase
         .from('questions')
         .select('id, title, slug, status')
@@ -119,7 +128,7 @@ export default function QuestionForm() {
         .limit(4)
       setSimilar(data ?? [])
     }, 500)
-  }, [title, tenantId])
+  }, [title, tenantId, locale])
 
   // No.26 下書き保存: 入力をlocalStorageに退避し、リロードや誤って離脱しても消えないように（テナント別）
   const draftKey = `wa_draft_${tenantId}`
