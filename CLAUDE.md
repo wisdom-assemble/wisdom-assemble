@@ -1057,6 +1057,56 @@ TENANT_SEARCH_TAGS（ルートポータルの検索用・日英両方）
 **触るファイル（内部ID＝サブドメインなので別名まわりは不要）**
 `middleware.ts`（VALID_SUBDOMAINS）／`src/lib/tenantNames.ts`（TENANT_NAME_MAP・TENANT_SEARCH_TAGS・必要ならLOGO_STYLE_OVERRIDES）／`src/lib/gemini.ts`（GENRE_CONFIG）／`src/lib/skillTags.ts`（2つのマップ）／`src/components/PortalHome.tsx`（REVIEW_TENANT_IDS・FALLBACK_COLOR_THEME）／`messages/*.json`×8（`guitarCardTagline`）／`public/icons/guitar.png`・`public/og/guitar.png`
 
+### ✅ 2026-08-15 GUITAR & PEDALS テナント作成・テナントビルダー改修（エンジニア）
+
+**テナントは本番稼働済み。** https://guitar.wisdomassemble.com （コミット `746cde4`）
+
+#### 確定した内容
+- 内部ID・公開サブドメインとも **`guitar`** で統一 → **別名の登録3箇所（`SUBDOMAIN_ALIASES` / `PUBLIC_SUBDOMAIN_MAP` / `AdminVisitors`のalias）はすべて不要**になった。今後もこの方式を推奨
+- 表示名 `GUITAR & PEDALS` ／ `color_theme` `#a96800`（金）／ ロゴ = American Typewriter・treatment `diagsplit`・`widthEmPerChar` 0.6599 ／ 閾値91
+- スキルタグ18件・検索候補9件・ポータル検索タグ・タグライン8言語・`description_i18n` 7言語・画像2枚、すべて投入済み
+- 本番検証: 全ページ200／画像2枚200／`/zh`等6言語はnoindex・en/jaはindex／sitemap 12件／単発10回すべて200／既存2テナントに影響なし
+
+#### ⭐ スキルタグの設計方針（今後の全テナントに適用）
+マッチングは **`questionText.includes(tag)` の部分一致**（[matching.ts:62](src/lib/matching.ts:62)）で、対象は**投稿された元言語の title+body**。ここから次が導かれる:
+- **`A・B` のような複合語は入れない**。「配線・改造」は質問文に出ないので**一度も一致しない**。「配線」「改造」に分ける
+- **同義語・表記ゆれは独立したタグとして両方入れる**（エフェクター/ペダル、アコースティックギター/アコギ、ビンテージ機材/ヴィンテージ）。分かっている人は両方チェックするので実害がなく、取りこぼしが減る。**ヴィンテージ/ビンテージ問題もこれで解決する**
+- 表示ラベルだけ `messages/*.json` の `skillTags` で各言語に切り替わる（**値＝照合用の内部文字列、表示＝各言語**）。今回23語×7言語を追加済み。**新テナントでは必ずこの翻訳もセットで入れること**（無いと英語圏でも日本語のまま出る）
+
+#### ⚠️ 未解決（実ユーザーが英語で投稿し始めたら効いてくる）
+上記のとおり照合は**元言語のテキストだけ**を見ており、**翻訳結果（`title_i18n`）は使われない**。しかも [route.ts:285](src/app/api/questions/route.ts:285) の照合時点では翻訳がまだ保存されていない（保存は312行目）。→ **日本語タグは英語の質問に一切当たらない**。
+- **解決策（ほぼコスト無し・要実装）**: レスポンスを返す前に**どのみち翻訳を待っている**ので、待つ位置を照合の前へ移すだけでよい。増えるのは照合処理と重ならなくなるぶん（DB書き込み＋通知メールで0.3〜0.8秒・人間ルート時のみ）。これで**日本語タグ1本で英語の質問にも当たる**ようになり、言語ごとにタグを揃える運用自体が不要になる
+- seed期は全問日本語なので影響ゼロ。**AdSense申請後に着手**
+
+#### 🔧 テナントビルダー(Artifact)を改修（URL不変）
+https://claude.ai/code/artifact/cad8ed82-9f1f-4131-b389-5be73c9ada22
+- **カード自体をSTEP順に並べ替え**（CSSの`order`のみ。DOM構造とIDは一切動かしていないので既存機能に影響なし）。STEP 1〜13で、Supabase・Cloudflare・チャットでの作業まで1本の並びに入った
+- **進捗バーを上部固定**（1行・51px）。入力から判定できるSTEPは自動で✓、判断が要るSTEPだけ手動チェック
+- **スキル/検索語をサジェスト調査つきで提案する流れ**に変更。依頼文が「先に `suggest-keywords.mts` を実行しろ」と指示し、返ってきた候補が**根拠つきでビルダー上に並び、チェックで採否を選べる**（保存JSONに`use:false`も残るのでレビュー状態ごと復元可）
+
+**見つけて直した穴5件**: ①`offerFile`が文字列を`URL.createObjectURL`に渡して落ちる ②「ここへ」が無反応（`behavior:"smooth"`が動かない環境がある） ③Supabase/Cloudflareが手順として繋がっていない ④画面の並びが作業順と違う ⑤ジャンプ先が固定バーに潜る
+
+**MEMO（次にビルダーを触るとき）**
+1. ロゴビルダーの UNDO / REDO
+2. スキル・キーワードの現在の個数表示
+3. **ファビコン色とOGP色が食い違っても警告が出ない**（今回踏んだ。ファビコンはロゴ色・OGPは`OG_COLORS`と出どころが違う）
+4. **OGP色を既定でテナントのテーマ色に追従させる**。既定の`#5B5B5B`はビルダー自身のアクセント色を流用しただけで、**新テナントにグレーの出番は無い**（グレーはルートポータル専用）。しかも黒背景では読めない画像が焼き込まれる
+5. 手順書の `?tenant=` の記述を削除（下記のとおり効かない）
+
+#### 🧰 新設: `scripts/suggest-keywords.mts`
+Googleサジェストから「実際に検索されている語」を集める調査ツール。`npx tsx scripts/suggest-keywords.mts --out <名前> <シード語...>`。実需ランキングと採否判断用のまとめを出す。⚠️検索ボリュームの実数は取れない（キーワードプランナー等が必要）。**サイト内検索チップは「よく検索される」だけでは足りず、実際に質問本文にその文字列が出るかを投稿後に確認して確定すること**。
+- 今回の発見例: `ペダル`単体は**自転車**（ペダルトレイン/ペダルレンチ）／`ピックアップ`は**ガチャ・トラック**／`ノイズ`は**ノイズキャンセリング**／逆に`弦高`(調整/測り方)・`エフェクター`(ボード/順番/電源)・`配線`(配線材/配線図)は実需が明確。ただし**サイト内検索なので外部の曖昧さは実害にならない**（この線引きを間違えないこと）
+
+#### 📏 sitemap URL数のベースライン（2026-08-15・投稿開始前）
+| ホスト | 合計 | 質問 |
+|---|---|---|
+| guitar.wisdomassemble.com | 12 | 0 |
+| music-prod.wisdomassemble.com | 12 | 0 |
+| wisdomassemble.com | 10 | 0 |
+| bug.wisdomassemble.com | 0 | 0（休眠） |
+
+---
+
 ### 🧹 2026-08-08 旧seed全削除・テナント独立性の是正・BUG休眠化（エンジニア）
 
 **このセッションでやったこと。すべて本番反映済み・実データで検証済み。**
@@ -1370,7 +1420,12 @@ https://claude.ai/code/artifact/cad8ed82-9f1f-4131-b389-5be73c9ada22
 - **ロゴを崩さないコツ**: ロゴビルダーで作ったら `canvas.measureText(表示名).width / 表示名.length / fontSizePx` を `LOGO_STYLE_OVERRIDES[newid].widthEmPerChar` に入れる（viewBox幅が実測でぴったり合い、右切れ・中央ズレしない）。指定しなくても`maxWidth:100%`で溢れはしないが、フォントによっては見た目が寄る
 - **ロゴのtreatment(2026-07-20〜)**: `LOGO_STYLE_OVERRIDES[newid].treatment`に25スタイル指定可(`globals.css`のfx-*をSiteLogoが`foreignObject`で適用)。未指定は平面グラデ(後方互換)。テナントビルダー(Artifact)で30書体×25スタイルを組んで出力するのが基本
 - **テナント別ダークモード(2026-07-20〜)**: `tenants.theme='dark'`で`<html data-theme="dark">`＝全ページダーク(`globals.css`のダーク上書き層)。`tenants.bg_color`で背景色を個別変更。ルートポータルのカードもtheme/bg_colorに追従。INSERTの`theme`/`bg_color`列(migration `20260720000001`)をお忘れなく
-- **ローカル確認**: 開発サーバはmiddleware未実行なので `http://localhost:3000/ja?tenant=newid` の `?tenant=` パラメータでテナントを指定して確認できる（middlewareの開発分岐がparam/headerを許可）。**ルートポータルのカード確認は `?tenant=root`**（新テナントのカード追加状態・ダーク/ライトを確認）
+- **ローカル確認**: ⚠️**`?tenant=xxx` は効かない**（2026-08-15に実測。middlewareに実装はあるが、そもそも**dev環境ではmiddlewareが1度も実行されていない**＝`/favicon.ico` が204でなく404、`/icon` も301でなく404 で確認）。`x-tenant-id` ヘッダーが効くのは、middlewareが無い分 `tenant.ts` がリクエストヘッダーを直接読むため。**必ずヘッダーで指定すること**:
+  ```bash
+  curl -s -H "x-tenant-id: newid" http://localhost:3000/ja    # テナント本体
+  curl -s -H "x-tenant-id: root"  http://localhost:3000/ja    # ルートポータルのカード
+  ```
+  ブラウザで見た目を確認したいときは、上のHTMLを `public/icons/_preview.html` 等に保存して `http://localhost:3000/icons/_preview.html` を開く（同一オリジンなので `/_next/...` のCSS・フォントがそのまま解決し、ロゴのfx-*も正しく描画される）。**確認後は必ず削除すること**
 
 ### 3. UI規則（CSSやロゴデザインが変わっても必ず守ること）
 - ログインページのロゴは **左揃え**
