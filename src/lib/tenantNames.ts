@@ -12,6 +12,7 @@ export const TENANT_NAME_MAP: Record<string, string> = {
   keyboard: 'KEYBOARDS',
   philippines: 'PH STUDY',
   canada: 'CA STUDY',
+  guitar: 'GUITAR & PEDALS',
 }
 
 export function getTenantDisplayName(tenantId: string | undefined, name: string): string {
@@ -96,6 +97,16 @@ export const LOGO_STYLE_OVERRIDES: Record<string, LogoStyleOverride> = {
     fontSizePx: 32,
     gradientFrom: '#74a7fe',
     gradientTo: '#606060',
+  },
+  guitar: {
+    fontFamily: "'American Typewriter', 'Courier New', monospace",
+    fontWeight: 800,
+    letterSpacingEm: -0.08,
+    fontSizePx: 34,
+    gradientFrom: '#a96800',
+    gradientTo: '#F97316',
+    treatment: 'diagsplit',
+    widthEmPerChar: 0.6599,
   },
 }
 

@@ -16,6 +16,7 @@ const IMAGE_CACHE_HEADERS = {
 const OG_COLORS: Record<string, string> = {
   debug: '#10B981',
   dtm: '#4A90E2',
+  guitar: '#a96800',
   root: '#9ca3af',
 }
 const DEFAULT_COLOR = '#4F46E5'

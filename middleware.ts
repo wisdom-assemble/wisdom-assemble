@@ -12,7 +12,7 @@ const UNLOCALIZED_PREFIXES = ['/api', '/auth/callback', '/sitemap.xml', '/robots
 const VALID_SUBDOMAINS = [
   'debug', 'tax-japan', 'australia-whv', 'bali',
   'chiangmai', 'portugal', 'dtm', 'keyboard',
-  'philippines', 'canada',
+  'philippines', 'canada', 'guitar',
 ]
 
 // 公開URL用のサブドメインエイリアス（内部のテナントID・DB主キーは変更しない）
