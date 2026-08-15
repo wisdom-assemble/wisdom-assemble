@@ -51,6 +51,8 @@
 - 基本用語 page_id: 38af5fa8-bcb9-80a7-8b9b-da2f6d7064ae
 - プロジェクト仕様書 page_id: 38af5fa8-bcb9-8065-9ccb-c55550c8d4ed
 - **ローンチタスクチェックリスト page_id: 390f5fa8-bcb9-80c6-bacb-f23143389627**
+- **テナント作成マニュアル page_id: 3bdf5fa8-bcb9-81a2-8bff-c084f459fae3**（2026-08-15新設・新テナントを作るときはまずこれを読む）
+  https://app.notion.com/p/Wisdom-Assemble-3bdf5fa8bcb981a28bffc084f459fae3
 
 ## Supabase
 - URL: https://scnkpmxvtwtsxzbhfdnf.supabase.co
@@ -1595,6 +1597,11 @@ https://claude.ai/code/artifact/cad8ed82-9f1f-4131-b389-5be73c9ada22
 | ai_answered | AI回答済み | AIが回答（旧フロー） |
 
 ## テナント追加時の必須チェックリスト
+
+> 📘 **手順の全体像・毎回ミスる11項目・確認コマンドは Notion「テナント作成マニュアル」にまとまっています。**
+> https://app.notion.com/p/Wisdom-Assemble-3bdf5fa8bcb981a28bffc084f459fae3
+> テナントビルダー（実装依頼文）にも同じ11項目が入るので、Claude側でも必ず確認されます。
+> 以下はファイル単位の詳細（マニュアルの3章に対応）。
 
 新テナントを追加するたびに必ず設定すること：
 
