@@ -62,7 +62,7 @@ async function main() {
 
   for (const q of questions) {
     const answers = await fetch(
-      `${url}/rest/v1/answers?select=id,is_ai,is_accepted,created_at,body_i18n&question_id=eq.${q.id}&order=created_at.asc`,
+      `${url}/rest/v1/answers?select=id,is_ai,is_accepted,created_at,body,source_locale,body_i18n&question_id=eq.${q.id}&order=created_at.asc`,
       { headers }
     ).then((r) => r.json())
 
@@ -74,11 +74,29 @@ async function main() {
     const aiI18n = ai ? Object.keys(ai.body_i18n ?? {}) : []
     const missAi = ai ? EXPECTED_LOCALES.filter((l) => !aiI18n.includes(l)) : []
 
+    // 人間の回答も翻訳を確認する。2026-08-17に、回答の body_i18n が7言語すべて
+    // 空のまま保存されていたのに、このスクリプトが「✅ すべてOK」と出す事故があった
+    // （AI回答しか見ていなかった）。回答の翻訳失敗はAPI側でも握り潰される＝画面にも
+    // 出ないため、ここで見ないと誰も気づけない。
+    const humans = (answers ?? []).filter?.((a) => !a.is_ai) ?? []
+    const humanChecks = humans.map((a) => {
+      const src = a.source_locale ?? 'ja'
+      const want = EXPECTED_LOCALES.filter((l) => l !== src)
+      const i18n = a.body_i18n ?? {}
+      const miss = want.filter((l) => !i18n[l])
+      // 出力トークンが尽きると数文字だけ入った状態で返ることがある（実測: 2文字）。
+      // 原文の1/4未満は欠損とみなす。
+      const tooShort = want.filter((l) => i18n[l] && i18n[l].length < (a.body?.length ?? 0) * 0.25)
+      return { want: want.length, got: want.length - miss.length, miss, tooShort }
+    })
+    const humanNg = humanChecks.filter((c) => c.miss.length || c.tooShort.length)
+
     // AI回答が無い場合は「人間ルーティング」が正常に走っているかを見る
     const routed = !!q.matched_b_id
     const ok =
       missTitle.length === 0 &&
       missBody.length === 0 &&
+      humanNg.length === 0 &&
       (ai ? missAi.length === 0 : routed)
 
     if (!ok) allOk = false
@@ -95,6 +113,13 @@ async function main() {
       console.log(`  AI回答        : なし → 人間ルーティング ${routed ? '✅ 割当済み' : '❌ 未割当（宙ぶらりん）'}`)
     }
     console.log(`  回答総数      : ${answers.length ?? 0}`)
+    humanChecks.forEach((c, i) => {
+      const ng = [
+        c.miss.length ? `❌ 欠落: ${c.miss.join(',')}` : '',
+        c.tooShort.length ? `❌ 短すぎ: ${c.tooShort.join(',')}` : '',
+      ].filter(Boolean).join(' ')
+      console.log(`  人間回答${i + 1}翻訳 : ${c.got}/${c.want} ${ng || '✅'}`)
+    })
     console.log(`  判定          : ${ok ? '✅ OK — 次の質問へ進んでよい' : '❌ NG — 投稿を止めて原因を確認'}`)
   }
 
