@@ -70,21 +70,45 @@ const LOCALE_NAMES: Record<string, string> = {
 // 予算切れの場合は翻訳を諦める（質問の投稿自体は成功し、多言語ページが後回しになるだけ）。
 const TRANSLATE_BUDGET_MS = 18_000
 
+// 日本語→多言語では出力が原文の約15倍の文字数になる（実測: 366字→7言語で合計5554字）。
+// 係数1.2では上限に当たって一部の言語が数文字しか返らない事故が起きたため引き上げた。
+// 上限8192はGeminiの出力上限。Groqへ渡す値は callOnce 側で別途絞る（TPMを食うため）。
 function estimateMaxTokens(text: string, localeCount: number): number {
-  const est = Math.ceil(text.length * localeCount * 1.2)
-  return Math.min(4096, Math.max(800, est))
+  const est = Math.ceil(text.length * localeCount * 2.5)
+  return Math.min(8192, Math.max(1500, est))
 }
 
 // 1回分のAPI呼び出し。GeminiもGroqもOpenAI互換なのでリクエスト形は共通。
+// 出力させたいJSONの形。Geminiに渡すと構造が保証される（下記 callOnce のコメント参照）。
+export type JsonSchema = { name: string; schema: Record<string, unknown> }
+
+// 全キーが string の JSON を要求するスキーマを組み立てる
+export function stringSchema(name: string, keys: string[]): JsonSchema {
+  return {
+    name,
+    schema: {
+      type: 'object',
+      properties: Object.fromEntries(keys.map((k) => [k, { type: 'string' }])),
+      required: [...keys],
+      additionalProperties: false,
+    },
+  }
+}
+
 async function callOnce(
   provider: 'gemini' | 'groq',
   systemPrompt: string,
   userText: string,
-  maxTokens: number
+  maxTokens: number,
+  schema?: JsonSchema,
+  deadline?: number
 ): Promise<Response> {
   const isGem = provider === 'gemini'
   return fetch(isGem ? GEMINI_API_URL : GROQ_API_URL, {
     method: 'POST',
+    // 予算はループの前後でしか見ていないため、1回の呼び出しが長引くと予算を超える
+    // （実測で35秒かかった回があった）。呼び出し自体にも残り時間で上限をかける。
+    signal: deadline ? AbortSignal.timeout(Math.max(1000, deadline - Date.now())) : undefined,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${isGem ? GEMINI_API_KEY : GROQ_API_KEY}`,
@@ -95,9 +119,18 @@ async function callOnce(
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userText },
       ],
-      response_format: { type: 'json_object' },
-      // Geminiは内部thinkingがトークンを食うので下限を確保する
-      max_tokens: isGem ? Math.max(maxTokens, 1200) : maxTokens,
+      // Geminiはjson_schemaで出力の構造を強制できる。json_objectだけだと
+      // ①稀に不正なJSONを返す（`"id": "indonesian": "…"` のような二重コロン。
+      //   パース全体が失敗し全言語が失われる）②翻訳が要約され原文の半分の
+      //   分量になる、の2つが実際に起きた（2026-08-17に本番で発生・実測で確認）。
+      // Groqへのフォールバック側は8bモデルがjson_schema非対応なので従来どおり。
+      response_format: isGem && schema
+        ? { type: 'json_schema', json_schema: schema }
+        : { type: 'json_object' },
+      // Geminiは内部thinkingがトークンを食うので下限を確保する。
+      // GroqはTPM(6000/分)を「実際の使用量」ではなく「要求したmax_tokens」で予約するため、
+      // 大きな値を渡すと1回で枠を食い潰して次の質問が429になる。4096で頭打ちにする。
+      max_tokens: isGem ? Math.max(maxTokens, 1200) : Math.min(maxTokens, 4096),
     }),
   })
 }
@@ -116,7 +149,8 @@ async function callGroqJson(
   userText: string,
   usageOut?: TokenUsage,
   maxTokens = 4096,
-  deadline = Date.now() + TRANSLATE_BUDGET_MS
+  deadline = Date.now() + TRANSLATE_BUDGET_MS,
+  schema?: JsonSchema
 ): Promise<string> {
   const order: Array<'gemini' | 'groq'> = USE_GEMINI
     ? (HAS_GROQ ? ['gemini', 'groq'] : ['gemini'])
@@ -130,7 +164,9 @@ async function callGroqJson(
       break
     }
     for (let i = 0; i <= 2; i++) {
-      const res = await callOnce(provider, systemPrompt, userText, maxTokens)
+      const res = await callOnce(provider, systemPrompt, userText, maxTokens, schema, deadline)
+        .catch((e) => { lastErr = `${provider} ${e}`; return null })
+      if (!res) break // タイムアウト・通信エラーは次のプロバイダへ
       if (res.ok) {
         const json = await res.json()
         if (usageOut) {
@@ -173,23 +209,57 @@ export async function translateToLocales(
     (locale) => locale !== sourceLocale && (!onlyLocales || onlyLocales.includes(locale))
   )
   if (targets.length === 0) return {}
-  const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
+  // 書式に注意: `"id": Indonesian` のような「キー: 値」に見える書き方をすると、
+  // モデルがこれを出力テンプレートと誤解し `"id": "indonesian": "実際の翻訳"` という
+  // 不正なJSONを返すことがある（2026-08-17に本番で発生。JSON全体のパースが失敗し
+  // 7言語すべてが失われた）。キーと言語名は必ず括弧書きで分けること。
+  const localeList = targets.map((locale) => `${locale} (${LOCALE_NAMES[locale]})`).join(', ')
   const systemPrompt = `You are a professional translator. Translate the user's text into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly (headings, code blocks, lists, links). Respond with ONLY a JSON object whose keys are exactly the locale codes (${targets.join(', ')}) and whose values are the translated text for that locale. No explanations, no extra keys.`
 
-  try {
-    const content = await callGroqJson(systemPrompt, text, usageOut, estimateMaxTokens(text, targets.length), deadline)
-    const parsed = JSON.parse(content) as Record<string, string>
-    const result: Record<string, string> = {}
-    for (const locale of targets) {
-      if (typeof parsed[locale] === 'string' && parsed[locale].trim()) {
-        result[locale] = parsed[locale].trim()
+  const schema = stringSchema('translations', [...targets])
+  const maxTokens = estimateMaxTokens(text, targets.length)
+
+  // JSONが壊れて返る事故は「1回目は失敗するが2回目は通る」形で起きるため、
+  // 予算が残っていればパース失敗そのものを再試行する（API側のリトライは
+  // callGroqJson が429にしか反応せず、壊れたJSONは拾えないため）。
+  let lastErr: unknown = null
+  let best: Record<string, string> = {}
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0 && Date.now() >= deadline) break
+    try {
+      const content = await callGroqJson(systemPrompt, text, usageOut, maxTokens, deadline, schema)
+      const parsed = JSON.parse(content) as Record<string, string>
+      const result: Record<string, string> = {}
+      for (const locale of targets) {
+        const v = typeof parsed[locale] === 'string' ? parsed[locale].trim() : ''
+        // json_schema は「stringであること」しか保証しないので、出力トークンが尽きると
+        // 残りの言語に数文字だけ入った状態で返ってくる。原文に対して極端に短いものは
+        // 欠損とみなして採用しない（言語差を考えても1/4を下回ることはない）。
+        if (v && v.length >= text.length * 0.25) result[locale] = v
       }
+      if (Object.keys(result).length === targets.length) return result
+      if (Object.keys(result).length > Object.keys(best).length) best = result
+      lastErr = new Error(`incomplete: ${Object.keys(result).length}/${targets.length}`)
+    } catch (e) {
+      lastErr = e
     }
-    return result
-  } catch (e) {
-    console.error('translateToLocales: batch translation failed', e)
-    return {}
   }
+  // まとめて要求すると、モデルが最初の1〜2言語だけ出してJSONを閉じてしまうことがある
+  // （トークン切れではない。実測で completion 431 でも打ち切られた）。
+  // 欠けた言語だけで要求し直すと出力が短くなり通りやすいので、1段だけ補完する。
+  // onlyLocales 付きの呼び出しは既に補完中なので再帰しない。
+  const missing = targets.filter((l) => !best[l])
+  if (missing.length && missing.length < targets.length && !onlyLocales && Date.now() < deadline) {
+    Object.assign(best, await translateToLocales(text, sourceLocale, usageOut, missing, deadline))
+  }
+
+  const filled = targets.filter((l) => best[l]).length
+  if (filled > 0) {
+    if (filled < targets.length) console.error(`translateToLocales: partial ${filled}/${targets.length}`, lastErr)
+    return best
+  }
+  console.error('translateToLocales: batch translation failed', lastErr)
+  return {}
 }
 
 // タイトルと本文をまとめて1回のGroq呼び出しで翻訳する（title/bodyを別々に呼ぶと8b-instantモデルへの
@@ -205,13 +275,24 @@ export async function translateQuestionToLocales(
   deadline = Date.now() + TRANSLATE_BUDGET_MS
 ): Promise<{ title_i18n: Record<string, string>; body_i18n: Record<string, string> }> {
   const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
-  const localeList = targets.map((locale) => `"${locale}": ${LOCALE_NAMES[locale]}`).join(', ')
+  // 書式に注意: `"id": Indonesian` のような「キー: 値」に見える書き方をすると、
+  // モデルがこれを出力テンプレートと誤解し `"id": "indonesian": "実際の翻訳"` という
+  // 不正なJSONを返すことがある（2026-08-17に本番で発生。JSON全体のパースが失敗し
+  // 7言語すべてが失われた）。キーと言語名は必ず括弧書きで分けること。
+  const localeList = targets.map((locale) => `${locale} (${LOCALE_NAMES[locale]})`).join(', ')
   const keyList = targets.flatMap((locale) => [`title_${locale}`, `body_${locale}`]).join(', ')
   const systemPrompt = `You are a professional translator. You will receive a JSON object with "title" and "body" fields. Translate BOTH fields into ALL of the following languages: ${localeList}. Preserve Markdown formatting exactly in the body (headings, code blocks, lists, links). Respond with ONLY a flat JSON object (no nested objects) with exactly these keys: ${keyList}. Each key's value is the translated text for that field/locale. No explanations, no extra keys.`
   const userText = JSON.stringify({ title, body })
 
   try {
-    const content = await callGroqJson(systemPrompt, userText, usageOut, estimateMaxTokens(title + body, targets.length), deadline)
+    const content = await callGroqJson(
+      systemPrompt,
+      userText,
+      usageOut,
+      estimateMaxTokens(title + body, targets.length),
+      deadline,
+      stringSchema('question_translations', targets.flatMap((l) => [`title_${l}`, `body_${l}`]))
+    )
     const parsed = JSON.parse(content) as Record<string, string>
     const title_i18n: Record<string, string> = {}
     const body_i18n: Record<string, string> = {}
