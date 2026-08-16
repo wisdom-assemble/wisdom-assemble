@@ -887,6 +887,18 @@ cd /Users/apple/wisdom-assemble && node scripts/verify-latest-post.mjs dtm 1
 > 本人にマッチするかを必ず確認する。※2026-08-17時点で guitar の回答候補は
 > YOYOYO（columbusslx1981・タグ18個）1人だけで、設定は正しいことを確認済み。
 >
+> **📋 BA選択前の実測値（比較用・選択すると分からなくなるので残す）**
+> 下の「📮 投稿フェーズの進捗」にある「BA選択時に `answer_count` が+1か確認する」用。
+> 2026-08-17 01:38 JST・本人（columbusslx1981 = YOYOYO）の値。
+>
+> | 項目 | BA選択前 | 選択後の期待値 |
+> |---|---|---|
+> | `tenant_profiles.answer_count`（dtm） | **1** | **1のまま**（2なら二重カウント＝バグ） |
+> | `answered_tags`（dtm） | `[]` | 質問のタグが入る（No.27の実績蓄積） |
+> | `answer_count`（guitar） | 0 | — |
+> | M01 の status | `open` | `solved` |
+> | M13 の status | `ai_answered` | （BAを選ぶなら `solved`） |
+>
 > 以下は2026-08-08時点の記述で、テナント作成の経緯として残してあります。
 > 必要な情報は全部 **「🎸 2026-08-08 GUITAR & PEDALS テナント作成の準備」の節**にあります（案・分担・手順7段階・触るファイル一覧）。**まずそこを読んでください。**
 > 最初にやること＝**mtさんにスキルタグ15件を確定してもらう**。そこから始まります。
