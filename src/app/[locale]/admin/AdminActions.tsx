@@ -114,7 +114,7 @@ export function QuestionList({ questions, adminUserId }: { questions: Question[]
 
   return (
     <div>
-      <div className="sticky top-[73px] z-[9] bg-white py-2 flex gap-2 mb-4 border-b border-gray-200">
+      <div className="sticky top-[var(--header-h,73px)] z-[9] bg-white py-2 flex gap-2 mb-4 border-b border-gray-200">
         <input
           type="text"
           value={q}
@@ -161,7 +161,7 @@ export function UserList({ profiles, adminUserId }: { profiles: Profile[]; admin
 
   return (
     <div>
-      <div className="sticky top-[73px] z-[9] bg-white py-2 flex gap-2 mb-4 border-b border-gray-200">
+      <div className="sticky top-[var(--header-h,73px)] z-[9] bg-white py-2 flex gap-2 mb-4 border-b border-gray-200">
         <input
           type="text"
           value={q}

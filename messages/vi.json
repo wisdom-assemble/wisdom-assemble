@@ -478,5 +478,8 @@
     "cannotEscalate": "Không thể chuyển cấp ở trạng thái này",
     "contactInfoNotAllowed": "Không được đăng thông tin liên hệ cá nhân (email, số điện thoại, tài khoản mạng xã hội, v.v.).",
     "spamNotAllowed": "Không được đăng nội dung quảng cáo hoặc mời chào."
+  },
+  "brand": {
+    "catchcopy": "Hỏi AI.\nNếu AI không biết, con người trả lời."
   }
 }

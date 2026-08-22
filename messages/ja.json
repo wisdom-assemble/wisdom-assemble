@@ -435,5 +435,8 @@
     "cannotEscalate": "このステータスではエスカレーションできません",
     "contactInfoNotAllowed": "個人の連絡先情報（メールアドレス・電話番号・SNSアカウント等）は投稿できません。",
     "spamNotAllowed": "広告・勧誘目的の投稿はできません。"
+  },
+  "brand": {
+    "catchcopy": "AIに聞く。\nAIがわからなければ、人間が答える。"
   }
 }

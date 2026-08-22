@@ -37,6 +37,7 @@ export default async function PortalHome() {
   const locale = await getLocale()
   setRequestLocale(locale)
   const t = await getTranslations('portalPage')
+  const tBrand = await getTranslations('brand')
   const tProfile = await getTranslations('profilePage')
 
   const admin = getAdminClient()
@@ -75,6 +76,14 @@ export default async function PortalHome() {
         <h1 className="mb-3">
           <WisdomAssembleWordmark fontSize={32} />
         </h1>
+        {/* 【2026-08-22】キャッチコピー。説明文ではなくサービスのルールとして、説明より先に大きく見せる。
+            2行組みで固定しているのは、1行にするとスマホ(375px)で本文より小さい約15pxまで
+            落とさないと収まらないため（全角23文字ぶん ÷ 343px）。改行位置を固定すれば
+            2行目18文字ぶんで約19pxを確保でき、狙いどおり「少し大きめ」になる。
+            テナント側(app/[locale]/page.tsx)と同じサイズ指定にしてある。 */}
+        <p className="whitespace-pre-line text-lg sm:text-xl font-medium text-gray-800 leading-snug mb-3">
+          {tBrand('catchcopy')}
+        </p>
         <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 

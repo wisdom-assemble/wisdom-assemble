@@ -478,5 +478,8 @@
     "cannotEscalate": "Este status não pode ser escalado",
     "contactInfoNotAllowed": "Informações de contato pessoais (e-mail, número de telefone, contas de redes sociais, etc.) não podem ser publicadas.",
     "spamNotAllowed": "Não são permitidas publicações de publicidade ou solicitação."
+  },
+  "brand": {
+    "catchcopy": "Pergunte à IA.\nSe não souber, um humano responde."
   }
 }

@@ -23,6 +23,9 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
     // ぴったり合い、右切れ・中央ズレが起きない。
     const perCharEm = override.widthEmPerChar ?? 0.70
     const textWidth = label.length * fontSize * perCharEm + (label.length - 1) * lsPx
+    // 最後の1文字の欠け対策で文字要素に足す右パディング（詳細はこの下のspanのコメント）。
+    // viewBoxの幅にも足しておかないと、字面がぎりぎりのテナントでSVGの外へ出てしまう。
+    const inkPadRight = Math.max(0, -lsPx) + fontSize * 0.08
 
     // treatment指定時：globals.cssのfx-*をforeignObjectで適用（ロゴビルダーとピクセル一致）。
     // treatment未指定（既存dtm等）は従来のSVG平面グラデ描画のまま（後方互換・見た目不変）。
@@ -32,7 +35,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
       const PAD = 16
       const isBox = treatment === 'pill' || treatment === 'emblem'
       const hasRule = treatment === 'underline' || treatment === 'dotted' || treatment === 'doublerule' || treatment === 'varsity'
-      const fw = Math.max(1, textWidth + tmFontSize * 1.3 + PAD * 2 + (isBox ? 40 : 0))
+      const fw = Math.max(1, textWidth + inkPadRight + tmFontSize * 1.3 + PAD * 2 + (isBox ? 40 : 0))
       const fh = fontSize + PAD * 2 + (hasRule ? 12 : 0) + (isBox ? 16 : 0)
       const boxStyle = {
         width: '100%',
@@ -72,6 +75,18 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
                     letterSpacing: lsPx,
                     lineHeight: 1,
                     whiteSpace: 'nowrap',
+                    /* 【2026-08-22】最後の1文字が欠ける不具合の対策。
+                       background-clip:text 系（gradient/split/diagsplit/stripe/fade/vertgradient）は
+                       「要素の箱の中」にしか色を塗らない。letterSpacingが負だと最後の文字のうしろ
+                       からもその分だけ箱が縮むため、字面（インク）が箱の右へはみ出し、はみ出した
+                       部分が塗られず透明になる＝文字が切れて見える。
+                       guitar（letterSpacingEm:-0.08・American Typewriter）で実際に「S」の右側が
+                       欠けていた。負の字送り分＋字面のはみ出し分を右パディングで足して、塗る範囲を
+                       文字より広げる。テキストはflex-startで左揃えなので位置は動かず、TMもSVG層で
+                       別に座標指定しているため影響しない。
+                       ※ letterSpacingが正のテナントでも字面のはみ出しは起こりうるので、
+                          常に fontSize*0.08 を上乗せしている（今後のテナントで再発させないため）。 */
+                    paddingRight: inkPadRight,
                   }}
                 >
                   {label}

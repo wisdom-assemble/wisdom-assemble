@@ -478,5 +478,8 @@
     "cannotEscalate": "该状态无法升级",
     "contactInfoNotAllowed": "不能发布个人联系方式（邮箱、电话号码、社交账号等）。",
     "spamNotAllowed": "不允许发布广告或招揽性质的内容。"
+  },
+  "brand": {
+    "catchcopy": "先问AI。\nAI不知道时，由人来回答。"
   }
 }

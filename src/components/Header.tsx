@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTenant, useTenantId } from './TenantProvider'
 import SiteLogo from './SiteLogo'
@@ -105,11 +105,31 @@ export default function Header() {
 
   const badge = taskCount + reviewCount
 
+  /* 【2026-08-22】ヘッダーの実高さを CSS変数 --header-h に流し込む。
+     一覧ページの「+質問する」＋検索の行は sticky で、これまで top-[73px] とベタ書きだった。
+     73px は開発デフォルトのBUG DEBUGテナントの高さで、ヘッダーの高さはロゴの文字サイズで
+     変わる（実測: bug 73px / music-prod 75px / guitar 105px）。そのため guitar では
+     32px ぶんヘッダーの下へ潜り込み、ボタンと検索欄が隠れていた。
+     新しいテナントはロゴがさらに大きいこともあるので、固定値をやめて実測値を渡す。
+     ResizeObserver にしているのは、ログイン状態・バッジ・折り返し・画面幅で高さが変わるため。 */
+  const headerRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const apply = () => {
+      document.documentElement.style.setProperty('--header-h', `${el.getBoundingClientRect().height}px`)
+    }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => ro.disconnect()
+  })
+
   // ルートドメイン(wisdomassemble.com)には質問投稿・高難度・ログインといった
   // テナント固有の機能がないため、ロゴだけのシンプルなヘッダーにする
   if (isRoot) {
     return (
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
+      <header ref={headerRef} className="border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center">
           <Link prefetch={false} href="/">
             <WisdomAssembleWordmark fontSize={20} />
@@ -120,7 +140,7 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
+    <header ref={headerRef} className="border-b border-gray-200 bg-white sticky top-0 z-10">
       <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link prefetch={false} href="/">
           <SiteLogo name={tenant?.name ?? 'Wisdom Assemble'} tenantId={tenant?.id} colorTheme={tenant?.color_theme ?? '#4F46E5'} />

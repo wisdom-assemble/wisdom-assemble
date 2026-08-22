@@ -478,5 +478,8 @@
     "cannotEscalate": "Este estado no se puede escalar",
     "contactInfoNotAllowed": "No se puede publicar información de contacto personal (correo electrónico, número de teléfono, cuentas de redes sociales, etc.).",
     "spamNotAllowed": "No se permiten publicaciones publicitarias o de solicitación."
+  },
+  "brand": {
+    "catchcopy": "Pregunta a la IA.\nSi la IA no sabe, responde una persona."
   }
 }

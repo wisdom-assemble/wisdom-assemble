@@ -478,5 +478,8 @@
     "cannotEscalate": "This status can't be escalated",
     "contactInfoNotAllowed": "Personal contact information (email, phone number, social media accounts, etc.) cannot be posted.",
     "spamNotAllowed": "Advertising or solicitation posts are not allowed."
+  },
+  "brand": {
+    "catchcopy": "Ask AI.\nIf AI doesn't know, a human answers."
   }
 }

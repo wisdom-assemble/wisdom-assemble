@@ -56,6 +56,7 @@ export default async function HomePage({
   }
 
   const t = await getTranslations('home')
+  const tBrand = await getTranslations('brand')
   const locale = await getLocale()
   const messages = await getMessages() as {
     skillTags?: Record<string, string>
@@ -84,11 +85,20 @@ export default async function HomePage({
       <Header />
       <Tutorial />
       <main className="max-w-3xl mx-auto px-4 py-8 w-full">
+        {/* 【2026-08-22】キャッチコピーはテナント説明文の「上」。サイズはルートポータルと統一。
+            2行固定の理由はPortalHome.tsx側のコメントを参照（スマホで1行にすると本文より小さくなる）。 */}
+        <p className="whitespace-pre-line text-lg sm:text-xl font-medium text-gray-800 leading-snug mb-2">
+          {tBrand('catchcopy')}
+        </p>
         {tagline && (
           <p className="text-gray-500 text-sm mb-6">{tagline}</p>
         )}
 
-        <div className="sticky top-[73px] z-[9] bg-white py-2 flex flex-wrap gap-3 mb-3 border-b border-gray-200">
+        {/* 【2026-08-22】top を固定値からヘッダー実測値(--header-h)に変更。
+            73pxは開発デフォルトのBUG DEBUGの高さで、ロゴが大きいテナントでは
+            この行がヘッダーの下に潜り「+質問する」と検索欄が隠れていた（guitarで32px）。
+            変数はHeader.tsxがResizeObserverで流し込む。JS実行前とSSR時のために73pxを既定値に残す。 */}
+        <div className="sticky top-[var(--header-h,73px)] z-[9] bg-white py-2 flex flex-wrap gap-3 mb-3 border-b border-gray-200">
           <Link
             prefetch={false}
             href="/questions/new"

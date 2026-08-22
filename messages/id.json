@@ -478,5 +478,8 @@
     "cannotEscalate": "Status ini tidak dapat dieskalasi",
     "contactInfoNotAllowed": "Informasi kontak pribadi (email, nomor telepon, akun media sosial, dll.) tidak boleh diposting.",
     "spamNotAllowed": "Postingan iklan atau ajakan tidak diperbolehkan."
+  },
+  "brand": {
+    "catchcopy": "Tanya AI.\nJika AI tidak tahu, manusia menjawab."
   }
 }
