@@ -71,20 +71,21 @@ export default async function PortalHome() {
   })
 
   return (
-    <main className="max-w-3xl mx-auto px-4 pt-5 pb-16 sm:py-16 w-full">
-      <div className="text-center mb-8 sm:mb-12">
-        <h1 className="mb-3">
+    <main className="max-w-3xl mx-auto px-4 pt-4 pb-12 sm:pt-10 sm:pb-14 w-full">
+      <div className="text-center mb-6 sm:mb-10">
+        <h1 className="mb-2">
           <WisdomAssembleWordmark fontSize={32} />
         </h1>
-        {/* 【2026-08-22】キャッチコピー。説明文ではなくサービスのルールとして、説明より先に大きく見せる。
-            2行組みで固定しているのは、1行にするとスマホ(375px)で本文より小さい約15pxまで
-            落とさないと収まらないため（全角23文字ぶん ÷ 343px）。改行位置を固定すれば
-            2行目18文字ぶんで約19pxを確保でき、狙いどおり「少し大きめ」になる。
-            テナント側(app/[locale]/page.tsx)と同じサイズ指定にしてある。 */}
-        <p className="whitespace-pre-line text-lg sm:text-xl font-medium text-gray-800 leading-snug mb-3">
+        {/* 【2026-08-22】キャッチコピー。説明文ではなくサービスのルールとして、説明より先に見せる。
+            改行の扱い：スマホは whitespace-pre-line で文中の改行をそのまま活かして2行。
+            PCは sm:whitespace-normal で改行を空白に畳んで1行にする。
+            スマホで1行にしてはいけない：全角23文字ぶんあるので375px（本文領域343px）だと
+            約15px＝本文より小さくなる。2行なら2行目18文字ぶんで18pxを確保できる。
+            サイズはルートが text-lg/xl、テナントは1段小さい text-base/lg（mtさん指定・2026-08-22）。 */}
+        <p className="whitespace-pre-line sm:whitespace-normal text-lg sm:text-xl font-medium text-gray-800 leading-snug mb-2">
           {tBrand('catchcopy')}
         </p>
-        <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
+        <p className="text-xs sm:text-[13px] text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 
       <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4 text-center">

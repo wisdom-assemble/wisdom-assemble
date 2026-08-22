@@ -890,6 +890,27 @@ from user_titles ut join titles t on t.id = ut.title_id order by ut.earned_at de
 - **⭐運用の確定形（2026-08-20）**：**22時台に、奥様の投稿→BA選択→夫の🤖投稿→夫の回答までを一気に済ませる**。夜中に間隔を空けて分割すると貼り間違いが起きる（8/19にM04へ別の問の回答を貼るミスが発生）。
 - 8/18は M02が17:27・G20が20:58 と**3時間半空いており**、時間帯としては自然な形になった。
 
+### 🛠 2026-08-22 プランナーが直接実装した3件（commit `3c64084`・本番反映済み）
+
+⚠️**イレギュラー**：通常コード修正はエンジニア側の担当だが、微調整のためmtさんの許可を得てプランナー席で実装した。**エンジニアはこの節を読んでから既存コードを触ること**。
+
+**① キャッチコピーの設置**（新規 `brand.catchcopy` ／ 8言語すべてに追加済み）
+- 置き場所：ルートは `PortalHome.tsx` のワードマーク下・`portalPage.subtitle` の上／テナントは `app/[locale]/page.tsx` の `tagline`（テナント説明文）の上。**サイズは両者共通** `text-lg sm:text-xl font-medium text-gray-800`
+- **文中の `\n` で2行に固定**し `whitespace-pre-line` で描画している。**1行にしてはいけない**：全角23文字ぶんあるので、スマホ375px（本文領域343px）で1行に収めると約15px＝本文より小さくなる。2行なら2行目18文字ぶんで18pxが確保でき「説明より少し大きい」という意図どおりになる
+- **8言語すべて375px幅で折り返さないことをcanvasで実測済み**（最大はes 327px／343px以内）。id・ptは初訳が超えたので文言を詰めた。**翻訳を差し替えるときは343pxを超えないか必ず測り直すこと**
+
+**② ロゴ末尾の文字が欠ける（guitarの「S」）** — `SiteLogo.tsx`
+- 原因：`background-clip:text` は**要素の箱の中にしか色を塗らない**。`letterSpacingEm` が負だと最後の文字のうしろからも箱が縮み、字面（インク）が箱の右へはみ出す。はみ出した部分は塗られず `color:transparent` のまま＝**文字が切れて見える**
+- 対策：`inkPadRight = Math.max(0, -lsPx) + fontSize * 0.08` を文字要素の `paddingRight` に入れ、**`fw`（viewBox幅）にも加算**。テキストはflex-startなので位置は動かず、TMはSVG層で別座標なので影響なし
+- **対象は6書式**（`gradient` `split` `diagsplit` `stripe` `fade` `vertgradient`）。今後ロゴビルダーで作るテナントにも自動で効く。※`treatment`なしのdtmはSVGの`<text>`＋`fill=url(#grad)`で描いており別経路・元から無関係
+
+**③ 「+質問する」と検索欄がヘッダーに隠れる** — `Header.tsx` ＋ `app/[locale]/page.tsx` ＋ `admin/AdminActions.tsx`
+- 原因：sticky の `top-[73px]` が**ベタ書き**。73pxは**開発デフォルトのBUG DEBUGテナントの高さ**で、ヘッダー高はロゴの文字サイズで変わる（実測 **bug 73 / music-prod 75 / guitar 105px**）。guitarでは32px潜って隠れていた
+- 対策：`Header.tsx` が **ResizeObserver** でヘッダー実高を CSS変数 `--header-h` に流し込み、各所は `top-[var(--header-h,73px)]` を参照。SSR時とJS実行前のために73pxを既定値で残している
+- **今後 `sticky top-[数値px]` をベタ書きしないこと。** ロゴが大きい新テナントで必ず再発する
+
+**検証済み**：`tsc --noEmit` 0エラー／本番で3ホスト×8回の単発アクセス24件すべて200／guitarで「ヘッダー下端98px・ボタン上端106px＝隠れ0px」を実測／Sの塗り範囲が字面より5.18px外まで広がったことを実測。
+
 ### 🗣 キャッチコピー確定（2026-08-22・別GPTのサイトレビューから）
 
 **メインコピー（サービスのルールそのもの。説明文ではない）**

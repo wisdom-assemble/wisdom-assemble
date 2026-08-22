@@ -84,14 +84,16 @@ export default async function HomePage({
     <>
       <Header />
       <Tutorial />
-      <main className="max-w-3xl mx-auto px-4 py-8 w-full">
-        {/* 【2026-08-22】キャッチコピーはテナント説明文の「上」。サイズはルートポータルと統一。
-            2行固定の理由はPortalHome.tsx側のコメントを参照（スマホで1行にすると本文より小さくなる）。 */}
-        <p className="whitespace-pre-line text-lg sm:text-xl font-medium text-gray-800 leading-snug mb-2">
+      <main className="max-w-3xl mx-auto px-4 pt-4 pb-8 w-full">
+        {/* 【2026-08-22】キャッチコピーはテナント説明文の「上」。
+            スマホは2行・PCは1行（改行の扱いはPortalHome.tsx側のコメント参照）。
+            サイズはルート(text-lg/xl)より1段小さい text-base/lg。テナントはロゴが主役なので
+            コピーを一段落とす、というmtさんの指定（2026-08-22）。 */}
+        <p className="whitespace-pre-line sm:whitespace-normal text-base sm:text-lg font-medium text-gray-800 leading-snug mb-1.5">
           {tBrand('catchcopy')}
         </p>
         {tagline && (
-          <p className="text-gray-500 text-sm mb-6">{tagline}</p>
+          <p className="text-gray-500 text-xs sm:text-[13px] mb-4">{tagline}</p>
         )}
 
         {/* 【2026-08-22】top を固定値からヘッダー実測値(--header-h)に変更。
