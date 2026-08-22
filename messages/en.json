@@ -394,7 +394,7 @@
   "portalPage": {
     "title": "Wisdom Assemble",
     "subtitle": "AI answers first, and when it can't confidently answer, a human expert takes over — a platform of Q&A services.",
-    "chooseGenre": "Choose a community to get started",
+    "chooseGenre": "What do you want to know about?",
     "comingSoon": "Coming soon",
     "aboutTitle": "About Wisdom Assemble",
     "aboutBody": "Wisdom Assemble is a multi-language platform for a set of genre-specific Q&A services. When a question is posted, AI attempts to answer first; when AI isn't confident, a real human expert takes over. It's the second opinion service AI can't provide, built for the AI era. For specialized or personal concerns AI alone can't fully resolve, we aim to help by drawing on real human knowledge. This service is operated by an individual.",

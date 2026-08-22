@@ -88,7 +88,12 @@ export default async function PortalHome() {
         <p className="text-xs sm:text-[13px] text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4 text-center">
+      {/* 【2026-08-22】文言を「ジャンルを選んで始めましょう」から問いかけに変更（mtさん指定）。
+          ユーザーはジャンルを選びに来るのではなく「〇〇について知りたくて」来る、という考え方。
+          英語は "Choose a community to get started" だったが、コミュニティに参加せず気軽に聞ける
+          というポジションと矛盾するので community という語ごと落とした。
+          uppercase を外したのは、問いかけを全部大文字にすると英語で叫んで見えるため。 */}
+      <p className="text-xs font-medium text-gray-400 tracking-wide mb-4 text-center">
         {t('chooseGenre')}
       </p>
 
