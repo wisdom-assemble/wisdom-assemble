@@ -910,6 +910,52 @@ from user_titles ut join titles t on t.id = ut.title_id order by ut.earned_at de
 - **⭐運用の確定形（2026-08-20）**：**22時台に、奥様の投稿→BA選択→夫の🤖投稿→夫の回答までを一気に済ませる**。夜中に間隔を空けて分割すると貼り間違いが起きる（8/19にM04へ別の問の回答を貼るミスが発生）。
 - 8/18は M02が17:27・G20が20:58 と**3時間半空いており**、時間帯としては自然な形になった。
 
+### 🧩 新テナント追加チェックリスト（2026-08-23 制定・**テナント側とルート側の両方**）
+
+⚠️**このリストを飛ばさないこと。** 2026-08-23に「ルートの検索で日本語『ギター』が1件も出ない」不具合が見つかった。原因は `TENANT_SEARCH_TAGS` に guitar の登録が無かったこと＝**ルート側の登録漏れ**。テナント側だけ見て「動いた」と判断すると、ルート側が壊れたまま気づけない。**テナントが動くこととルートに正しく出ることは別物**。
+
+#### A. テナント側（そのテナントが動くために必要）
+
+| # | 場所 | 抜けるとどうなるか |
+|---|---|---|
+| 1 | DB `tenants` 行（ビルダーが作る）。`description` と **`description_i18n`（en/zh/id/vi/ko/es/pt）** | 説明文が出ない。**i18nが無いとルート検索が日本語しか効かない** |
+| 2 | `middleware.ts` の `VALID_SUBDOMAINS` | テナント判定に失敗し**debugにフォールバック**する（全ページが別テナントの中身になる） |
+| 3 | `middleware.ts` の `SUBDOMAIN_ALIASES` ※内部IDと公開サブドメインが違う場合のみ | 公開URLで開けない |
+| 4 | `src/lib/tenantNames.ts` の `TENANT_NAME_MAP` | 表示名がテナントIDのまま出る |
+| 5 | 同 `PUBLIC_SUBDOMAIN_MAP` | ルートのカードのリンク先が壊れる |
+| 6 | 同 `LOGO_STYLE_OVERRIDES` ※カスタムロゴを使う場合 | 既定の3D押し出しロゴになる |
+| 7 | `src/lib/skillTags.ts` の `TENANT_SKILL_OPTIONS` | **マッチングが動かない**（＋ルート検索の材料も減る） |
+| 8 | `src/app/[locale]/layout.tsx` の `FALLBACK_DESCRIPTION_MAP` | DB取得に失敗したときの説明文が出ない |
+| 9 | `public/og/{id}.png` と `public/icons/{id}.png` | SNS共有画像とファビコンが出ない |
+| 10 | Cloudflare の Custom Domain | サブドメインが繋がらない |
+
+#### B. ルート側（ポータルに出る・検索に出るために必要）★ここが抜けやすい
+
+| # | 場所 | 抜けるとどうなるか |
+|---|---|---|
+| 11 | `PortalHome.tsx` の `REVIEW_TENANT_IDS` | **カードが1枚も出ない**（存在しないのと同じ） |
+| 12 | 同 `FALLBACK_COLOR_THEME` | DB取得失敗時にカードの色が消える |
+| 13 | `messages/*.json` の **`{tenantId}CardTagline` を8言語ぶん** | カードの説明が出ない。**これは検索対象も兼ねる**ので、書かないとその言語で検索に出ない |
+| 14 | `src/lib/tenantNames.ts` の `TENANT_SEARCH_TAGS`（任意・精度用） | 略称や別名で引けない（今回guitarで起きた） |
+| 15 | `src/app/[locale]/admin/AdminVisitors.tsx` の `alias` / `map` | 管理ダッシュボードでテナント名が出ない |
+
+#### C. 何もしなくても自動で効くもの（2026-08-23 にそう作り替えた）
+
+- **ルート検索は全8言語で成立する**。材料は①`{tenantId}CardTagline`（表示中の言語）②`tenants.description_i18n[locale]`。どちらもテナント作成時に必ず作るデータなので、**手動タグを1件も書かなくても最低限の検索は通る**
+- **`TENANT_SKILL_OPTIONS`** も検索材料。マッチングに必須なので書き忘れようがない
+- **質問のタグ**は投稿するたび自動で増える（Fender / ファズ / Genelec / MOTU など固有名詞はここから入る）
+- 検索は **`normalizeForSearch()`（小文字化＋アクセント記号除去）** を通す。`música`→`musica` が `musical` に一致し、ベトナム語を記号なしで打っても引ける。⚠️**tags側(PortalHome)と入力側(PortalTenantSearch)は必ず同じ関数を通すこと**
+
+#### D. 追加後に必ず実機で確認すること
+
+1. **ルートのカードが出るか**（`wisdomassemble.com`）
+2. **ルート検索がそのジャンルの語で引けるか。日本語と英語だけで満足しないこと** — 8言語ぶん、そのテナントの中核語（例: ko「기타」es「guitarra」）で試す
+3. **検索欄がスクロールしても残るか**（sticky。`top` は `var(--header-h,73px)`）
+4. テナント側で**質問を1本投げてマッチングが動くか**
+5. `node scripts/verify-latest-post.mjs {tenant} 1` が ✅
+
+⚠️**`sticky top-[数値px]` をベタ書きしないこと。** ヘッダー高はロゴの大きさでテナントごとに変わる（実測 bug 73 / music-prod 75 / guitar 105px）。必ず `var(--header-h,73px)` を使う。8/22にこれで「+質問する」が隠れる不具合が起きている。
+
 ### 👤 運用体制の変更：WAはプランナー席のみで回す（2026-08-22 mtさん決定）
 
 **これまで**：プランナー席（`-Users-apple-Music-Ableton`）が企画・投稿・記録、エンジニア席（`-Users-apple-wisdom-assemble`）がコード実装、という分担だった。
