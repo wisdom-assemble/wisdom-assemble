@@ -1,6 +1,6 @@
 import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
+import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP, normalizeForSearch } from '@/lib/tenantNames'
 import { TENANT_SKILL_OPTIONS } from '@/lib/skillTags'
 import PortalTenantSearch from '@/components/PortalTenantSearch'
 import PortalLanguageSwitcher from '@/components/PortalLanguageSwitcher'
@@ -104,7 +104,7 @@ export default async function PortalHome() {
       ...(TENANT_SKILL_OPTIONS[tenantId] ?? []).map((tag) => tag.toLowerCase()),
       // 実際に投稿された質問のタグ（自動で増える）
       ...(questionTagsByTenant[tenantId] ?? []),
-    ].filter(Boolean)
+    ].filter(Boolean).map(normalizeForSearch)
     return {
       tenantId,
       name: tenant?.name ?? tenantId,

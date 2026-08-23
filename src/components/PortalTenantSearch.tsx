@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import SiteLogo from '@/components/SiteLogo'
+import { normalizeForSearch } from '@/lib/tenantNames'
 
 type Tenant = {
   tenantId: string
@@ -22,7 +23,8 @@ type Props = {
 
 export default function PortalTenantSearch({ tenants, searchPlaceholder, noResultsLabel }: Props) {
   const [query, setQuery] = useState('')
-  const normalizedQuery = query.trim().toLowerCase()
+  // tags側は PortalHome で同じ関数を通してある。両側を必ず同じ正規化に通すこと。
+  const normalizedQuery = normalizeForSearch(query.trim())
 
   const visibleTenants = normalizedQuery
     ? tenants.filter((tenant) => tenant.tags.some((tag) => tag.includes(normalizedQuery)))

@@ -197,12 +197,12 @@ export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
     'midi', 'sampling', 'arrangement', 'composition', 'music theory', 'plugin',
     'audio interface', 'monitor', 'speaker', 'microphone', 'mic', 'studio',
     '音楽', '音楽制作', '作曲', '編曲', 'ミックス', 'ミキシング', 'マスタリング', 'レコーディング', '録音', '打ち込み', 'エイブルトン', 'シンセ', 'プラグイン', 'マイク', 'モニター',
-    '音乐制作', '混音', '母带',
-    'produksi musik', 'mixing', 'mastering',
-    'sản xuất âm nhạc', 'phối khí', 'mastering',
-    '음악 제작', '믹싱', '마스터링',
-    'producción musical', 'mezcla', 'masterización',
-    'produção musical', 'mixagem', 'masterização',
+    '音乐制作', '音乐', '混音', '母带', '录音', '人声',
+    'produksi musik', 'musik', 'rekaman', 'vokal',
+    'sản xuất âm nhạc', 'âm nhạc', 'phối khí', 'thu âm', 'giọng hát',
+    '음악 제작', '음악', '믹싱', '마스터링', '녹음', '보컬',
+    'producción musical', 'música', 'mezcla', 'masterización', 'grabación', 'voz',
+    'produção musical', 'música', 'mixagem', 'masterização', 'gravação', 'voz',
   ],
   keyboard: [
     'keyboard', 'mechanical keyboard',
@@ -234,4 +234,14 @@ export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
     'canadá', 'estudiar',
     'canadá', 'estudar',
   ],
+}
+
+/* 【2026-08-23】ジャンル検索用の正規化。小文字化に加えてアクセント記号（ダイアクリティカルマーク）を落とす。
+   理由：スペイン語で「música」と打っても0件だった。説明文に入っているのは「producción musical」＝
+   形容詞形の "musical" で、"música" は部分一致しない。記号を落とすと "musica" となり
+   "musical" に含まれるので一致する。ベトナム語は記号なしで打つ利用者が多く（âm nhạc → am nhac）、
+   ポルトガル語も música/musical の同じ問題があるため、全言語まとめてここで吸収する。
+   日本語・韓国語・中国語は分解対象の記号を持たないので影響しない。 */
+export function normalizeForSearch(input: string): string {
+  return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
