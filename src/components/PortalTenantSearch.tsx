@@ -32,13 +32,21 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
 
   return (
     <div>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={searchPlaceholder}
-        className="w-full mb-4 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400"
-      />
+      {/* 【2026-08-23】検索欄をスクロール追従にする（mtさん指定）。
+          top はヘッダーの実測値 --header-h を参照する。Header.tsx が ResizeObserver で
+          流し込んでいる値で、ロゴの大きさが違ってもズレない（テナント一覧と同じ方式）。
+          既定値の 73px は JS実行前とSSR時のフォールバック。
+          ⚠️ここに数値をベタ書きしないこと。8/22に一覧ページで同じ事故が起きている。
+          背景を白で塗らないと、下のカードが透けて文字が重なる。 */}
+      <div className="sticky top-[var(--header-h,73px)] z-[9] bg-white pt-1 pb-3">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={searchPlaceholder}
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400"
+        />
+      </div>
 
       {visibleTenants.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-8">{noResultsLabel}</p>
