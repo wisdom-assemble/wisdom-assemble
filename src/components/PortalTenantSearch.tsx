@@ -35,10 +35,13 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
       {/* 【2026-08-23】検索欄をスクロール追従にする（mtさん指定）。
           top はヘッダーの実測値 --header-h を参照する。Header.tsx が ResizeObserver で
           流し込んでいる値で、ロゴの大きさが違ってもズレない（テナント一覧と同じ方式）。
-          既定値の 73px は JS実行前とSSR時のフォールバック。
+          ⚠️既定値は 0px。ルートポータルには Header コンポーネントが無く --header-h が
+          セットされないため、テナント一覧と同じ 73px を既定にすると「ヘッダーが無いのに
+          73px下に貼り付く」＝上に死角ができて、そこを中身が流れていく（実際そうなっていた）。
+          将来ルートにヘッダーを付けた場合は --header-h がセットされるので自動で追従する。
           ⚠️ここに数値をベタ書きしないこと。8/22に一覧ページで同じ事故が起きている。
           背景を白で塗らないと、下のカードが透けて文字が重なる。 */}
-      <div className="sticky top-[var(--header-h,73px)] z-[9] bg-white pt-1 pb-3">
+      <div className="sticky top-[var(--header-h,0px)] z-[9] bg-white pt-1 pb-3">
         <input
           type="text"
           value={query}
