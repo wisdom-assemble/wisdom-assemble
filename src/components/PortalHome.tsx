@@ -55,7 +55,23 @@ export default async function PortalHome() {
       console.error(`[PortalHome] tenants fetch failed for ${tenantId}:`, error.message)
     }
     const label = TENANT_NAME_MAP[tenantId] ?? tenantId
-    const tags = [label.toLowerCase(), tenantId.toLowerCase(), ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase())]
+    // タグラインは `{tenantId}CardTagline` の動的キーで取得（3テナント目以降でも壊れない）。
+    const tagline = t(`${tenantId}CardTagline` as Parameters<typeof t>[0])
+    /* 【2026-08-23】ジャンル検索の対象に「カードの説明文(tagline)」と「DBのテナント名」を追加した。
+       それまでの対象は ①英語の表示名 ②テナントID ③TENANT_SEARCH_TAGS の手動タグ だけで、
+       guitar は手動タグが1件も登録されていなかったため「ギター」で検索しても出なかった
+       （英語で出ていたのはテナントIDの 'guitar' が一致していただけ）。dtm も「ミキシング」はあるが
+       「ミックス」が無く出なかった。手動タグは登録漏れが起きる前提で考えるべき仕組みだった。
+       tagline は messages/*.json に8言語ぶん必ず書くもので、しかも表示中のロケールの文字列が
+       入るので、これを検索対象に入れておけば【新テナントは説明文を書くだけで8言語とも検索に出る】。
+       手動タグの方は残す（説明文に出てこない略称・別名・メーカー名などの精度用）。 */
+    const tags = [
+      label.toLowerCase(),
+      tenantId.toLowerCase(),
+      (tenant?.name ?? '').toLowerCase(),
+      tagline.toLowerCase(),
+      ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase()),
+    ].filter(Boolean)
     return {
       tenantId,
       name: tenant?.name ?? tenantId,
@@ -63,9 +79,9 @@ export default async function PortalHome() {
       theme: (tenant as { theme?: string | null } | null)?.theme ?? null,
       bgColor: (tenant as { bg_color?: string | null } | null)?.bg_color ?? null,
       href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
-      // タグラインは `{tenantId}CardTagline` の動的キーで取得（3テナント目以降でも壊れない）。
-      // 新テナント追加時は messages/*.json に `{tenantId}CardTagline` を追加すること。
-      tagline: t(`${tenantId}CardTagline` as Parameters<typeof t>[0]),
+      // ⚠️新テナント追加時は messages/*.json に `{tenantId}CardTagline` を8言語ぶん追加すること。
+      // これが検索対象を兼ねているので、書けばその言語で検索に出る。
+      tagline,
       tags,
     }
   })

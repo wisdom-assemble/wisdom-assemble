@@ -113,6 +113,20 @@ export const LOGO_STYLE_OVERRIDES: Record<string, LogoStyleOverride> = {
 // ルートポータルのジャンル検索用タグ（表示名に加えて、関連キーワードで検索できるようにする）
 // 対応8言語（en/ja/zh/id/vi/ko/es/pt）どの言語で検索してもヒットするようにキーワードを用意
 export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
+  // 【2026-08-23】guitar はここに1件も登録が無く、日本語「ギター」で検索しても
+  // ヒットしなかった（英語で出ていたのは、テナントIDの 'guitar' がたまたま
+  // 一致していただけ）。新テナント追加時はここへの登録を忘れやすいので、
+  // PortalHome.tsx 側で「カードの説明文」も検索対象に入れる保険をかけてある。
+  guitar: [
+    'guitar', 'guitars', 'pedal', 'pedals', 'effects', 'amp', 'fender', 'gibson',
+    'ギター', 'ギタリスト', 'エフェクター', 'ペダル', 'アンプ', 'フェンダー', 'ギブソン', '弦',
+    '吉他', '效果器', '音箱',
+    'gitar', 'efek', 'amplifier',
+    'ghi ta', 'bàn đạp', 'hiệu ứng',
+    '기타', '이펙터', '앰프',
+    'guitarra', 'pedales', 'amplificador',
+    'pedais',
+  ],
   debug: [
     'bug', 'debug', 'programming', 'code', 'engineer',
     'プログラミング', 'デバッグ', 'コード', 'バグ', 'エンジニア',
@@ -175,7 +189,7 @@ export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
   ],
   dtm: [
     'music production', 'music', 'dtm', 'daw', 'ableton', 'mixing', 'mastering',
-    '音楽', '作曲', 'ミキシング', 'マスタリング',
+    '音楽', '音楽制作', '作曲', 'ミックス', 'ミキシング', 'マスタリング', 'レコーディング', '打ち込み', 'エイブルトン',
     '音乐制作', '混音', '母带',
     'produksi musik', 'mixing', 'mastering',
     'sản xuất âm nhạc', 'phối khí', 'mastering',
