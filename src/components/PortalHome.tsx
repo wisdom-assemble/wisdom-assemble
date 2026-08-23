@@ -88,6 +88,14 @@ export default async function PortalHome() {
       tenantId.toLowerCase(),
       (tenant?.name ?? '').toLowerCase(),
       tagline.toLowerCase(),
+      /* 【2026-08-23】テナント説明文の「表示中の言語版」。tenants.description_i18n には
+         en/zh/id/vi/ko/es/pt が入っており（jaは description 列）、各言語の中核語が必ず含まれる
+         （例: ko「기타 및 페달」／es「guitarras y pedales」／vi「guitar và pedal」）。
+         tagline と合わせて、これが【全8言語ぶんの自動カバー】になる。
+         手動タグを8言語ぶん書き続けるのは登録漏れが必ず起きる（実際 guitar で起きた）ので、
+         テナント作成時に必ず作られるデータだけで最低限の検索が成立する状態を作っておく。 */
+      (((tenant as { description_i18n?: Record<string, string> | null } | null)?.description_i18n?.[locale])
+        ?? (tenant as { description?: string | null } | null)?.description ?? '').toLowerCase(),
       ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase()),
       // マイページの「得意なこと」の選択肢。マッチングに必須なので必ず維持されるデータで、
       // エレキギター/アコギ/ピックアップ/真空管アンプ/Ableton Live のような

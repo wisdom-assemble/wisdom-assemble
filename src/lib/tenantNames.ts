@@ -118,8 +118,12 @@ export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
   // 一致していただけ）。新テナント追加時はここへの登録を忘れやすいので、
   // PortalHome.tsx 側で「カードの説明文」も検索対象に入れる保険をかけてある。
   guitar: [
-    'guitar', 'guitars', 'pedal', 'pedals', 'effects', 'amp', 'fender', 'gibson',
+    'guitar', 'guitars', 'pedal', 'pedals', 'pedalboard', 'effects', 'effector',
+    'amp', 'amplifier', 'tube amp', 'fuzz', 'distortion', 'overdrive', 'reverb',
+    'pickup', 'humbucker', 'single coil', 'vintage', 'recording', 'repair', 'setup',
+    'fender', 'gibson', 'stratocaster', 'telecaster', 'les paul', 'acoustic', 'electric',
     'ギター', 'ギタリスト', 'エフェクター', 'ペダル', 'アンプ', 'フェンダー', 'ギブソン', '弦',
+    'ファズ', '歪み', 'オーバードライブ', 'リバーブ', 'ストラト', 'テレキャス', 'レスポール',
     '吉他', '效果器', '音箱',
     'gitar', 'efek', 'amplifier',
     'ghi ta', 'bàn đạp', 'hiệu ứng',
@@ -188,8 +192,11 @@ export const TENANT_SEARCH_TAGS: Record<string, string[]> = {
     'portugal', 'europa',
   ],
   dtm: [
-    'music production', 'music', 'dtm', 'daw', 'ableton', 'mixing', 'mastering',
-    '音楽', '音楽制作', '作曲', 'ミックス', 'ミキシング', 'マスタリング', 'レコーディング', '打ち込み', 'エイブルトン',
+    'music production', 'music', 'dtm', 'daw', 'ableton', 'logic', 'cubase', 'pro tools',
+    'mixing', 'mastering', 'recording', 'vocal', 'vocals', 'synth', 'synthesizer',
+    'midi', 'sampling', 'arrangement', 'composition', 'music theory', 'plugin',
+    'audio interface', 'monitor', 'speaker', 'microphone', 'mic', 'studio',
+    '音楽', '音楽制作', '作曲', '編曲', 'ミックス', 'ミキシング', 'マスタリング', 'レコーディング', '録音', '打ち込み', 'エイブルトン', 'シンセ', 'プラグイン', 'マイク', 'モニター',
     '音乐制作', '混音', '母带',
     'produksi musik', 'mixing', 'mastering',
     'sản xuất âm nhạc', 'phối khí', 'mastering',
