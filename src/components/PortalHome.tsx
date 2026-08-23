@@ -1,6 +1,7 @@
 import { getTranslations, getLocale, setRequestLocale } from 'next-intl/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getPublicSubdomain, TENANT_SEARCH_TAGS, TENANT_NAME_MAP } from '@/lib/tenantNames'
+import { TENANT_SKILL_OPTIONS } from '@/lib/skillTags'
 import PortalTenantSearch from '@/components/PortalTenantSearch'
 import PortalLanguageSwitcher from '@/components/PortalLanguageSwitcher'
 import WisdomAssembleWordmark from '@/components/WisdomAssembleWordmark'
@@ -49,6 +50,23 @@ export default async function PortalHome() {
     )
   )
 
+  /* 【2026-08-23】検索の材料に「実際に投稿された質問のタグ」を足す。
+     Fender / ファズ / Klon Centaur / Genelec / MOTU のように、利用者が実際に打ちそうな
+     固有名詞はここにしか無い。しかも質問を投稿するたび勝手に増えるので、
+     テナントが育つほど検索が強くなり、運用の手間はゼロ。
+     ⚠️表示するテナントぶんだけ・上限2000行に絞っている。テナントや質問が大幅に増えて
+     ここが重くなったら、タグの集計を別テーブル/ビューに切り出すこと。 */
+  const { data: tagRows } = await admin
+    .from('questions')
+    .select('tenant_id, tags')
+    .in('tenant_id', REVIEW_TENANT_IDS)
+    .limit(2000)
+  const questionTagsByTenant: Record<string, Set<string>> = {}
+  for (const row of tagRows ?? []) {
+    const set = (questionTagsByTenant[row.tenant_id] ??= new Set<string>())
+    for (const tag of (row.tags as string[] | null) ?? []) set.add(String(tag).toLowerCase())
+  }
+
   const cards = REVIEW_TENANT_IDS.map((tenantId, i) => {
     const { data: tenant, error } = results[i]
     if (error) {
@@ -71,6 +89,13 @@ export default async function PortalHome() {
       (tenant?.name ?? '').toLowerCase(),
       tagline.toLowerCase(),
       ...(TENANT_SEARCH_TAGS[tenantId] ?? []).map((tag) => tag.toLowerCase()),
+      // マイページの「得意なこと」の選択肢。マッチングに必須なので必ず維持されるデータで、
+      // エレキギター/アコギ/ピックアップ/真空管アンプ/Ableton Live のような
+      // 利用者が実際に打つ語がそろっている。フォールバック（未定義ならdebug）は使わない
+      // ――無関係なテナントに React や Python が混ざってしまうため。
+      ...(TENANT_SKILL_OPTIONS[tenantId] ?? []).map((tag) => tag.toLowerCase()),
+      // 実際に投稿された質問のタグ（自動で増える）
+      ...(questionTagsByTenant[tenantId] ?? []),
     ].filter(Boolean)
     return {
       tenantId,
