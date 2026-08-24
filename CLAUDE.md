@@ -949,51 +949,89 @@ from user_titles ut join titles t on t.id = ut.title_id order by ut.earned_at de
 
 **残っている制約**：固有名詞レベル（fuzz/ピックアップ/Klon Centaur）の全言語対応は、**質問タグが日本語でしか生成されない**ため未解決。AdSense承認後タスクB「tags_i18n を追加」で解消する。それまで ja/en 以外は tagline＋説明文＋手動タグで拾う。
 
-### 🧩 新テナント追加チェックリスト（2026-08-23 制定・**テナント側とルート側の両方**）
+### 🧩 新テナント追加チェックリスト（2026-08-25 統合版・**これ1枚で足りる**）
 
-⚠️**このリストを飛ばさないこと。** 2026-08-23に「ルートの検索で日本語『ギター』が1件も出ない」不具合が見つかった。原因は `TENANT_SEARCH_TAGS` に guitar の登録が無かったこと＝**ルート側の登録漏れ**。テナント側だけ見て「動いた」と判断すると、ルート側が壊れたまま気づけない。**テナントが動くこととルートに正しく出ることは別物**。
+⚠️**2026-08-25にmtさんの依頼で作り直した。** それまでは「A/Bチェックリスト」と「触るファイル一覧（Notion §3）」と「ビルダーの出力」が**3箇所に分かれていて、A/Bだけ見ると4項目が漏れる**状態だった（GENRE_CONFIG / TENANT_SUGGESTED_KEYWORDS / messages の skillTags・searchKeywords / OG_COLORS）。**このリストが唯一の正**。ここに全部入っている。
 
-#### A. テナント側（そのテナントが動くために必要）
+⚠️**識別子と行番号は2026-08-25に実ファイルで全件確認済み。** リファクタで動いたら更新すること。
 
-| # | 場所 | 抜けるとどうなるか |
-|---|---|---|
-| 1 | DB `tenants` 行（ビルダーが作る）。`description` と **`description_i18n`（en/zh/id/vi/ko/es/pt）** | 説明文が出ない。**i18nが無いとルート検索が日本語しか効かない** |
-| 2 | `middleware.ts` の `VALID_SUBDOMAINS` | テナント判定に失敗し**debugにフォールバック**する（全ページが別テナントの中身になる） |
-| 3 | `middleware.ts` の `SUBDOMAIN_ALIASES` ※内部IDと公開サブドメインが違う場合のみ | 公開URLで開けない |
-| 4 | `src/lib/tenantNames.ts` の `TENANT_NAME_MAP` | 表示名がテナントIDのまま出る |
-| 5 | 同 `PUBLIC_SUBDOMAIN_MAP` | ルートのカードのリンク先が壊れる |
-| 6 | 同 `LOGO_STYLE_OVERRIDES` ※カスタムロゴを使う場合 | 既定の3D押し出しロゴになる |
-| 7 | `src/lib/skillTags.ts` の `TENANT_SKILL_OPTIONS` | **マッチングが動かない**（＋ルート検索の材料も減る） |
-| 8 | `src/app/[locale]/layout.tsx` の `FALLBACK_DESCRIPTION_MAP` | DB取得に失敗したときの説明文が出ない |
-| 9 | `public/og/{id}.png` と `public/icons/{id}.png` | SNS共有画像とファビコンが出ない |
-| 10 | Cloudflare の Custom Domain | サブドメインが繋がらない |
+#### ⓪ 着手前
 
-#### B. ルート側（ポータルに出る・検索に出るために必要）★ここが抜けやすい
+- [ ] **内部IDと公開サブドメインを揃える。** 違えると別名登録が `middleware.ts` / `tenantNames.ts` / `AdminVisitors.tsx` の**3箇所**に必要になり、訪問者ダッシュボードで同じテナントが2行に割れる。揃えれば全部不要（既存の例外は debug→bug、dtm→music-prod）
+- [ ] **色を確定してから画像を書き出す。** PNGに焼き込まれるので、先に書き出すと撮り直しになる
 
-| # | 場所 | 抜けるとどうなるか |
-|---|---|---|
-| 11 | `PortalHome.tsx` の `REVIEW_TENANT_IDS` | **カードが1枚も出ない**（存在しないのと同じ） |
-| 12 | 同 `FALLBACK_COLOR_THEME` | DB取得失敗時にカードの色が消える |
-| 13 | `messages/*.json` の **`{tenantId}CardTagline` を8言語ぶん** | カードの説明が出ない。**これは検索対象も兼ねる**ので、書かないとその言語で検索に出ない |
-| 14 | `src/lib/tenantNames.ts` の `TENANT_SEARCH_TAGS`（任意・精度用） | 略称や別名で引けない（今回guitarで起きた） |
-| 15 | `src/app/[locale]/admin/AdminVisitors.tsx` の `alias` / `map` | 管理ダッシュボードでテナント名が出ない |
+#### ① コード（8ファイル）★ここが本体
 
-#### C. 何もしなくても自動で効くもの（2026-08-23 にそう作り替えた）
+| # | ファイル | 識別子 | 抜けるとどうなるか |
+|---|---|---|---|
+| 1 | `middleware.ts:12` | `VALID_SUBDOMAINS` | テナント判定に失敗し**debugにフォールバック**（全ページが別テナントの中身になる） |
+| 2 | `middleware.ts:20` | `SUBDOMAIN_ALIASES` ※IDとサブドメインが違う場合のみ | 公開URLで開けない |
+| 3 | `src/lib/tenantNames.ts:4` | `TENANT_NAME_MAP` | 表示名がテナントIDのまま出る |
+| 4 | `src/lib/tenantNames.ts:26` | `PUBLIC_SUBDOMAIN_MAP` | ルートのカードのリンク先が壊れる |
+| 5 | `src/lib/tenantNames.ts:92` | `LOGO_STYLE_OVERRIDES` ※カスタムロゴのみ | 既定の3D押し出しロゴになる |
+| 6 | `src/lib/tenantNames.ts:115` | `TENANT_SEARCH_TAGS` ※任意・精度用 | 略称・別名・メーカー名で引けない（**guitarで実際に抜けた**） |
+| 7 | `src/lib/tenantNames.ts:61` | ⭐`DORMANT_TENANT_IDS` **に入れる** | ⚠️**10問未満でもインデックスされる**（下の④参照） |
+| 8 | `src/lib/gemini.ts:37` | ⭐`GENRE_CONFIG`（label / threshold=91 / inScope / outScope / dangerKeywords） | ⚠️**AIの範囲判定が効かない。** 旧A/Bリストで漏れていた項目 |
+| 9 | `src/lib/skillTags.ts:3` | `TENANT_SKILL_OPTIONS` | **マッチングが動かない**（＋ルート検索の材料も減る） |
+| 10 | `src/lib/skillTags.ts:33` | ⭐`TENANT_SUGGESTED_KEYWORDS` | 検索チップが出ない。⚠️旧A/Bリストで漏れていた項目 |
+| 11 | `src/app/[locale]/layout.tsx:27` | `FALLBACK_DESCRIPTION_MAP` | DB取得失敗時に説明文が出ない |
+| 12 | `src/components/PortalHome.tsx:15` | `REVIEW_TENANT_IDS` | ★**カードが1枚も出ない**（存在しないのと同じ） |
+| 13 | `src/components/PortalHome.tsx:18` | `FALLBACK_COLOR_THEME` | DB取得失敗時にカードの色が消える |
+| 14 | `src/app/[locale]/admin/AdminVisitors.tsx:14` | `alias` | 管理ダッシュボードでテナント名が出ない／2行に割れる |
+| 15 | `scripts/image-templates/opengraph-image.tsx:16` | ⭐`OG_COLORS` | ⚠️OGP画像が既定色になる。旧A/Bリストで漏れていた項目 |
 
-- **ルート検索は全8言語で成立する**。材料は①`{tenantId}CardTagline`（表示中の言語）②`tenants.description_i18n[locale]`。どちらもテナント作成時に必ず作るデータなので、**手動タグを1件も書かなくても最低限の検索は通る**
-- **`TENANT_SKILL_OPTIONS`** も検索材料。マッチングに必須なので書き忘れようがない
-- **質問のタグ**は投稿するたび自動で増える（Fender / ファズ / Genelec / MOTU など固有名詞はここから入る）
-- 検索は **`normalizeForSearch()`（小文字化＋アクセント記号除去）** を通す。`música`→`musica` が `musical` に一致し、ベトナム語を記号なしで打っても引ける。⚠️**tags側(PortalHome)と入力側(PortalTenantSearch)は必ず同じ関数を通すこと**
+#### ② 翻訳（`messages/*.json` ×8）⚠️**自動翻訳の仕組みは無い。3種類ある**
 
-#### D. 追加後に必ず実機で確認すること
+- [ ] **`{tenantId}CardTagline` を8言語ぶん** ―― カードの説明。⭐**これは検索対象も兼ねる**ので、書かないとその言語で検索に出ない
+- [ ] ⭐**`skillTags` を7言語ぶん** ―― 旧A/Bリストで漏れていた項目
+- [ ] ⭐**`searchKeywords` を7言語ぶん** ―― 同上
+- ⚠️`skillTags` と `searchKeywords` は**別物**。skillTagsは「得意なこと」の名前（Effects pedals）、searchKeywordsは部分一致で当たりやすい**短い語**（Pedal）。⛔**チップは表示ラベル＝検索値**なので、長い語にすると押しても0件になる
+- ⛔**英語ラベルに一般語（action, note など）を使わない。** 翻訳文への部分一致で無関係な質問に誤ヒットする
+
+#### ③ 画像・外部サービス
+
+- [ ] `public/icons/{id}.png`（32×32）と `public/og/{id}.png`（1200×630）を置く。⚠️**無いと404だが、軽い404ではなく7.4KBのHTMLをWorkerが毎回描画する**（ファビコンはほぼ全PVで取りに来る）
+- [ ] ⚠️**ファビコン色＝ロゴの色／OGP色＝`OG_COLORS` と出どころが違う。** 食い違うと別々の色の画像が黙って書き出される（2026-08-15に実際に踏んだ：ファビコン金・OGPグレー）
+- [ ] Supabase `tenants` に INSERT。⭐**`description_i18n`（en/zh/id/vi/ko/es/pt）を必ず含める** ―― 無いとルート検索が日本語しか効かない
+- [ ] Cloudflare の Custom Domain を追加
+
+#### ④ ⭐公開の判断（2026-08-25 追加）
+
+- [ ] ⚠️**作成直後は必ず `DORMANT_TENANT_IDS` に入れる。10問揃ってから外す。**
+- ⛔**「10問未満は自動でnoindex」という閾値方式は未実装**（2026-08-25判明）。noindexの判定は `DORMANT_TENANT_IDS` の手動リストだけで、質問数のカウントは存在しない。**忘れると1〜3問の薄いページが公開され、ドメイン全体の評価を下げる**
+- `DORMANT_TENANT_IDS` に入れると **noindex ＋ sitemap除外 ＋ ポータル非掲載**が同時に効く
+- ⛔**robots.txt でブロックしないこと。** クロールできないとHTML内のnoindexを読めず、既にインデックスされたURLが消えない
+
+#### ⑤ 追加後に必ず実機で確認する
 
 1. **ルートのカードが出るか**（`wisdomassemble.com`）
-2. **ルート検索がそのジャンルの語で引けるか。日本語と英語だけで満足しないこと** — 8言語ぶん、そのテナントの中核語（例: ko「기타」es「guitarra」）で試す
+2. ⚠️**ルート検索がそのジャンルの語で引けるか。日本語と英語だけで満足しないこと** ―― 8言語ぶん、中核語で試す（例: ko「기타」es「guitarra」）
 3. **検索欄がスクロールしても残るか**（sticky。`top` は `var(--header-h,73px)`）
 4. テナント側で**質問を1本投げてマッチングが動くか**
 5. `node scripts/verify-latest-post.mjs {tenant} 1` が ✅
+6. ⚠️**デプロイ後は単発で5〜10回叩いてError Rateを見る**（並列ではなく単発。アクセスが少ないほど失敗率が上がる不具合のため）。0%台が正常・20%超は異常。異常ならまず空コミットで再ビルド、直らなければRollback
+
+```bash
+for i in $(seq 1 10); do curl -s -o /dev/null -w "%{http_code}\n" https://<sub>.wisdomassemble.com/ja; sleep 1; done
+```
 
 ⚠️**`sticky top-[数値px]` をベタ書きしないこと。** ヘッダー高はロゴの大きさでテナントごとに変わる（実測 bug 73 / music-prod 75 / guitar 105px）。必ず `var(--header-h,73px)` を使う。8/22にこれで「+質問する」が隠れる不具合が起きている。
+
+⚠️**ローカル確認に `?tenant=` は使えない**（dev環境ではmiddlewareが実行されない）。`curl -H "x-tenant-id: <id>" http://localhost:3000/ja` を使う。
+
+#### ⑥ 何もしなくても自動で効くもの
+
+- **ルート検索は全8言語で成立する。** 材料は①`{tenantId}CardTagline`（表示中の言語）②`tenants.description_i18n[locale]`。どちらもテナント作成時に必ず作るデータなので、**手動タグを1件も書かなくても最低限の検索は通る**
+- **`TENANT_SKILL_OPTIONS`** も検索材料。マッチングに必須なので書き忘れようがない
+- **質問のタグ**は投稿するたび自動で増える（Fender / ファズ / Genelec / MOTU などの固有名詞はここから入る）
+- 検索は **`normalizeForSearch()`（小文字化＋アクセント記号除去）** を通す。`música`→`musica` が `musical` に一致し、ベトナム語を記号なしで打っても引ける。⚠️**tags側(PortalHome)と入力側(PortalTenantSearch)は必ず同じ関数を通すこと**
+
+#### ⑦ スキルタグの作法（外しやすい）
+
+- ⛔**複合語にしない。**「配線・改造」→「配線」「改造」に分ける。照合は**質問本文への部分一致**なので、複合語は一度も一致しない
+- **同義語・表記ゆれは独立タグで両方入れる**（エフェクター／ペダル、ビンテージ／ヴィンテージ）。分かっている人は両方選ぶので実害がなく、取りこぼしが減る
+- 8〜18個。「得意なこと」として読んで意味が通る専門領域にする
+- ⚠️**テキストを扱うコードを足すときは `title_i18n` / `body_i18n` も見る。** title/body は投稿された元言語だけで、翻訳は別カラム。ここを見ないと日本語しか当たらないコードになる（検索・マッチング・類似質問で**実際に4箇所踏んだ**）
 
 ### 👤 運用体制の変更：WAはプランナー席のみで回す（2026-08-22 mtさん決定）
 
