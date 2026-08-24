@@ -532,6 +532,10 @@
 - Groq課金の蓋: 日次予算超過でAI回答停止→人間マッチング直行フォールバック＋Brevo警告
 - DAU日次メールレポート: pg_cron+Brevo（テナント別DAU/質問数/Groqコスト推定/有料化判断）
 - テナントnoindex閾値方式（10問未満はnoindex+sitemap除外、到達で自動解禁）
+  - ⚠️⚠️**【2026-08-25 未実装と判明】この「閾値方式」はコードになっていない。** 実際の noindex 判定は `src/lib/tenantNames.ts:61` の **`DORMANT_TENANT_IDS = ['debug']` という手動リストだけ**で、**質問数のカウントも閾値判定も存在しない**（`layout.tsx` の `isDormantTenant(tenantId) || !INDEXABLE_LOCALES.includes(locale)` が全て）。
+  - ⛔**つまり新テナントを作った瞬間からインデックス対象になる。** 10問揃う前の薄いページがクロールされる＝**scaled content リスクの安全網が無い**。
+  - **当面の運用（実装するまで）**：⚠️**新テナントを作ったら必ず `DORMANT_TENANT_IDS` に入れ、10問揃ってから外す。** 忘れると薄いページが公開される。「新テナント追加チェックリスト」にも入れること
+  - **実装するなら**：questions の件数を数えて10未満なら `robots:{index:false}` ＋ sitemap から除外。⚠️エンジニア作業なので着手はmtさんの判断
 - **多言語インデックス絞り込み**: 当面en/jaのみインデックス、他6言語（zh/id/vi/ko/es/pt）は翻訳データ保持のままnoindex+sitemap除外（人間レビューなし機械翻訳ページの量産=スケールドコンテンツ判定の回避）。流入シグナルが出た言語から解禁
 
 **参照**: 比較ダッシュボード（Artifact） https://claude.ai/code/artifact/95dbabc4-e444-45ad-b515-ddf577d980aa ／詳細リサーチ4本（広告/アフィリ/Stripe/宣伝SEO・出典つき）はプランナーセッション2026-07-18〜19の会話ログ
