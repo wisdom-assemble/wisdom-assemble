@@ -86,7 +86,9 @@ export default async function OgImage() {
           </div>
         </div>
 
-        {/* Tagline（全ロケールで確実に描画されるようLatinで統一） */}
+        {/* Tagline（全ロケールで確実に描画されるようLatinで統一）
+            【2026-08-25】旧コピー `AI answers first — humans fill the gaps` から、
+            8/22に確定した現行コピーへ差し替え。public/og/*.png も再生成が必要。 */}
         <div
           style={{
             fontSize: 32,
@@ -95,7 +97,7 @@ export default async function OgImage() {
             letterSpacing: 1,
           }}
         >
-          AI answers first — humans fill the gaps
+          Ask AI. If AI doesn't know, a human answers.
         </div>
       </div>
     ),
