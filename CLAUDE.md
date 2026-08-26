@@ -1152,6 +1152,30 @@ for i in $(seq 1 10); do curl -s -o /dev/null -w "%{http_code}\n" https://<sub>.
 | 電話番号 / WhatsApp | 同上 |
 | 営業時間 | 24時間動くサイトに概念がない。⚠️「24時間営業」も選ばない（人間が常時対応すると誤解される。実際はAIが即答・人間は数時間かかる） |
 
+### 🌐 2026-08-26 翻訳が3度目の無音失敗（Day 10）＋**フォールバックが機能していない疑い**
+
+**Day 10 で人間の回答2件（M16・G02）の `body_i18n` が 0/7 で保存された。** 質問のタイトル・本文・AI回答は 7/7 で正常なので、**壊れるのは回答の翻訳だけ**という過去の傾向（7/26・8/17）どおり。
+
+#### 原因（ログに出ていた）
+
+```
+translate: Gemini failed, falling back to Groq: gemini TimeoutError: The operation was aborted due to timeout
+translateToLocales: batch translation failed Error: translate API error: gemini TimeoutError
+   ❌ 翻訳できず（18008ms）
+```
+
+⚠️⚠️**注目すべきは、最後に投げられた `lastErr` が `gemini TimeoutError` のままだったこと。** Groqで失敗したなら `groq ...` になるはず。⛔**つまりGroqへのフォールバックが実際には走っていない可能性が高い。**
+
+**構造上の理由**：`TRANSLATE_BUDGET_MS = 18_000`（`translate.ts:71`）を**プロバイダ間で共有**しており、`AbortSignal.timeout(deadline - Date.now())`（111行）で切っている。**Geminiが18秒フルに使ってタイムアウトすると、Groqを試す残り時間がゼロ**になる。⚠️実測でも失敗が毎回きっかり18秒で、Geminiだけで使い切っている。
+
+⛔**未検証**：コードの構造からの推定で、Groqが本当に一度も呼ばれていないかは確認していない。**断定しない。** 直すならエンジニア判断で、案は「①Geminiのタイムアウトを予算の半分（9秒）で切ってGroqに残す ②プロバイダごとに独立した予算を持たせる」。
+
+#### 復旧（記録どおりの手順で成功）
+
+`npx tsx scripts/backfill-answer-translations.mts --apply` を**繰り返す**。⚠️**1回では通らない。** 実測で1回目=両方失敗、2回目=1件成功（9.0秒）、3回目=残り1件成功（8.1秒）。**成功するときは8〜9秒で終わる**ので、18秒かかったら失敗と判断してよい。⭐**Geminiの一時的な不調**なので、時間をおいて叩き直せば通る。
+
+⚠️**dry run（`--apply`なし）で対象だけ先に見る**こと。過去31件のうち欠落は当日の2件だけだった＝**過去分は壊れていない**ことも同時に確認できる。
+
 ### 📮 投稿日の締め手順（2026-08-25 制定・**言われる前にやる**）
 
 ⚠️**mtさんの動き方は「投稿→回答→BAを待機なしで一気に終わらせる」**（memory: feedback_posting_cadence）。つまり**「投稿しました」と言われた時点で、その日のBAも既に終わっている前提で確認する**こと。
