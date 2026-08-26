@@ -1518,11 +1518,13 @@ rpc auto_escalate_expired → permission denied for function auto_escalate_expir
 |---|---|---|
 | ~~8/23~~ **8/22 ✅完了** | **YouTube**（`@WisdomAssemble` / チャンネルID `UCkSH1iRQyNtmA8m6dP7d6-w`） | YouTube Shorts ← **7媒体で唯一Google検索に出る＝最優先**。⚠️**新規Googleアカウントは作っていない**。既存の専用Gmail `wisdomassemble@gmail.com` にチャンネルが無かったので、そのまま個人チャンネルを作成し名前とハンドルを書き換えた（ブランドアカウントの回り道は不要だった）。説明は**英語を既定＋日本語を「言語を追加」で登録**＝閲覧者の言語で出し分かる。リンクはルートポータル1本。**連絡先メールは意図的に空欄**（概要に公開されスパムの的になる／サイトに`/contact`がある）。アイコン・バナー・透かしは7媒体ぶんまとめて作るので未設定 |
 | 8/23 | **Meta（Instagram）** | IG Reels ＋ Facebook Reels ＋ Threads（**3媒体が1アカウントで済む**） |
-| ~~8/24~~ **未実施** | **TikTok** | TikTok ← ⚠️**飛ばした**。8/25にmtさんの指摘で発覚。プランナーが「残り3媒体」と誤って数え続けていた（正しくは4媒体） |
-| 8/25 | X | X |
-| 8/26 | note | 記事（日本語） |
-| 8/27 | dev.to | 記事（英語） |
-| 8/28 | Pinterest | Pinterest（効果を見て切ってよい枠） |
+| ~~8/24~~ **8/26 ✅完了** | **TikTok**（`@wisdomassemble`） | TikTok ← ⚠️**一度飛ばした**。8/25にmtさんの指摘で発覚（プランナーが「残り3媒体」と誤って数え続けていた／正しくは4媒体）。8/26にブラウザだけで開設完了。⚠️**TikTokの名前は7日に1回しか変更できない** |
+| 8/25 | X（`@wisdomassemble`） ✅完了 | X |
+| **8/27** | **note** | 記事（日本語） ← ⚠️TikTokを8/26に入れたぶん1日ずつ後ろにずれた |
+| **8/28** | **dev.to** | 記事（英語） |
+| **8/29** | **Pinterest** | Pinterest（効果を見て切ってよい枠） |
+
+**✅ 完了 6/7：YouTube・Meta(IG/FB/Threads)・X・TikTok　　⏳ 残り3：note・dev.to・Pinterest**
 
 - **⚠️「7」が2種類あるので混同しないこと**。**動画7媒体**＝TikTok / IG Reels / FB Reels / YouTube Shorts / X / Threads / **Pinterest**（noteとdev.toは入らない）。**作るアカウント7つ**＝Google / Meta / TikTok / X / Pinterest / note / dev.to（Metaが3媒体ぶん）。動画7媒体はアカウント5つでカバーでき、残り2つが記事用。
 - **⚠️アカウント作成は必ずmtさん自身**（Claudeは作成不可）。
@@ -1860,6 +1862,7 @@ where tp.user_id = u.id
 - **やらないこと**: Reddit / Show HN / Product Hunt は**本命の弾として温存**。アフィリンクは承認後まで貼らない。大量投稿もしない
 
 **【E. タイミング】**
+- [ ] **E0b. 【E0と同じ窓・ついでに直す／低優先】hreflangが8言語のまま絞られていない**（2026-08-27 実機で発見）。`sitemap` と `robots meta` は `INDEXABLE_LOCALES`（en/ja）で絞ったのに、**hreflangだけ8言語ぶん出ている**（`src/app/[locale]/questions/[slug]/page.tsx` の `availableLocales`）。コード内コメント「（sitemapと同基準）」も**もう同基準ではない**ので併せて直す。⚠️**実害はほぼゼロ**（Googleはnoindexを指すhreflangを無視するだけでペナルティは無い）。⛔単独でpushする価値は無い＝E0のついでに。
 - [ ] ⭐⭐**E0. 【必須・投稿完了〜申請の窓でやる】翻訳フォールバックの修正**（2026-08-26 発見）。⛔**この窓を逃すと承認までpushできなくなる**（E2で申請後のpushを禁止しているため）。窓は**9/6の投稿完了〜9/22の申請開始まで**の2週間強。
   - **症状**：人間の回答の `body_i18n` が 0/7 で保存される。3週間で3回（7/26・8/17・8/26）
   - **原因**：`TRANSLATE_BUDGET_MS = 18_000`（`src/lib/translate.ts:71`）を**Gemini/Groqで共有**し、`AbortSignal.timeout(deadline - Date.now())`（111行）で切っている。**Geminiが18秒フルに使ってタイムアウトすると、`callGroqJson` のループ先頭にある `if (Date.now() >= deadline) break` に当たり、Groqが1度も呼ばれない**。⚠️Groqは削除されていない（`order = USE_GEMINI ? (HAS_GROQ ? ['gemini','groq'] : ['gemini']) : ['groq']`）。主プロバイダをGroq→Geminiに変えただけで、Groqは「Gemini障害時の保険」として残っている
