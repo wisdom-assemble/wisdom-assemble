@@ -1388,6 +1388,13 @@ M03「Antelope Zen Quadro＋Edge Soloのマイクエミュレーター方法は�
 2. ⭐**DBで status を数え直す**（`ai_answered` / `solved` / `open`+人間回答 / `hard`）。⛔前回の結果を使い回さない
 3. ⭐**その日のBA対象が `solved` になっているか個別に確認**する。⛔「まだのはず」と決めつけない
 4. **較正スコアとのズレを確認**（🤖のはずが👤に落ちていないか、その逆も）。ズレていたら配分の入れ替えを提案する
+   - ⚠️**引き直しは2回まで。** 同じスコアが2回続いたらそれは揺れではなく**その質問の実力値**（M25が実例：較正95だが本番は2回とも90）。それ以上引くと「一番自信満々な回答」を選ぶ操作になり、⛔誤答が通りやすくなる
+   - ⭐**🤖になった問は必ずAI回答を読む。** 固有名詞（人名・製品名・型番）の捏造が一番すり抜ける（M03のNeumane／G03のキース・リチャーズ）
+4.5 ⭐**`tenant_profiles` の `is_available` を見る**（2026-08-29 追加）。⚠️バグ④で奥様が回答候補に戻ることがある。⛔戻っていると意図しないマッチと通知が発生し、8時間後に自動hard化する
+   ```bash
+   cd /Users/apple/wisdom-assemble && set -a && . ./.env.local && set +a && curl -s "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/tenant_profiles?select=tenant_id,display_name,is_available&is_available=eq.true" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
+   ```
+   ✅正常＝YOYOYOの2行（dtm/guitar）だけ。⛔MeloStが出たらSQLで戻す（バグトラック⑪）
 5. ⭐**Notionの投稿スケジュール表のその日の行を消し込む**（✅＋取り消し線）。⛔**これは言われる前にやる作業**
 6. ズレや発見があれば CLAUDE.md とNotionに記録する
 
