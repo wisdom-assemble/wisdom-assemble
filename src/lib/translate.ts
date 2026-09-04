@@ -16,7 +16,18 @@ const GEMINI_TRANSLATE_MODEL = 'gemini-3.5-flash-lite'
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_TRANSLATE_MODEL = 'llama-3.1-8b-instant'
+// ⚠️2026-09-05: Groqが llama 系を全廃し、旧値 'llama-3.1-8b-instant' は 404
+//   （"The model does not exist or you do not have access to it"）になっていた。
+//   Groqは「Geminiが落ちたときだけ」呼ばれるので、死んでいても普段は気づけない。
+//   実際にGeminiが503を返した日に、保険が効かず翻訳が全滅して発覚した。
+//   ⚠️qwen/qwen3.8-27b は訳質が最良だったが、7言語をまとめて返すと出力トークン上限で
+//   429「Request too large ... on output tokens」になったため不採用。保険は落ちないことが第一。
+//   採用時に実訳を確認済み：「op-ampの音の違い」→ko「사운드 차이」(旧8bの「소음(騒音)」誤訳は再現せず)、
+//   zhにカタカナ混入なし、Quad Cortex Mini / Genelec G Three の製品名も全言語で保持。
+//   ⚠️Groqのラインナップは入れ替わる。404が出たら
+//     curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"
+//   で実在するモデルを確認してから差し替えること。
+const GROQ_TRANSLATE_MODEL = 'openai/gpt-oss-120b'
 
 const USE_GEMINI = !!GEMINI_API_KEY
 // GroqキーはGemini障害時のフォールバックに必要。消すと保険が静かに死ぬので残すこと。
@@ -25,7 +36,7 @@ const HAS_GROQ = !!GROQ_API_KEY
 
 // 翻訳の料金（USD / 1Mトークン、2026-07-22に公式料金ページで確認）:
 //   Gemini 3.5 Flash-Lite : 入力$0.30 / 出力$2.50
-//   Groq 8b-instant       : 入力$0.05 / 出力$0.08（フォールバック時用）
+//   Groq qwen3.8-27b      : フォールバック時用（旧 8b-instant は2026-09-05に廃止済み）
 // フォールバックが発生した回はGemini単価で計上されるが、稀なうえ推定値なので許容する。
 // 回答生成がGeminiになりコストの請求先が2つに割れたため、翻訳分も計上しないと
 // ダッシュボードの金額が実コストより過小に見える（プランナー指摘・2026-07-22）。
@@ -108,7 +119,18 @@ async function callOnce(
     method: 'POST',
     // 予算はループの前後でしか見ていないため、1回の呼び出しが長引くと予算を超える
     // （実測で35秒かかった回があった）。呼び出し自体にも残り時間で上限をかける。
-    signal: deadline ? AbortSignal.timeout(Math.max(1000, deadline - Date.now())) : undefined,
+    // ⚠️2026-09-05修正（E0）：以前は残り予算をまるごとGeminiに渡していたため、
+    //   Geminiが18秒フルに使ってタイムアウトすると callGroqJson のループ先頭の
+    //   `if (Date.now() >= deadline) break` に当たり、Groqが一度も呼ばれなかった。
+    //   ⭐Geminiには残り予算の半分だけ渡し、フォールバック用に半分を残す。
+    //   Groq側は残り全部を使ってよい（最後の砦なので）。
+    signal: deadline
+      ? AbortSignal.timeout(
+          Math.max(1000, isGem
+            ? Math.floor((deadline - Date.now()) / 2)
+            : deadline - Date.now())
+        )
+      : undefined,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${isGem ? GEMINI_API_KEY : GROQ_API_KEY}`,
