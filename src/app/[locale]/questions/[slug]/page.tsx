@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
 import { getTranslations, getLocale } from 'next-intl/server'
-import { routing } from '@/i18n/routing'
+import { routing, INDEXABLE_LOCALES } from '@/i18n/routing'
 import Header from '@/components/Header'
 import AnswerForm from '@/components/AnswerForm'
 import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@/components/QuestionActions'
@@ -75,11 +75,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = (bodyI18n[locale] ?? q.body).slice(0, 160)
 
   // hreflang / canonical: 各言語版のURLを相互リンクし、重複コンテンツ判定を防ぐ。
-  // 実際に翻訳が存在するロケール（source_locale + 翻訳済み）のみ対象にする（sitemapと同基準）。
+  // 対象は「翻訳が存在する」かつ「インデックス対象(en/ja)」のロケールだけ。
+  // ⚠️2026-09-05修正（E0b）：以前は routing.locales(8言語) で絞っていたため、
+  //   sitemap と robots meta は INDEXABLE_LOCALES(en/ja) に絞ってあるのに
+  //   hreflang だけ8言語ぶん出ており、noindex のページを指していた。
+  //   （Googleは noindex を指す hreflang を無視するだけでペナルティは無いが、
+  //     シグナルとして矛盾しているので揃える。実害はほぼゼロ＝低優先だった）
+  //   ⭐将来6言語を解禁するときは INDEXABLE_LOCALES を足すだけで
+  //     sitemap・robots・hreflang が揃って追従する。
   const host = (await headers()).get('host') ?? 'bug.wisdomassemble.com'
   const path = `/questions/${encodeURIComponent(slug)}`
   const availableLocales = [...new Set([q.source_locale ?? 'ja', ...Object.keys(titleI18n)])]
-    .filter((loc) => (routing.locales as readonly string[]).includes(loc))
+    .filter((loc) => INDEXABLE_LOCALES.includes(loc))
   const languages: Record<string, string> = {}
   for (const loc of availableLocales) languages[loc] = `https://${host}/${loc}${path}`
   // x-default はデフォルトロケール(en)があればそれ、無ければ元言語を指す
