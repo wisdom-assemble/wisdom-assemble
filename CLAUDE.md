@@ -1429,13 +1429,27 @@ groq 404 "The model `llama-3.1-8b-instant` does not exist or you do not have acc
    GROQ_TRANSLATE_MODEL = 'llama-3.1-8b-instant' → 'openai/gpt-oss-120b'
 
 ② src/lib/translate.ts の AbortSignal.timeout（E0本体）
-   Geminiには残り予算の「半分」だけ渡し、フォールバック用に半分を残す
+   Geminiには残り予算の 2/3(12秒)、フォールバック用に 1/3(6秒) を残す
    → 18秒使い切ってもGroqに到達する
+   ⚠️最初は「半分ずつ(9秒/9秒)」にしたが、⛔Geminiの正常な成功が8〜9秒なので
+     境界ぴったりで正常な翻訳まで打ち切ってしまう（品質が理由でGeminiを主役に
+     したのに本末転倒）。⭐Groqは実測3〜5秒と速いので1/3で足りる → 2/3に修正
 
 ③ scripts/backfill-question-translations.mts を新規作成
    ⛔質問側（タイトル・本文）のバックフィルが存在しなかった
 ```
 ⭐**①②③で今夜の翻訳が全部埋まった**（実際にGeminiが503のままGroq経由で成功）。
+
+#### ⚠️用語の書き方（mtさん指摘・2026-09-05）
+
+⛔`openai/gpt-oss-120b` とだけ書くと「OpenAIのサービスを使っている」ように読める。
+⭐**必ず「Groq × openai/gpt-oss-120b」の形で書く。**
+
+```
+Groq    推論を走らせるインフラ会社（速さが売り）。⭐課金先も認証キーもここ
+OpenAI  モデルを作った会社。モデル名に名前が入っているだけ
+```
+⚠️OpenAIのAPIは使っていない。変わったのは「Groqの上で動かすモデル」だけ。
 
 #### ⭐モデル選定の記録（次に404が出たとき用）
 
@@ -1447,7 +1461,7 @@ curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_AP
 | モデル | 訳質 | 判定 |
 |---|---|---|
 | qwen/qwen3.8-27b | ⭐最良（「生産年份別」と年代差を正確に／Op-Amp原語併記） | ⛔**不採用**。7言語まとめると `429 Request too large ... on output tokens` |
-| **openai/gpt-oss-120b** | ⭐ほぼ同等（iZotope Ozone Elements等の固有名詞も保持） | ✅**採用**。7言語を一度に返せた |
+| **openai/gpt-oss-120b** | ⭐ほぼ同等（iZotope Ozone Elements等の固有名詞も保持） | ✅**採用**。7言語を一度に返せた。実測 4.96 / 3.23 / 3.62秒 |
 | openai/gpt-oss-20b | ○（韓国語「오펜앰프」がやや不正確） | 予備 |
 
 - ⭐**旧8bの前科（韓国語「op-ampの音」→「소음(騒音)」／中国語にカタカナ混入）は3モデルとも再現せず**

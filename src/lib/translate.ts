@@ -122,12 +122,17 @@ async function callOnce(
     // ⚠️2026-09-05修正（E0）：以前は残り予算をまるごとGeminiに渡していたため、
     //   Geminiが18秒フルに使ってタイムアウトすると callGroqJson のループ先頭の
     //   `if (Date.now() >= deadline) break` に当たり、Groqが一度も呼ばれなかった。
-    //   ⭐Geminiには残り予算の半分だけ渡し、フォールバック用に半分を残す。
+    //   ⭐Geminiには残り予算の2/3、フォールバック用に1/3を残す。
+    //   ⚠️配分の根拠（2026-09-05 実測）：
+    //     Geminiの正常な成功は 8〜9秒（CLAUDE.mdの実測記録）
+    //     Groq(gpt-oss-120b)の7言語翻訳は 3〜5秒（実測 4.96 / 3.23 / 3.62秒）
+    //   ⛔半分(9秒)で切ると正常なGeminiまで打ち切ってしまう（品質が理由でGeminiを
+    //     主役にしたので本末転倒）。⭐Groqは速いので1/3(6秒)あれば足りる。
     //   Groq側は残り全部を使ってよい（最後の砦なので）。
     signal: deadline
       ? AbortSignal.timeout(
           Math.max(1000, isGem
-            ? Math.floor((deadline - Date.now()) / 2)
+            ? Math.floor((deadline - Date.now()) * 2 / 3)
             : deadline - Date.now())
         )
       : undefined,
