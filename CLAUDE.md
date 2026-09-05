@@ -18,11 +18,13 @@
 - アフィリエイト: ASP登録（A8.net・もしもアフィリエイト等）してリンクを貼るだけ、カスタム追跡システムは不要
 
 ## 技術スタック
-- Next.js 14 (App Router) + TypeScript
+- Next.js 15 (App Router) + TypeScript
 - Supabase (PostgreSQL + Auth + RLS)
 - Tailwind CSS
-- Groq API (llama-3.3-70b-versatile) for AI answers
-- Cloudflare Pages（デプロイ先）※ Vercel は使わない
+- ⭐**AI回答・スコア判定：Gemini 3.5 Flash-Lite**（`src/lib/gemini.ts`）。⚠️保険のGroq側は `GROQ_MODEL = 'llama-3.3-70b-versatile'` のままだが**Groqがllama系を全廃したので404**（承認後に差し替え）
+- ⭐**翻訳：1番目 Gemini 3.5 Flash-Lite ／ 2番目（保険）Groq × openai/gpt-oss-120b**（`src/lib/translate.ts`）。⛔Groqは推論インフラ会社、OpenAIはモデル製作者で、OpenAIのAPIは使っていない
+- Cloudflare **Workers**（@opennextjs/cloudflare・Workers Buildsでmainへのpushで自動デプロイ）※ Vercel は使わない
+⚠️**【2026-09-05 訂正】ここは長らく「Groq (llama-3.3-70b-versatile) / Cloudflare Pages / Next.js 14」のままだった。**冒頭なので毎回読まれる＝誤解の元だった。
 
 ## セッション管理ルール
 - 開発のキリがいいタイミングで**セッションを切り替える**
@@ -76,7 +78,7 @@
 - Next.js マルチテナント基盤
 - 質問投稿・一覧・詳細ページ
 - Google OAuth + メールログイン（メールはリリース前削除）
-- Groq API AI自動回答（llama-3.3-70b-versatile）
+- AI自動回答（⚠️当時はGroq llama-3.3-70b-versatile。⭐現在はGemini 3.5 Flash-Lite）
 - スキルタグ×回答数スコアリングによるマッチング（B→C→hard昇格）
 - 質問投稿後オーバーレイアニメーション（AIが考え中 / マッチング中）
 - 投稿後バナー（AI回答 / マッチング成功 / 受付中）
