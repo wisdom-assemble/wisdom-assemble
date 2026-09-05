@@ -18,7 +18,7 @@
 - アフィリエイト: ASP登録（A8.net・もしもアフィリエイト等）してリンクを貼るだけ、カスタム追跡システムは不要
 
 ## 技術スタック
-- Next.js 15 (App Router) + TypeScript
+- Next.js 16 (App Router) + TypeScript ※package.json実測 16.2.9
 - Supabase (PostgreSQL + Auth + RLS)
 - Tailwind CSS
 - ⭐**AI回答・スコア判定：Gemini 3.5 Flash-Lite**（`src/lib/gemini.ts`）。⚠️保険のGroq側は `GROQ_MODEL = 'llama-3.3-70b-versatile'` のままだが**Groqがllama系を全廃したので404**（承認後に差し替え）
