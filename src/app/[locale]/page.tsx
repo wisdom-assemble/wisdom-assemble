@@ -88,10 +88,11 @@ export default async function HomePage({
         {/* 【2026-08-22】キャッチコピーはテナント説明文の「上」。
             スマホは2行・PCは1行（改行の扱いはPortalHome.tsx側のコメント参照）。
             サイズはルート(text-lg/xl)より1段小さい text-base/lg。テナントはロゴが主役なので
-            コピーを一段落とす、というmtさんの指定（2026-08-22）。 */}
-        <p className="whitespace-pre-line sm:whitespace-normal text-base sm:text-lg font-medium text-gray-800 leading-snug mb-1.5">
+            コピーを一段落とす、というmtさんの指定（2026-08-22）。
+            【2026-10-07】見出しが1つも無かったので h1 にした（見た目は classes で決まるので変わらない）。 */}
+        <h1 className="whitespace-pre-line sm:whitespace-normal text-base sm:text-lg font-medium text-gray-800 leading-snug mb-1.5">
           {tBrand('catchcopy')}
-        </p>
+        </h1>
         {tagline && (
           <p className="text-gray-500 text-xs sm:text-[13px] mb-4">{tagline}</p>
         )}

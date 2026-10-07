@@ -1,8 +1,14 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
+import { buildStaticPageMetadata } from '@/lib/pageMeta'
 
 type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props) {
+  const { locale } = await params
+  return buildStaticPageMetadata(locale, '/terms', 'termsPage', 'title')
+}
 
 export default async function TermsPage({ params }: Props) {
   const { locale } = await params

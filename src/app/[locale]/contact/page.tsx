@@ -57,8 +57,6 @@ export default function ContactPage() {
     window.location.reload()
   }
 
-  if (loading) return <><Header /><div className="max-w-3xl mx-auto px-4 py-8 text-center text-gray-400 text-sm">{tCommon('loading')}</div></>
-
   return (
     <>
       <Header />
@@ -73,7 +71,11 @@ export default function ContactPage() {
           <p>{t('disclaimer')}</p>
         </div>
 
-        {!user ? (
+        {/* 【2026-10-07】ログイン確認中もタイトル・説明・注意書きは出す（以前はページ全体が「読み込み中...」で、
+            サーバーが返すHTMLに本文が無かった＝JSを実行しないクローラーには空のページに見えていた） */}
+        {loading ? (
+          <div className="py-8 text-center text-gray-400 text-sm">{tCommon('loading')}</div>
+        ) : !user ? (
           <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-center">
             <p className="text-sm text-amber-800 font-medium mb-3">{t('loginRequired')}</p>
             <a

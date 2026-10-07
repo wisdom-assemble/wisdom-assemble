@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import SiteLogo from '@/components/SiteLogo'
 import { normalizeForSearch } from '@/lib/tenantNames'
-import type { PortalExample } from '@/components/PortalHome'
+import type { PortalExample, PortalQuestionLink } from '@/components/PortalHome'
 
 type Tenant = {
   tenantId: string
@@ -15,6 +15,7 @@ type Tenant = {
   tagline: string
   tags: string[]
   examples: PortalExample[]
+  moreQuestions: PortalQuestionLink[]
 }
 
 type Props = {
@@ -60,7 +61,7 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
         /* 【2026-10-07】カードに回答例（AIが答えた例・人間が答えた例）を載せたので、正方形の2列から
            スマホ1列・PC2列に変更。カード全体を1つのリンクにすると回答例のリンクと入れ子になる（<a>の中に<a>は不正）ので、
            ロゴ部分・回答例・一覧へ の3つを別々のリンクにしている。
-           カードは subgrid（3段＝ロゴ／回答例／一覧へ）にして、ロゴの大きさや説明文の行数が違っても
+           カードは subgrid（3段＝ロゴ／回答例＋ほかの質問／一覧へ）にして、ロゴの大きさや説明文の行数が違っても
            横に並んだカード同士で段の高さがそろうようにしている（固定のmin-hだと言語ごとに崩れる）。 */
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {visibleTenants.map((tenant) => {
@@ -83,7 +84,8 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
                   <SiteLogo name={tenant.name} tenantId={tenant.tenantId} colorTheme={tenant.colorTheme} />
                   <span className="text-xs text-gray-500 leading-relaxed">{tenant.tagline}</span>
                 </a>
-                {/* 回答例が無くても ul は置く（subgridの段数を3に保つため） */}
+                {/* 回答例が無くても div は置く（subgridの段数を3に保つため） */}
+                <div>
                 <ul className={tenant.examples.length > 0 ? 'border-t border-gray-200 divide-y divide-gray-100' : undefined}>
                   {tenant.examples.map((example) => (
                     <li key={example.kind}>
@@ -110,6 +112,17 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
                     </li>
                   ))}
                 </ul>
+                {tenant.moreQuestions.length > 0 && (
+                  <ul className="border-t border-gray-100 px-4 py-2.5 space-y-1.5">
+                    {tenant.moreQuestions.map((q) => (
+                      <li key={q.href} className="flex gap-1.5 text-xs leading-snug">
+                        <span aria-hidden="true" className="text-gray-300">•</span>
+                        <a href={q.href} className="text-gray-700 hover:text-gray-900 hover:underline line-clamp-1">{q.title}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                </div>
                 <a
                   href={tenant.href}
                   className="border-t border-gray-200 px-4 py-2.5 text-center text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors"

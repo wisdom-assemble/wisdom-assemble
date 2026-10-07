@@ -1,7 +1,13 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import Header from '@/components/Header'
+import { buildStaticPageMetadata } from '@/lib/pageMeta'
 
 type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props) {
+  const { locale } = await params
+  return buildStaticPageMetadata(locale, '/about', 'portalPage', 'aboutTitle')
+}
 
 export default async function AboutPage({ params }: Props) {
   const { locale } = await params

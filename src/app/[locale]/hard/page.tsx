@@ -1,9 +1,20 @@
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
+import { notFound } from 'next/navigation'
+import { buildStaticPageMetadata } from '@/lib/pageMeta'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import HardQuestionList from '@/components/HardQuestionList'
 import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  // ルートでは本体が notFound() で「見つかりません」を出すが、このルートには loading.tsx があり
+  // 200 を送った後になるのでステータスは404にできない（質問詳細で起きたソフト404と同じ・2026-08-08参照）。
+  // どこからもリンクしていないページなので、noindex を付けて検索に出ないようにしておく。
+  if ((await getTenantId()) === 'root') return { robots: { index: false, follow: true } }
+  return buildStaticPageMetadata(locale, '/hard', 'hardPage', 'title')
+}
 
 export default async function HardQuestPage({
   searchParams,
@@ -12,19 +23,22 @@ export default async function HardQuestPage({
 }) {
   const { tab = 'unsolved' } = await searchParams
   const t = await getTranslations('hardPage')
+  const locale = await getLocale()
   const tenantId = await getTenantId()
+  // 【2026-10-07】ルートには高難度が無い（質問はサブドメインにだけある）。空の一覧ページを出さない
+  if (tenantId === 'root') notFound()
   const supabase = await createClient()
 
   const [{ data: unsolved }, { data: solved }] = await Promise.all([
     supabase
       .from('questions')
-      .select('id, title, slug, user_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
+      .select('id, title, title_i18n, slug, user_id, created_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'hard')
       .order('created_at', { ascending: false }),
     supabase
       .from('questions')
-      .select('id, title, slug, user_id, created_at, updated_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
+      .select('id, title, title_i18n, slug, user_id, created_at, updated_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'solved')
       .not('matched_c_id', 'is', null)
@@ -36,6 +50,10 @@ export default async function HardQuestPage({
   // 埋め込んだ profiles.display_name を tenant_profiles の値で上書きし、
   // HardQuestionList 側は変更せずに反映させる。
   const allRows = [...(unsolved ?? []), ...(solved ?? [])]
+  // 【2026-10-07】タイトルを表示言語に合わせる（それまで /en/hard でも日本語の原文タイトルが出ていた）
+  for (const r of allRows as any[]) {
+    r.title = r.title_i18n?.[locale] ?? r.title
+  }
   const posterIds = [...new Set(allRows.map((r: any) => r.user_id).filter(Boolean))]
   if (posterIds.length > 0) {
     const { data: tpRows } = await supabase

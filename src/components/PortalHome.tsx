@@ -125,6 +125,28 @@ async function fetchExamples(admin: Admin, tenantId: string, locale: string): Pr
   return examples
 }
 
+/* 【2026-10-07】回答例の下に並べる「ほかの質問」のタイトル（新しい順に3つ・回答例と重複しないもの）。
+   ルートから各ジャンルの質問ページへ直接たどれる入口を増やす（審査はルートから入るため）。 */
+export type PortalQuestionLink = { href: string; title: string }
+const MORE_QUESTIONS_COUNT = 3
+
+async function fetchMoreQuestions(admin: Admin, tenantId: string, locale: string, excludeHrefs: string[]): Promise<PortalQuestionLink[]> {
+  const base = `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com/${locale}/questions/`
+  const { data } = await admin
+    .from('questions')
+    .select('slug, title, title_i18n')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(MORE_QUESTIONS_COUNT + 2)
+  return (data ?? [])
+    .map((q) => ({
+      href: base + q.slug,
+      title: (q.title_i18n as Record<string, string> | null)?.[locale] ?? q.title,
+    }))
+    .filter((q) => !excludeHrefs.includes(q.href))
+    .slice(0, MORE_QUESTIONS_COUNT)
+}
+
 // wisdomassemble.com（ルートドメイン）専用のポータルページ。
 // 各ジャンル別サブドメインへの入口。まだCloudflareのCustom Domain設定が
 // 済んでいないテナントは「準備中」バッジを表示し、リンクを無効化する。
@@ -152,12 +174,16 @@ export default async function PortalHome() {
     ),
     // 回答例の取得に失敗してもポータル自体は出す（カードが回答例なしになるだけ）
     Promise.all(
-      REVIEW_TENANT_IDS.map((tenantId) =>
-        fetchExamples(admin, tenantId, locale).catch((e) => {
+      REVIEW_TENANT_IDS.map(async (tenantId) => {
+        try {
+          const examples = await fetchExamples(admin, tenantId, locale)
+          const more = await fetchMoreQuestions(admin, tenantId, locale, examples.map((e) => e.href))
+          return { examples, more }
+        } catch (e) {
           console.error(`[PortalHome] examples fetch failed for ${tenantId}:`, e)
-          return [] as PortalExample[]
-        })
-      )
+          return { examples: [] as PortalExample[], more: [] as PortalQuestionLink[] }
+        }
+      })
     ),
   ])
 
@@ -227,7 +253,8 @@ export default async function PortalHome() {
       // これが検索対象を兼ねているので、書けばその言語で検索に出る。
       tagline,
       tags,
-      examples: examplesByTenant[i],
+      examples: examplesByTenant[i].examples,
+      moreQuestions: examplesByTenant[i].more,
     }
   })
 

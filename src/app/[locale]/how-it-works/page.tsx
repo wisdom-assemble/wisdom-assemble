@@ -1,13 +1,24 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import Header from '@/components/Header'
+import { buildStaticPageMetadata } from '@/lib/pageMeta'
+import { notFound } from 'next/navigation'
+import { getTenantId } from '@/lib/tenant'
 import { Link } from '@/i18n/navigation'
 
 type Props = { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props) {
+  const { locale } = await params
+  return buildStaticPageMetadata(locale, '/how-it-works', 'howItWorksPage', 'title')
+}
 
 export default async function HowItWorksPage({ params }: Props) {
   const { locale } = await params
   setRequestLocale(locale)
   const t = await getTranslations('howItWorksPage')
+  // 【2026-10-07】ルートには質問投稿が無く、このページの「質問してみる」等の導線が成立しない。
+  // ルートのヘッダーで使い方を出していない（2026-07-11）のと揃えて、ルートでは出さない
+  if ((await getTenantId()) === 'root') notFound()
 
   return (
     <>
