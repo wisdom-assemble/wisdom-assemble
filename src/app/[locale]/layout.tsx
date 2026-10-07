@@ -19,6 +19,13 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 // でのみフッターに「About Wisdom Assemble」オーバーレイを表示する
 const ROOT_TENANT_ID = 'root'
 
+// クライアント部品（'use client'）が useTranslations / useMessages で使う名前空間（2026-10-07 実測・23ファイル）。
+// skillTags はマイページが useMessages() で直接読んでいる（grepの useTranslations だけでは見つからないので注意）。
+const CLIENT_MESSAGE_NAMESPACES = [
+  'answerForm', 'common', 'contactPage', 'cookieConsent', 'footer', 'hardPage', 'header', 'home',
+  'loginPage', 'portalPage', 'profilePage', 'questionActions', 'questionForm', 'skillTags', 'titles', 'tutorial',
+] as const
+
 const OG_LOCALE_MAP: Record<string, string> = {
   en: 'en_US', ja: 'ja_JP', zh: 'zh_CN', id: 'id_ID',
   vi: 'vi_VN', ko: 'ko_KR', es: 'es_ES', pt: 'pt_PT',
@@ -137,6 +144,15 @@ export default async function RootLayout({
     getMessages(),
   ])
 
+  // 【2026-10-07 B①】ブラウザへ送る翻訳は、クライアント部品（'use client'）が使う名前空間だけにする。
+  // それまでは24名前空間・約30KBを全ページで送っていた（規約を開いても投稿フォームやマイページの文言まで）。
+  // サーバー部品は getTranslations() でサーバー側から読むので送らなくてよい。HTMLが軽くなり描画のCPUも下がる（1102対策）。
+  // ⚠️クライアント部品で新しい名前空間を useTranslations / useMessages するときは、ここに足すこと。
+  //    足し忘れると、その文言だけ「名前空間.キー」のまま表示される（他の表示・翻訳データには影響しない）。
+  const clientMessages = Object.fromEntries(
+    CLIENT_MESSAGE_NAMESPACES.filter((ns) => ns in messages).map((ns) => [ns, messages[ns]])
+  )
+
   // テナント別ダークモード。theme='dark'なら<html data-theme="dark">、
   // bg_colorがあれば --page-bg で背景色を個別上書き（globals.css参照）。
   const isDark = tenant?.theme === 'dark'
@@ -147,7 +163,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={geist.variable} data-theme={isDark ? 'dark' : undefined} style={htmlStyle}>
       <body className="min-h-full flex flex-col antialiased">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={clientMessages}>
           <TenantProvider tenant={tenant} tenantId={tenantId}>
             {children}
             <Footer />
