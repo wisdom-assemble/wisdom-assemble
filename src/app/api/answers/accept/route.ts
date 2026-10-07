@@ -63,8 +63,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: apiErrors.alreadySolved }, { status: 400 })
   }
 
-  // ベストアンサーにマーク
-  await admin.from('answers').update({ is_accepted: true }).eq('id', answerId)
+  // ベストアンサーにマーク（失敗したら質問の状態を元に戻す＝「解決済みなのにベストアンサーなし」で詰まらないように）
+  const { error: markError } = await admin.from('answers').update({ is_accepted: true }).eq('id', answerId)
+  if (markError) {
+    console.error('accept: mark answer failed, reverting question status:', markError)
+    await admin
+      .from('questions')
+      .update({ status: question.status, solved_at: null, solved_by: null })
+      .eq('id', questionId)
+    return NextResponse.json({ error: apiErrors.postFailed }, { status: 500 })
+  }
 
   // 人間の回答者なら実績加算 + タグ蓄積 + 称号チェック
   // （質問者本人の回答は実績に数えない。回答APIでも本人の回答は拒否している・2026-10-07）

@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
   //   誰でも回答できる：高難度／AI回答済み／担当者が見つからず止まっている質問
   //   担当者だけが回答できる：専門家①（B）・②（C）が担当中の質問（期限内に限る）
   const now = Date.now()
-  const notExpired = (deadline: string | null) => !deadline || new Date(deadline).getTime() >= now
+  // 期限の直前に書き始めて期限後に送った回答を弾かないよう、30分の猶予を持たせる（自動の高難度移行は15分ごと）
+  const DEADLINE_GRACE_MS = 30 * 60 * 1000
+  const notExpired = (deadline: string | null) => !deadline || new Date(deadline).getTime() + DEADLINE_GRACE_MS >= now
   const isOwner = question.user_id === user.id
   const openToAll =
     question.status === 'hard' ||

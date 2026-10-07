@@ -28,9 +28,9 @@ function toSlug(text: string): string {
     .replace(/[\s　]+/g, '-')
     .replace(/[^\p{L}\p{N}_-]/gu, '')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 100)
-  return slug || 'q'
+  // 文字単位（サロゲートペアを壊さない）で100文字に切ってから、端のハイフンを落とす
+  const cut = Array.from(slug).slice(0, 100).join('').replace(/^-+|-+$/g, '')
+  return cut || 'q'
 }
 
 export async function POST(request: NextRequest) {
@@ -202,7 +202,10 @@ export async function POST(request: NextRequest) {
   const titleTranslationPromise = translationPromise.then((r) => r.title_i18n)
   // 【2026-10-07】タグも翻訳する（tags_i18n）。本文の翻訳と並行して走らせ、下で保存前に待つ。
   // 失敗しても投稿は成功扱い（そのタグは元の言語のまま表示されるだけ）。
-  const tagsTranslationPromise = translateTagsToLocales(aiResult?.tags ?? [], sourceLocale, translationUsage).catch((e) => {
+  // タグを作るAIの指示は日本語固定（gemini.ts）なので、元の言語は本文ではなくタグ自体の文字で判定する（2026-10-08）
+  const questionTags = aiResult?.tags ?? []
+  const tagsSourceLocale = detectSourceLocale(questionTags.join(' '), 'en', SUPPORTED_LOCALES)
+  const tagsTranslationPromise = translateTagsToLocales(questionTags, tagsSourceLocale, translationUsage).catch((e) => {
     console.error('tag translation error:', e)
     return {} as Record<string, string[]>
   })

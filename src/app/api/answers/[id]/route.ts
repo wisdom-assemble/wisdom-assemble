@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { data: answer } = await admin
     .from('answers')
-    .select('id, user_id, is_ai, tenant_id')
+    .select('id, user_id, is_ai, tenant_id, body')
     .eq('id', answerId)
     .eq('tenant_id', tenantId)
     .maybeSingle()
@@ -41,6 +41,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (answer.is_ai || answer.user_id !== user.id) {
     return NextResponse.json({ error: apiErrors.notPermitted }, { status: 403 })
   }
+
+  // 本文が変わっていなければ何もしない（翻訳のやり直しでAIを無駄に使わない）
+  if ((answer.body ?? '').trim() === text) return NextResponse.json({ ok: true })
 
   const sourceLocale = detectSourceLocale(text, String(locale ?? ''), SUPPORTED_LOCALES)
   // 先に本文を保存し、古い翻訳は消す（翻訳に失敗しても、古い内容の訳が残らないように）
