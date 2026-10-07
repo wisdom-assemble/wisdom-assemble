@@ -14,21 +14,35 @@
 # ⚠️Cloudflare側のビルドは GitHub App がpushを受けて走る。botのpushでも走る想定だが、走らなかった場合は
 #    再測定でも失敗が続き、最終的にジョブ失敗＝通知で気付ける。
 # ⛔測定は48回まで。本番に数百リクエストを流すと、それ自体が②の引き金になる（10/7に実際に起きた）。
+#
+# 【2026-10-08 追加・定期チェック（1102対策 b）】mtさん決定：Workers Paid（月$5）は使わず、無料のまま定期チェックで守る。
+#   審査中はpushしないので、②が起きると誰かが再デプロイするまで落ちたままになる → 30分ごとに見張る。
+#   定期実行は軽く8回だけ測り、2回以上失敗したときだけ48回で確かめる（見張り自体を負荷にしない）。
+#   ⚠️公開リポジトリは60日間コミットが無いと定期実行が止まる（審査期間中は問題ない）。
+#   ⚠️定期実行の失敗通知は、cron を最後に書き換えたコミットの作者に届く。
 
 name: post-deploy-check
 
 on:
   push:
     branches: [main]
+  schedule:
+    # 30分ごと（GitHubの混雑を避けて毎時7分・37分。混んでいると数分〜十数分遅れることがある）
+    - cron: '7,37 * * * *'
   workflow_dispatch:
     inputs:
       wait_seconds:
         description: '測定前に待つ秒数（デプロイ済みなら 0 でよい）'
         default: '0'
+      force_rebuild:
+        description: '正常でも1回だけ再ビルドする（自動再ビルドの経路が動くかの試験用）'
+        type: boolean
+        default: false
 
+# pushのときだけ実行中のチェックを打ち切る。定期チェックは前の回（再ビルド待ちの途中など）を打ち切らずに順番を待つ
 concurrency:
   group: post-deploy-check
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 permissions:
   contents: write
@@ -44,6 +58,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           DISPATCH_WAIT: ${{ inputs.wait_seconds }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
           # 再ビルド後の待ち時間
           REBUILD_WAIT: 300
           # 48回中この回数以上失敗したら異常（正常時は0回）
@@ -62,9 +77,10 @@ jobs:
           https://guitar.wisdomassemble.com/en/hard
           "
 
+          # 引数＝何周するか（1周8回。既定6周＝48回）
           measure() {
             fails=0; total=0
-            for round in 1 2 3 4 5 6; do
+            for round in $(seq 1 "${1:-6}"); do
               for u in $URLS; do
                 code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)
                 total=$((total+1))
@@ -79,13 +95,33 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           rebuilds=0
-          # push時：Cloudflareのビルドとデプロイは通常2〜3分。余裕を見て5分待つ。手動実行時は入力値（既定0）
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then wait="${DISPATCH_WAIT:-0}"; else wait=300; fi
+          # push時：Cloudflareのビルドとデプロイは通常2〜3分。余裕を見て5分待つ。手動実行時は入力値（既定0）。定期実行は待たない
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then wait="${DISPATCH_WAIT:-0}"
+          elif [ "$EVENT_NAME" = "schedule" ]; then wait=0
+          else wait=300; fi
+
+          # 定期実行：まず8回だけ。2回以上失敗したときだけ、下の48回で確かめる
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            measure 1
+            if [ "$fails" -lt 2 ]; then
+              echo "✅ 見張り：正常（${fails}/${total}）"
+              exit 0
+            fi
+            echo "⚠️ 見張りで異常の疑い（${fails}/${total}）→ 48回で確かめる"
+          fi
+
+          force="${FORCE_REBUILD:-false}"
           while true; do
             echo "待ち ${wait}秒"
             sleep "$wait"
             measure
-            if [ "$fails" -lt "$FAIL_THRESHOLD" ]; then
+            label="1102 ${fails}/${total}"
+            if [ "$force" = "true" ]; then
+              # 試験用：正常でも1回だけ再ビルドの経路を通す（測定値はそのまま残す）
+              force=false
+              label="試験 ${fails}/${total}"
+              echo "🧪 試験：正常でも再ビルドする"
+            elif [ "$fails" -lt "$FAIL_THRESHOLD" ]; then
               echo "✅ 正常（${fails}/${total}）"
               exit 0
             fi
@@ -94,9 +130,9 @@ jobs:
               exit 1
             fi
             rebuilds=$((rebuilds+1))
-            echo "⚠️ 異常（${fails}/${total}）→ 同じソースで再ビルド（${rebuilds}回目）"
+            echo "⚠️ 再ビルド（${label}・${rebuilds}回目）"
             git pull --rebase --quiet origin main
-            git commit --allow-empty -m "chore: 自動再ビルド ${rebuilds}回目（1102 ${fails}/${total}）"
+            git commit --allow-empty -m "chore: 自動再ビルド ${rebuilds}回目（${label}）"
             git push origin HEAD:main
             wait="$REBUILD_WAIT"
           done
