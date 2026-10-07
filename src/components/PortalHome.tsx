@@ -125,26 +125,55 @@ async function fetchExamples(admin: Admin, tenantId: string, locale: string): Pr
   return examples
 }
 
-/* 【2026-10-07】回答例の下に並べる「ほかの質問」のタイトル（新しい順に3つ・回答例と重複しないもの）。
-   ルートから各ジャンルの質問ページへ直接たどれる入口を増やす（審査はルートから入るため）。 */
+/* 【2026-10-07】回答例の下に並べる「ほかの質問」のタイトル（6つ・回答例と重複しないもの）。
+   ルートから各ジャンルの質問ページへ直接たどれる入口を増やす（審査はルートから入るため）。
+   並びは「人間の回答が新しく付いた順」。回答が付くたびにルートの顔ぶれが入れ替わり、
+   サイトが動いていることがルートから見える（AdSenseの確認点「継続的な更新」）。足りなければ新しい質問で埋める。 */
 export type PortalQuestionLink = { href: string; title: string }
-const MORE_QUESTIONS_COUNT = 3
+const MORE_QUESTIONS_COUNT = 6
 
 async function fetchMoreQuestions(admin: Admin, tenantId: string, locale: string, excludeHrefs: string[]): Promise<PortalQuestionLink[]> {
   const base = `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com/${locale}/questions/`
-  const { data } = await admin
-    .from('questions')
-    .select('slug, title, title_i18n')
+  const toLink = (q: { slug: string; title: string; title_i18n: unknown }) => ({
+    href: base + q.slug,
+    title: (q.title_i18n as Record<string, string> | null)?.[locale] ?? q.title,
+  })
+
+  const { data: recentAnswers } = await admin
+    .from('answers')
+    .select('question_id')
     .eq('tenant_id', tenantId)
+    .eq('is_ai', false)
     .order('created_at', { ascending: false })
-    .limit(MORE_QUESTIONS_COUNT + 2)
-  return (data ?? [])
-    .map((q) => ({
-      href: base + q.slug,
-      title: (q.title_i18n as Record<string, string> | null)?.[locale] ?? q.title,
-    }))
-    .filter((q) => !excludeHrefs.includes(q.href))
-    .slice(0, MORE_QUESTIONS_COUNT)
+    .limit(40)
+  const answeredIds = [...new Set((recentAnswers ?? []).map((a) => a.question_id as string))]
+
+  const [{ data: answeredRows }, { data: newestRows }] = await Promise.all([
+    answeredIds.length > 0
+      ? admin.from('questions').select('id, slug, title, title_i18n').in('id', answeredIds)
+      : Promise.resolve({ data: [] as { id: string; slug: string; title: string; title_i18n: unknown }[] }),
+    admin
+      .from('questions')
+      .select('id, slug, title, title_i18n')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false })
+      .limit(MORE_QUESTIONS_COUNT + 2),
+  ])
+  // .in() は順序を保たないので、回答が新しい順に並べ直す
+  const answeredById = new Map((answeredRows ?? []).map((q) => [q.id, q]))
+  const ordered = [
+    ...answeredIds.map((id) => answeredById.get(id)).filter((q): q is NonNullable<typeof q> => !!q),
+    ...(newestRows ?? []),
+  ]
+
+  const links: PortalQuestionLink[] = []
+  for (const q of ordered) {
+    const link = toLink(q)
+    if (excludeHrefs.includes(link.href) || links.some((l) => l.href === link.href)) continue
+    links.push(link)
+    if (links.length >= MORE_QUESTIONS_COUNT) break
+  }
+  return links
 }
 
 // wisdomassemble.com（ルートドメイン）専用のポータルページ。
@@ -258,7 +287,9 @@ export default async function PortalHome() {
     }
   })
 
-  const howSteps = [tHow('step1Title'), tHow('step2Title'), tHow('step3Title'), tHow('step6Title')]
+  // ルートでは質問を投稿できないので、最初の手順は「ジャンルを選ぶ」（2026-10-07 mtさん指摘）。
+  // 2つ目以降は使い方ページの手順名をそのまま流用
+  const howSteps = [t('stepChooseGenre'), tHow('step1Title'), tHow('step2Title'), tHow('step3Title')]
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-4 pb-12 sm:pt-10 sm:pb-14 w-full">
@@ -278,7 +309,7 @@ export default async function PortalHome() {
         <p className="text-xs sm:text-[13px] text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 
-      {/* 【2026-10-07】しくみ（使い方ページの手順名をそのまま流用）。コピーの中身を4語で見せる */}
+      {/* 【2026-10-07】しくみ4ステップ。コピー「AIに聞く。AIがわからなければ、人間が答える。」の中身を手順で見せる */}
       <section aria-label={tHow('title')} className="mb-8 sm:mb-10">
         <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {howSteps.map((step, i) => (
