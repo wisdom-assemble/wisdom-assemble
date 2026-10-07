@@ -60,7 +60,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
             height={fh}
             viewBox={`0 0 ${fw} ${fh}`}
             xmlns="http://www.w3.org/2000/svg"
-            aria-label={name}
+            aria-label={label}
             style={{ maxWidth: '100%', height: 'auto' }}
           >
             <foreignObject x="0" y="0" width={fw} height={fh}>
@@ -130,7 +130,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
           height={svgHeight}
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           xmlns="http://www.w3.org/2000/svg"
-          aria-label={name}
+          aria-label={label}
           style={{ maxWidth: '100%', height: 'auto' }}
         >
           <defs>
@@ -171,7 +171,7 @@ export default function SiteLogo({ name, tenantId, colorTheme = '#4F46E5' }: Pro
         height={svgHeight}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         xmlns="http://www.w3.org/2000/svg"
-        aria-label={name}
+        aria-label={label}
         style={{ maxWidth: '100%', height: 'auto' }}
       >
         {/* 3D押し出し効果（影を右下方向に、メインテキストはx=0で左端揃え） */}

@@ -277,7 +277,8 @@ export default async function PortalHome() {
       colorTheme: tenant?.color_theme ?? FALLBACK_COLOR_THEME[tenantId],
       theme: (tenant as { theme?: string | null } | null)?.theme ?? null,
       bgColor: (tenant as { bg_color?: string | null } | null)?.bg_color ?? null,
-      href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`,
+      // 表示中の言語のまま入る（ロケールなしだとブラウザの言語設定で /en や /ja に飛ばされていた・2026-10-07）
+      href: `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com/${locale}`,
       // ⚠️新テナント追加時は messages/*.json に `{tenantId}CardTagline` を8言語ぶん追加すること。
       // これが検索対象を兼ねているので、書けばその言語で検索に出る。
       tagline,

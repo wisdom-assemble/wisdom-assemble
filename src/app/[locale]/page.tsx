@@ -13,7 +13,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import SearchForm from '@/components/SearchForm'
-import { getSuggestedKeywords } from '@/lib/skillTags'
+import { getSuggestedKeywords, getSkillOptions } from '@/lib/skillTags'
 
 const ROOT_TENANT_ID = 'root'
 
@@ -22,6 +22,34 @@ function getAdminClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+}
+
+/* 【2026-10-07】「検索されそうなキーワード」は、押して1問以上ヒットする語だけを出す。
+   それまでは手で選んだ固定リストで、音楽は9語中6語・ギターも一部が0件だった
+   （AdSense再申請前の点検で発見。英語UIでは訳語がタイトル・本文の英訳に含まれないと0件になる）。
+   候補＝厳選リスト→マイページの「得意なこと」の順。検索（下の q の条件）と同じく、原文と表示中の言語の
+   タイトル・本文に部分一致（大文字小文字を区別しない）するかで判定する。質問が増えれば自動で入れ替わる。 */
+const MAX_KEYWORD_CHIPS = 9
+
+async function pickHittingKeywords(
+  admin: ReturnType<typeof getAdminClient>,
+  tenantId: string,
+  locale: string,
+  label: (kw: string) => string
+): Promise<string[]> {
+  const isKnownLocale = (routing.locales as readonly string[]).includes(locale)
+  const select = isKnownLocale ? `title, body, lt:title_i18n->>${locale}, lb:body_i18n->>${locale}` : 'title, body'
+  const { data } = await admin.from('questions').select(select).eq('tenant_id', tenantId).limit(1000)
+  const rows = (data ?? []) as unknown as Record<string, string | null>[]
+  const haystacks = rows.map((r) => [r.title, r.body, r.lt, r.lb].filter(Boolean).join('\n').toLowerCase())
+  const candidates = [...new Set([...getSuggestedKeywords(tenantId), ...getSkillOptions(tenantId)])]
+  const picked: string[] = []
+  for (const kw of candidates) {
+    const needle = label(kw).toLowerCase()
+    if (haystacks.some((h) => h.includes(needle))) picked.push(kw)
+    if (picked.length >= MAX_KEYWORD_CHIPS) break
+  }
+  return picked
 }
 
 const PAGE_SIZE = 25
@@ -72,6 +100,7 @@ export default async function HomePage({
     messages.searchKeywords?.[kw] ?? messages.skillTags?.[kw] ?? kw
 
   const admin = getAdminClient()
+  const keywordChips = q ? [] : await pickHittingKeywords(admin, tenantId, locale, keywordLabel)
   const { data: tenant } = await admin
     .from('tenants')
     .select('name, description, description_i18n')
@@ -113,10 +142,10 @@ export default async function HomePage({
           <SearchForm key={q} defaultValue={q} />
         </div>
 
-        {!q && (
+        {!q && keywordChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 mb-6 text-xs">
             <span className="text-gray-400 shrink-0">{t('suggestedKeywords')}</span>
-            {getSuggestedKeywords(tenantId).map((keyword) => (
+            {keywordChips.map((keyword) => (
               <Link
                 prefetch={false}
                 key={keyword}
