@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "Judul",
+    "discardDraft": "Buang draf",
     "titlePlaceholder": "cth. Error hydration saat SSR dengan Next.js",
     "bodyLabel": "Detail",
     "bodyPlaceholder": "Jelaskan masalahnya, apa yang sudah dicoba, pesan error, dll. (Mendukung Markdown)",
@@ -134,7 +135,11 @@
     "tooShort": "Jawaban minimal 30 karakter",
     "submitFailed": "Gagal mengirim. Silakan coba lagi.",
     "submitting": "Mengirim...",
-    "submit": "Kirim jawaban"
+    "submit": "Kirim jawaban",
+    "edit": "Edit",
+    "saveEdit": "Simpan",
+    "cancelEdit": "Batal",
+    "saving": "Menyimpan..."
   },
   "questionActions": {
     "matching": "Mencocokkan dengan ahli berikutnya...",
@@ -482,7 +487,9 @@
     "cannotEscalate": "Status ini tidak dapat dieskalasi",
     "contactInfoNotAllowed": "Informasi kontak pribadi (email, nomor telepon, akun media sosial, dll.) tidak boleh diposting.",
     "spamNotAllowed": "Postingan iklan atau ajakan tidak diperbolehkan.",
-    "invalidEmail": "Masukkan alamat email yang valid."
+    "invalidEmail": "Masukkan alamat email yang valid.",
+    "rateLimited": "Kamu telah mencapai batas pertanyaan hari ini. Silakan coba lagi nanti.",
+    "outOfScope": "Layanan ini hanya menerima pertanyaan yang sesuai dengan topiknya."
   },
   "aboutPage": {
     "originTitle": "Mengapa saya memulai ini",

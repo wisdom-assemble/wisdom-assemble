@@ -50,17 +50,25 @@ export async function POST(request: NextRequest) {
 
   if (!answer) return NextResponse.json({ error: apiErrors.answerNotFound }, { status: 404 })
 
-  // ベストアンサーにマーク
-  await admin.from('answers').update({ is_accepted: true }).eq('id', answerId)
-
-  // 質問をsolvedに
-  await admin
+  // 【2026-10-07】質問を solved にするのは「まだ solved でない場合だけ」。更新できた1件のときだけ先へ進む。
+  // それまでは確認と更新が別々で、二重クリックや2タブ同時操作で両方が通り、実績が二重に加算され
+  // 別々の回答が2件ともベストアンサーになることがあった。
+  const { data: solvedRows } = await admin
     .from('questions')
     .update({ status: 'solved', solved_at: new Date().toISOString(), solved_by: answer.user_id })
     .eq('id', questionId)
+    .neq('status', 'solved')
+    .select('id')
+  if (!solvedRows || solvedRows.length === 0) {
+    return NextResponse.json({ error: apiErrors.alreadySolved }, { status: 400 })
+  }
+
+  // ベストアンサーにマーク
+  await admin.from('answers').update({ is_accepted: true }).eq('id', answerId)
 
   // 人間の回答者なら実績加算 + タグ蓄積 + 称号チェック
-  if (!answer.is_ai && answer.user_id) {
+  // （質問者本人の回答は実績に数えない。回答APIでも本人の回答は拒否している・2026-10-07）
+  if (!answer.is_ai && answer.user_id && answer.user_id !== question.user_id) {
     // 【2026-08-08】ここにあった increment_answer_count は削除した。
     //   answers の after insert トリガー(handle_new_answer)が回答を投稿した時点で
     //   加算するようになったため、ここでも呼ぶと1回の回答で +2 されてしまう

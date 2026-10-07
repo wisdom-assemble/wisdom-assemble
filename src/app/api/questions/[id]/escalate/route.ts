@@ -70,6 +70,25 @@ export async function POST(
     return NextResponse.json({ ok: true, nextStatus: 'hard' })
   }
 
+  // 【2026-10-07】通常（forceHard なし）の経路も、画面でボタンが出る条件と同じに絞る。
+  // それまでは質問者がBの回答前・期限前でもCへ飛ばせたり、外れた元のBがCの担当中に高難度へ送れたりした。
+  //   open      → C へ：担当のB本人がギブアップ、または質問者が「Bの回答あり or Bの期限切れ」のとき再依頼
+  //   matched_c → hard：担当のC本人がギブアップしたときだけ（質問者からの高難度移行は forceHard の経路）
+  {
+    const { count: answerCount } = await admin
+      .from('answers')
+      .select('id', { count: 'exact', head: true })
+      .eq('question_id', questionId)
+    const bExpiredNow = !!question.matched_b_deadline && new Date(question.matched_b_deadline) < new Date()
+    const allowed =
+      (question.status === 'open' && !!question.matched_b_id &&
+        (question.matched_b_id === user.id || (isOwner && ((answerCount ?? 0) > 0 || bExpiredNow)))) ||
+      (question.status === 'matched_c' && !!question.matched_c_id && question.matched_c_id === user.id)
+    if (!allowed) {
+      return NextResponse.json({ error: apiErrors.cannotEscalate }, { status: 400 })
+    }
+  }
+
   if (question.status === 'open') {
     // BがギブアップまたはタイムアウトしてCへ
     const excludeIds = [question.user_id, question.matched_b_id].filter(Boolean) as string[]

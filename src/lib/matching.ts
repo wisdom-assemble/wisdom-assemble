@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSkillOptions } from '@/lib/skillTags'
 
 // スコア設定定数（リリース後に実データで調整）
 const SCORE = {
@@ -61,6 +62,22 @@ export async function findMatch(
 
   if (!candidates || candidates.length === 0) return null
 
+  // 【2026-10-07】BANされた人は候補にしない（BANしても is_available は true のままで、選ばれると
+  // 通知が届くのに回答APIでは403になり、質問が8時間止まっていた）。取得に失敗した場合は絞らない。
+  const { data: bannedRows, error: bannedErr } = await supabase
+    .from('profiles')
+    .select('id')
+    .in('id', candidates.map((c) => c.user_id))
+    .eq('is_banned', true)
+  const bannedIds = new Set(bannedErr ? [] : (bannedRows ?? []).map((r: { id: string }) => r.id))
+  const eligible = candidates.filter((c) => !bannedIds.has(c.user_id))
+  if (eligible.length === 0) return null
+
+  // 【2026-10-07】自己申告の得意分野は、そのテナントの選択肢にあるものだけを数える（重複も除く）。
+  // skill_tags はブラウザから直接書き込める列で、'a' や 'e' のような1文字を大量に入れると
+  // 部分一致で加点され、マッチングをほぼ独占できた。
+  const allowedSkills = new Set(getSkillOptions(tenantId).map((t) => t.toLowerCase()))
+
   // 照合は「タグの文字列が質問文に含まれるか」の部分一致なので、投稿された元言語の
   // 本文しか見ないと、日本語のスキルタグは英語で投稿された質問に一生当たらない
   // （逆も同じ）。多言語サービスとしては成立しないため、翻訳結果も対象に含める。
@@ -73,8 +90,8 @@ export async function findMatch(
   ]
   const questionText = parts.join(' ').toLowerCase()
 
-  const scored = candidates.map(c => {
-    const skillTags: string[] = c.skill_tags ?? []
+  const scored = eligible.map(c => {
+    const skillTags: string[] = [...new Set(((c.skill_tags ?? []) as string[]).filter((tag) => allowedSkills.has(String(tag).toLowerCase())))]
     const answeredTags: string[] = c.answered_tags ?? []
 
     // 自己申告タグマッチ

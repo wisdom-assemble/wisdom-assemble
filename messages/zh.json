@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "标题",
+    "discardDraft": "放弃草稿",
     "titlePlaceholder": "例：使用Next.js进行SSR时出现hydration错误",
     "bodyLabel": "详情",
     "bodyPlaceholder": "请描述问题详情、已尝试的方法、错误信息等（支持Markdown）",
@@ -134,7 +135,11 @@
     "tooShort": "回答至少需要30个字符",
     "submitFailed": "发布失败，请重试。",
     "submitting": "提交中...",
-    "submit": "发布回答"
+    "submit": "发布回答",
+    "edit": "编辑",
+    "saveEdit": "保存",
+    "cancelEdit": "取消",
+    "saving": "保存中..."
   },
   "questionActions": {
     "matching": "正在匹配下一位专家...",
@@ -482,7 +487,9 @@
     "cannotEscalate": "该状态无法升级",
     "contactInfoNotAllowed": "不能发布个人联系方式（邮箱、电话号码、社交账号等）。",
     "spamNotAllowed": "不允许发布广告或招揽性质的内容。",
-    "invalidEmail": "请输入有效的电子邮箱地址。"
+    "invalidEmail": "请输入有效的电子邮箱地址。",
+    "rateLimited": "今天的提问次数已达上限，请稍后再试。",
+    "outOfScope": "本服务仅接受与主题相关的问题。"
   },
   "aboutPage": {
     "originTitle": "创建的契机",

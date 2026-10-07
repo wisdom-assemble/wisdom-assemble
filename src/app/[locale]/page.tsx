@@ -39,15 +39,23 @@ async function pickHittingKeywords(
   label: (kw: string) => string
 ): Promise<string[]> {
   const isKnownLocale = (routing.locales as readonly string[]).includes(locale)
-  const select = isKnownLocale ? `title, body, lt:title_i18n->>${locale}, lb:body_i18n->>${locale}` : 'title, body'
+  // 【2026-10-07】判定はタイトル（原文＋表示言語）だけで行う。本文まで取るとページを開くたびに全問の本文を
+  // 読んで文字列検索することになり、質問数に比例してCPUが増える（1102の芽）。タイトルに当たる語は検索でも必ず当たる。
+  const select = isKnownLocale ? `title, lt:title_i18n->>${locale}` : 'title'
   const { data } = await admin.from('questions').select(select).eq('tenant_id', tenantId).limit(1000)
   const rows = (data ?? []) as unknown as Record<string, string | null>[]
-  const haystacks = rows.map((r) => [r.title, r.body, r.lt, r.lb].filter(Boolean).join('\n').toLowerCase())
+  const haystacks = rows.map((r) => [r.title, r.lt].filter(Boolean).join('\n').toLowerCase())
   const candidates = [...new Set([...getSuggestedKeywords(tenantId), ...getSkillOptions(tenantId)])]
   const picked: string[] = []
+  const seenLabels = new Set<string>()
   for (const kw of candidates) {
     const needle = label(kw).toLowerCase()
-    if (haystacks.some((h) => h.includes(needle))) picked.push(kw)
+    // 別のキーでも訳が同じ語（例: エフェクター／ペダル → Pedal）は1つだけにする
+    if (seenLabels.has(needle)) continue
+    if (haystacks.some((h) => h.includes(needle))) {
+      picked.push(kw)
+      seenLabels.add(needle)
+    }
     if (picked.length >= MAX_KEYWORD_CHIPS) break
   }
   return picked
@@ -76,9 +84,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string; tag?: string }>
+  searchParams: Promise<{ q?: string | string[]; page?: string | string[]; tag?: string | string[] }>
 }) {
-  const { q = '', page: pageStr = '1', tag = '' } = await searchParams
+  // 【2026-10-07】?q=a&q=b のように同じ名前が2つ来ると配列になり、q.trim() で落ちていた（200のままエラー画面）。先頭だけ使う
+  const sp = await searchParams
+  const first = (v: string | string[] | undefined, fallback: string) => (Array.isArray(v) ? v[0] : v) ?? fallback
+  const q = first(sp.q, '')
+  const pageStr = first(sp.page, '1')
+  const tag = first(sp.tag, '')
   const page = Math.max(1, parseInt(pageStr) || 1)
 
   const tenantId = await getTenantId()
@@ -324,7 +337,7 @@ async function QuestionResults({
           </ul>
 
           {totalPages > 1 && (
-            <Pagination currentPage={page} totalPages={totalPages} q={q} t={t} />
+            <Pagination currentPage={page} totalPages={totalPages} q={q} tag={tag} t={t} />
           )}
         </>
       ) : (
@@ -376,10 +389,12 @@ function StatusBadge({ status, matchedBId, matchedCId, myId, t }: { status: stri
   )
 }
 
-function Pagination({ currentPage, totalPages, q, t }: { currentPage: number; totalPages: number; q: string; t: Awaited<ReturnType<typeof getTranslations>> }) {
+function Pagination({ currentPage, totalPages, q, tag, t }: { currentPage: number; totalPages: number; q: string; tag: string; t: Awaited<ReturnType<typeof getTranslations>> }) {
   const params = (page: number) => {
     const p = new URLSearchParams()
     if (q) p.set('q', q)
+    // タグで絞り込み中の2ページ目以降もタグを引き継ぐ（以前は全件表示に戻っていた・2026-10-07）
+    if (tag) p.set('tag', tag)
     if (page > 1) p.set('page', String(page))
     return p.toString() ? `/?${p.toString()}` : '/'
   }

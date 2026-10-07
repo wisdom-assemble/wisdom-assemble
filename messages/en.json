@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "Title",
+    "discardDraft": "Discard draft",
     "titlePlaceholder": "e.g. Hydration error when SSR-ing with Next.js",
     "bodyLabel": "Details",
     "bodyPlaceholder": "Describe the problem, what you've tried, error messages, etc. (Markdown supported)",
@@ -134,7 +135,11 @@
     "tooShort": "Answer must be at least 30 characters",
     "submitFailed": "Failed to post. Please try again.",
     "submitting": "Submitting...",
-    "submit": "Post answer"
+    "submit": "Post answer",
+    "edit": "Edit",
+    "saveEdit": "Save",
+    "cancelEdit": "Cancel",
+    "saving": "Saving..."
   },
   "questionActions": {
     "matching": "Matching with the next expert...",
@@ -482,7 +487,9 @@
     "cannotEscalate": "This status can't be escalated",
     "contactInfoNotAllowed": "Personal contact information (email, phone number, social media accounts, etc.) cannot be posted.",
     "spamNotAllowed": "Advertising or solicitation posts are not allowed.",
-    "invalidEmail": "Please enter a valid email address."
+    "invalidEmail": "Please enter a valid email address.",
+    "rateLimited": "You've reached today's question limit. Please try again later.",
+    "outOfScope": "This service only accepts questions related to its topic."
   },
   "aboutPage": {
     "originTitle": "Why I started this",

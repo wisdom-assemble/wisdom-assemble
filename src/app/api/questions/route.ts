@@ -8,6 +8,7 @@ import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser, sendAiCostAlert } from '@/lib/email'
 import { translateQuestionToLocales, translateToLocales, translateTagsToLocales, translateCost, SUPPORTED_LOCALES, type TokenUsage } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
+import { detectSourceLocale } from '@/lib/detectLocale'
 
 // 翌JST0時をISO(UTC)で返す。AIが使えない時のモーダル「次に使える時刻」の
 // フォールバック（予算RPCのreset_atが取れない場合用）。
@@ -19,13 +20,17 @@ function nextJstMidnightIso(): string {
 }
 
 function toSlug(text: string): string {
-  return text
+  // 【2026-10-07】文字の種類を全言語に広げた（以前は英数字と日本語の範囲だけで、ハングルやアクセント付きの文字が消え、
+  // 韓国語のタイトルだと slug が「-」になっていた）。文字が1つも残らなければ 'q'。
+  const slug = text
     .toLowerCase()
     .trim()
     .replace(/[\s　]+/g, '-')
-    .replace(/[^\w぀-ゟ゠-ヿ一-鿿-]/g, '')
+    .replace(/[^\p{L}\p{N}_-]/gu, '')
     .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
     .slice(0, 100)
+  return slug || 'q'
 }
 
 export async function POST(request: NextRequest) {
@@ -53,23 +58,8 @@ export async function POST(request: NextRequest) {
 
   const headersList = await headers()
   const tenantId = headersList.get('x-tenant-id') ?? 'debug'
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? '0.0.0.0'
-
-  const { data: withinLimit, error: rateLimitError } = await admin.rpc(
-    'check_and_increment_rate_limit',
-    { p_user_id: user.id, p_tenant_id: tenantId }
-  )
-  if (rateLimitError) {
-    console.error('Rate limit check error:', rateLimitError)
-  } else if (!withinLimit) {
-    return NextResponse.json(
-      { error: '本日の質問投稿数の上限に達しました。時間をおいて再度お試しください。' },
-      { status: 429 }
-    )
-  }
 
   const { title, body, locale } = await request.json()
-  const sourceLocale = (SUPPORTED_LOCALES as readonly string[]).includes(locale) ? locale : 'ja'
 
   if (!title?.trim() || !body?.trim()) {
     return NextResponse.json({ error: apiErrors.titleAndBodyRequired }, { status: 400 })
@@ -84,6 +74,22 @@ export async function POST(request: NextRequest) {
   const filterResult = checkContent(`${title} ${body}`)
   if (!filterResult.ok) {
     return NextResponse.json({ error: apiErrors[filterResult.reasonCode] }, { status: 422 })
+  }
+
+  // 元の言語は本文の文字で判定する（画面の言語ではなく・2026-10-07。src/lib/detectLocale.ts）
+  const sourceLocale = detectSourceLocale(`${title}\n${body}`, String(locale ?? ''), SUPPORTED_LOCALES)
+
+  // 【2026-10-07】投稿数の上限（1日3件）は、入力チェックを通ってから数える。
+  // 以前は最初に数えていたため、文字数不足や連絡先の記載で弾かれた投稿でも1件減り、3回失敗すると24時間投稿できなかった。
+  // AIを呼ぶ前には数える（AIの利用回数の歯止めも兼ねるため）。
+  const { data: withinLimit, error: rateLimitError } = await admin.rpc(
+    'check_and_increment_rate_limit',
+    { p_user_id: user.id, p_tenant_id: tenantId }
+  )
+  if (rateLimitError) {
+    console.error('Rate limit check error:', rateLimitError)
+  } else if (!withinLimit) {
+    return NextResponse.json({ error: apiErrors.rateLimited }, { status: 429 })
   }
 
   // ① 保存前にジャンル判定＋AI回答生成（1回のGroq呼び出しに統合・コスト最適化）。
@@ -128,10 +134,7 @@ export async function POST(request: NextRequest) {
     try {
       aiResult = await askWithScoreInScope(tenantId, `${title}\n\n${body}`)
       if (!aiResult.inScope) {
-        return NextResponse.json(
-          { error: 'このサービスでは関連のある質問のみ受け付けています。' },
-          { status: 422 }
-        )
+        return NextResponse.json({ error: apiErrors.outOfScope }, { status: 422 })
       }
     } catch (e) {
       console.error('Scope check error:', e)
@@ -144,25 +147,29 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // スラッグ生成（重複時は末尾に数値付加）
-  let slug = toSlug(title)
-  const { count } = await supabase
+  // スラッグ生成（重複時は末尾に連番）
+  // 【2026-10-07】以前は「前方一致する件数＋1」を付けていたため、「X 2」が先にあると「X」が X-2 になって衝突したり、
+  // 削除後に既存とぶつかったりして500になっていた。実在する slug を見て空いている番号を選び、
+  // それでも一意制約に当たった場合（同時投稿など）は短いランダムな接尾辞で1回だけ再試行する。
+  const baseSlug = toSlug(title)
+  const { data: takenRows } = await admin
     .from('questions')
-    .select('id', { count: 'exact', head: true })
+    .select('slug')
     .eq('tenant_id', tenantId)
-    .like('slug', `${slug}%`)
+    .like('slug', `${baseSlug}%`)
+  const taken = new Set((takenRows ?? []).map((r: { slug: string }) => r.slug))
+  let slug = baseSlug
+  for (let n = 2; taken.has(slug); n++) slug = `${baseSlug}-${n}`
 
-  if (count && count > 0) slug = `${slug}-${count + 1}`
-
-  const { data: question, error } = await admin
+  const insertQuestion = (s: string) => admin
     .from('questions')
     .insert({
       tenant_id: tenantId,
       user_id: user.id,
       title: title.trim(),
       body: body.trim(),
-      slug,
-      ip_address: ip,
+      slug: s,
+      // 【2026-10-07】IPアドレスは保存しない（公開の鍵で読める列だった・既存分もSQLで消去済み）
       source_locale: sourceLocale,
       // AIが内容から付けたタグ(2〜3個)。Groqエラー等で取得できなければ空配列（No.34タグ検索用）
       tags: aiResult?.tags ?? [],
@@ -170,7 +177,13 @@ export async function POST(request: NextRequest) {
     .select('id, slug')
     .single()
 
-  if (error) {
+  let { data: question, error } = await insertQuestion(slug)
+  if (error && (error as { code?: string }).code === '23505') {
+    slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`
+    ;({ data: question, error } = await insertQuestion(slug))
+  }
+
+  if (error || !question) {
     console.error('Question insert error:', error)
     return NextResponse.json({ error: apiErrors.postFailed }, { status: 500 })
   }

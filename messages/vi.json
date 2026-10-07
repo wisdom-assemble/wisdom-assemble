@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "Tiêu đề",
+    "discardDraft": "Hủy bản nháp",
     "titlePlaceholder": "vd: Lỗi hydration khi SSR với Next.js",
     "bodyLabel": "Chi tiết",
     "bodyPlaceholder": "Mô tả vấn đề, những gì bạn đã thử, thông báo lỗi, v.v. (Hỗ trợ Markdown)",
@@ -134,7 +135,11 @@
     "tooShort": "Câu trả lời phải có ít nhất 30 ký tự",
     "submitFailed": "Đăng thất bại. Vui lòng thử lại.",
     "submitting": "Đang gửi...",
-    "submit": "Đăng câu trả lời"
+    "submit": "Đăng câu trả lời",
+    "edit": "Chỉnh sửa",
+    "saveEdit": "Lưu",
+    "cancelEdit": "Hủy",
+    "saving": "Đang lưu..."
   },
   "questionActions": {
     "matching": "Đang ghép nối với chuyên gia tiếp theo...",
@@ -482,7 +487,9 @@
     "cannotEscalate": "Không thể chuyển cấp ở trạng thái này",
     "contactInfoNotAllowed": "Không được đăng thông tin liên hệ cá nhân (email, số điện thoại, tài khoản mạng xã hội, v.v.).",
     "spamNotAllowed": "Không được đăng nội dung quảng cáo hoặc mời chào.",
-    "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ."
+    "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ.",
+    "rateLimited": "Bạn đã đạt giới hạn số câu hỏi hôm nay. Vui lòng thử lại sau.",
+    "outOfScope": "Dịch vụ này chỉ nhận các câu hỏi liên quan đến chủ đề của trang."
   },
   "aboutPage": {
     "originTitle": "Vì sao tôi bắt đầu",

@@ -38,11 +38,12 @@ export default async function HardQuestPage({
       .order('created_at', { ascending: false }),
     supabase
       .from('questions')
-      .select('id, title, title_i18n, slug, user_id, created_at, updated_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
+      .select('id, title, title_i18n, slug, user_id, created_at, updated_at, solved_at, view_count, profiles!questions_user_id_fkey(username, display_name)')
       .eq('tenant_id', tenantId)
       .eq('status', 'solved')
       .not('matched_c_id', 'is', null)
-      .order('updated_at', { ascending: false })
+      // 解決した時刻で並べる（updated_at は閲覧数の加算や質問者の確認でも変わるため・2026-10-07）
+      .order('solved_at', { ascending: false, nullsFirst: false })
       .limit(50),
   ])
 

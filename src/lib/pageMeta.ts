@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { getTenantId } from '@/lib/tenant'
-import { getTenantDisplayName } from '@/lib/tenantNames'
+import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
 import { INDEXABLE_LOCALES } from '@/i18n/routing'
 
 /* 【2026-10-07】規約・About・お問い合わせ等の固定ページ用の metadata。
@@ -27,15 +27,31 @@ export async function buildStaticPageMetadata(
   const languages: Record<string, string> = {}
   for (const l of INDEXABLE_LOCALES) languages[l] = `/${l}${path}`
   languages['x-default'] = `/en${path}`
-  const meta: Metadata = {
-    title: `${t(key)} | ${siteName}`,
-    alternates: { canonical: `/${locale}${path}`, languages },
-  }
+  const title = `${t(key)} | ${siteName}`
+  let description: string | undefined
   if (descriptionKey) {
     const text = t(descriptionKey).replace(/\s+/g, ' ').trim()
-    meta.description = text.length > DESCRIPTION_MAX ? `${text.slice(0, DESCRIPTION_MAX)}…` : text
+    description = text.length > DESCRIPTION_MAX ? `${text.slice(0, DESCRIPTION_MAX)}…` : text
   }
-  return meta
+  // 【2026-10-07】SNS用のカードもこのページのものにする（以前は layout のサイトトップのカードを引き継いでいた）。
+  // openGraph は子で指定すると丸ごと置き換わるので、画像（layout と同じテナント画像）もここで指定する。
+  const siteUrl = tenantId === 'root' ? 'https://wisdomassemble.com' : `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com`
+  const ogImage = `${siteUrl}/og/${tenantId}.png`
+  const url = `${siteUrl}/${locale}${path}`
+  return {
+    title,
+    ...(description ? { description } : {}),
+    alternates: { canonical: `/${locale}${path}`, languages },
+    openGraph: {
+      title,
+      ...(description ? { description } : {}),
+      url,
+      siteName,
+      type: 'website',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: siteName }],
+    },
+    twitter: { card: 'summary_large_image', title, ...(description ? { description } : {}), images: [ogImage] },
+  }
 }
 
 // 【2026-10-07】トップページの title。サイト名だけだと en と ja が同じ title になっていたので、

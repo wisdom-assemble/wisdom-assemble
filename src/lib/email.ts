@@ -132,7 +132,11 @@ async function sendEmail(params: { to: string; subject: string; htmlContent: str
   })
 
   if (!res.ok) {
-    console.error('Brevo送信エラー:', await res.text())
+    // 【2026-10-07】失敗は投げる（以前はログだけで、お問い合わせが「送信しました」と出るのに届かないことがあった）。
+    // 呼び出し元（お問い合わせ・マッチング通知）はすべて try/catch 済み。
+    const detail = await res.text()
+    console.error('Brevo送信エラー:', detail)
+    throw new Error(`Brevo send failed: ${res.status}`)
   }
 }
 

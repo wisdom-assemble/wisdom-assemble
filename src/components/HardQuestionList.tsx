@@ -15,6 +15,7 @@ type Question = {
   slug: string
   created_at: string
   updated_at?: string
+  solved_at?: string | null
   view_count: number
   profiles: { username: string; display_name: string | null } | null
 }
@@ -54,7 +55,7 @@ export default function HardQuestionList({
     <ul className="divide-y divide-gray-100">
       {questions.map((q) => {
         const createdAt = new Date(q.created_at)
-        const solvedAt = tab === 'solved' && q.updated_at ? new Date(q.updated_at) : null
+        const solvedAt = tab === 'solved' && (q.solved_at ?? q.updated_at) ? new Date((q.solved_at ?? q.updated_at)!) : null
         const hours = solvedAt
           ? Math.round((solvedAt.getTime() - createdAt.getTime()) / 1000 / 60 / 60)
           : null

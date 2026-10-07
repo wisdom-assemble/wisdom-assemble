@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { checkContent } from '@/lib/contentFilter'
+import { checkSpamOnly } from '@/lib/contentFilter'
 import { sendContactInquiry } from '@/lib/email'
 import { getApiErrors } from '@/lib/apiErrors'
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: apiErrors.notPermitted }, { status: 400 })
   }
 
-  const filterResult = checkContent(`${subject} ${body}`)
+  const filterResult = checkSpamOnly(`${subject} ${body}`)
   if (!filterResult.ok) {
     return NextResponse.json({ error: apiErrors[filterResult.reasonCode] }, { status: 422 })
   }

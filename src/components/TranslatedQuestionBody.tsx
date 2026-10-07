@@ -24,10 +24,12 @@ export default function TranslatedQuestionBody({
   showOriginalLabel,
   showTranslationLabel,
 }: Props) {
-  const hasTranslation = Boolean(translatedBody)
+  // 【2026-10-07】タイトルと本文は別々に判定する（以前は本文の訳の有無だけで決めており、
+  // 本文の翻訳だけ失敗した質問では、<title> やパンくずは訳なのに見出しだけ原文になっていた）
+  const hasTranslation = Boolean(translatedBody) || Boolean(translatedTitle)
   const [showOriginal, setShowOriginal] = useState(false)
-  const displayTitle = hasTranslation && !showOriginal ? (translatedTitle ?? title) : title
-  const displayBody = hasTranslation && !showOriginal ? translatedBody! : body
+  const displayTitle = translatedTitle && !showOriginal ? translatedTitle : title
+  const displayBody = translatedBody && !showOriginal ? translatedBody : body
 
   return (
     <>

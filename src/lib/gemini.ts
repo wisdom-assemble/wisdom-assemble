@@ -23,7 +23,9 @@ const GEMINI_MODEL_FALLBACK = 'gemini-flash-lite-latest'
 // これによりSecret登録前にデプロイしても本番が停止しない。
 const GROQ_API_KEY = process.env.GROQ_API_KEY!
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama-3.3-70b-versatile'
+// 【2026-10-07】Groqは llama 系を全廃したため、旧 llama-3.3-70b-versatile は404だった（翻訳側は9/5に差し替え済み）。
+// 翻訳と同じ openai/gpt-oss-120b にそろえる。※Groq＝推論インフラ会社、OpenAI＝モデル製作者。OpenAIのAPIは使っていない
+const GROQ_MODEL = 'openai/gpt-oss-120b'
 const USE_GEMINI = !!GEMINI_API_KEY
 
 // ジャンル設定：新ジャンル追加はここに1エントリ追加するだけ
@@ -201,7 +203,9 @@ async function callGroq(
 
   // JSON構造化出力を強制する。指定しないとGeminiが ```json フェンスを付けることがあり、
   // パースに失敗してscore0（人間ルート）に落ちる事故が起きる（実測1/65件）。
-  const payload = JSON.stringify(
+  // 送信内容はその時点のモデル名で毎回組み立てる（2026-10-07）。以前は最初のモデル名で作った payload を
+  // 429の再試行でも使い回しており、-latest へ退避した後の再試行が廃止モデル宛てに送られて再び404になっていた。
+  const buildPayload = () => JSON.stringify(
     USE_GEMINI && jsonMode
       ? { model, messages, max_tokens: tokens, response_format: { type: 'json_object' } }
       : { model, messages, max_tokens: tokens }
@@ -210,7 +214,7 @@ async function callGroq(
   let res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: payload,
+    body: buildPayload(),
   })
 
   // 固定ピンしたGeminiモデルが廃止された(404)ときだけ -latest へ自動退避。
@@ -243,7 +247,7 @@ async function callGroq(
       res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: payload,
+        body: buildPayload(),
       })
     } else {
       // 待ちが長い/不明＝RPD(日次)超過の可能性が高い。復活秒数を添えて人間ルーティングへ。

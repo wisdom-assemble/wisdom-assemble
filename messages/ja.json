@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "タイトル",
+    "discardDraft": "下書きを破棄",
     "titlePlaceholder": "例：Next.jsでSSRするとhydrationエラーが出る",
     "bodyLabel": "詳細",
     "bodyPlaceholder": "問題の詳細、試したこと、エラーメッセージなどを書いてください（Markdownが使えます）",
@@ -134,7 +135,11 @@
     "tooShort": "回答は30文字以上入力してください",
     "submitFailed": "投稿に失敗しました。お手数ですが再度お試しください。",
     "submitting": "送信中...",
-    "submit": "回答を投稿する"
+    "submit": "回答を投稿する",
+    "edit": "編集する",
+    "saveEdit": "保存する",
+    "cancelEdit": "キャンセル",
+    "saving": "保存中..."
   },
   "questionActions": {
     "matching": "次の専門家にマッチング中...",
@@ -439,7 +444,9 @@
     "cannotEscalate": "このステータスではエスカレーションできません",
     "contactInfoNotAllowed": "個人の連絡先情報（メールアドレス・電話番号・SNSアカウント等）は投稿できません。",
     "spamNotAllowed": "広告・勧誘目的の投稿はできません。",
-    "invalidEmail": "メールアドレスの形式が正しくありません"
+    "invalidEmail": "メールアドレスの形式が正しくありません",
+    "rateLimited": "本日の質問投稿数の上限に達しました。時間をおいて再度お試しください。",
+    "outOfScope": "このサービスでは関連のある質問のみ受け付けています。"
   },
   "aboutPage": {
     "originTitle": "立ち上げたきっかけ",

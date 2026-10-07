@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "Título",
+    "discardDraft": "Descartar borrador",
     "titlePlaceholder": "p. ej. Error de hidratación al hacer SSR con Next.js",
     "bodyLabel": "Detalles",
     "bodyPlaceholder": "Describe el problema, qué has probado, mensajes de error, etc. (Se admite Markdown)",
@@ -134,7 +135,11 @@
     "tooShort": "La respuesta debe tener al menos 30 caracteres",
     "submitFailed": "No se pudo publicar. Inténtalo de nuevo.",
     "submitting": "Enviando...",
-    "submit": "Publicar respuesta"
+    "submit": "Publicar respuesta",
+    "edit": "Editar",
+    "saveEdit": "Guardar",
+    "cancelEdit": "Cancelar",
+    "saving": "Guardando..."
   },
   "questionActions": {
     "matching": "Emparejando con el siguiente experto...",
@@ -482,7 +487,9 @@
     "cannotEscalate": "Este estado no se puede escalar",
     "contactInfoNotAllowed": "No se puede publicar información de contacto personal (correo electrónico, número de teléfono, cuentas de redes sociales, etc.).",
     "spamNotAllowed": "No se permiten publicaciones publicitarias o de solicitación.",
-    "invalidEmail": "Introduce una dirección de correo electrónico válida."
+    "invalidEmail": "Introduce una dirección de correo electrónico válida.",
+    "rateLimited": "Has alcanzado el límite de preguntas de hoy. Inténtalo de nuevo más tarde.",
+    "outOfScope": "Este servicio solo acepta preguntas relacionadas con su tema."
   },
   "aboutPage": {
     "originTitle": "Por qué empecé",

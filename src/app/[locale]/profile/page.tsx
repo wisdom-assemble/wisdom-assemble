@@ -85,28 +85,28 @@ export default function ProfilePage() {
           .maybeSingle(),
         supabase
           .from('questions')
-          .select('id, title, slug, status, created_at')
+          .select('id, title, title_i18n, slug, status, created_at')
           .eq('tenant_id', tenantId)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
           .from('questions')
-          .select('id, title, slug, status, created_at, matched_b_deadline')
+          .select('id, title, title_i18n, slug, status, created_at, matched_b_deadline')
           .eq('tenant_id', tenantId)
           .eq('matched_b_id', user.id)
           .eq('status', 'open')
           .order('created_at', { ascending: false }),
         supabase
           .from('questions')
-          .select('id, title, slug, status, created_at, matched_c_deadline')
+          .select('id, title, title_i18n, slug, status, created_at, matched_c_deadline')
           .eq('tenant_id', tenantId)
           .eq('matched_c_id', user.id)
           .eq('status', 'matched_c')
           .order('created_at', { ascending: false }),
         supabase
           .from('questions')
-          .select('id, title, slug, status, created_at, owner_reviewed_at, answers(id, created_at)')
+          .select('id, title, title_i18n, slug, status, created_at, owner_reviewed_at, answers(id, created_at)')
           .eq('tenant_id', tenantId)
           .eq('user_id', user.id)
           .not('status', 'in', '("solved","hard")')
@@ -118,7 +118,7 @@ export default function ProfilePage() {
           .eq('user_id', user.id),
         supabase
           .from('answers')
-          .select('id, created_at, questions(id, title, slug)')
+          .select('id, created_at, questions(id, title, title_i18n, slug)')
           .eq('tenant_id', tenantId)
           .eq('user_id', user.id)
           .eq('is_accepted', true)
@@ -493,7 +493,7 @@ export default function ProfilePage() {
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm font-medium text-gray-900 flex-1">{q.title}</p>
+                          <p className="text-sm font-medium text-gray-900 flex-1">{(q as { title_i18n?: Record<string, string> | null }).title_i18n?.[locale] ?? q.title}</p>
                           <span className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700">
                             {t('assignedToYou')}
                           </span>
@@ -529,7 +529,7 @@ export default function ProfilePage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{q.title}</p>
+                            <p className="text-sm font-medium text-gray-900">{(q as { title_i18n?: Record<string, string> | null }).title_i18n?.[locale] ?? q.title}</p>
                             <p className="text-xs text-red-500 mt-0.5">{t('answerArrived')}</p>
                           </div>
                           <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>
@@ -563,7 +563,7 @@ export default function ProfilePage() {
                         href={`/questions/${q.slug}`}
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
-                        <p className="text-sm font-medium text-gray-900">{q.title}</p>
+                        <p className="text-sm font-medium text-gray-900">{(q as { title_i18n?: Record<string, string> | null }).title_i18n?.[locale] ?? q.title}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {formatLocalDate(a.created_at, locale)} · {t('bestAnswer')}
                         </p>
@@ -597,7 +597,7 @@ export default function ProfilePage() {
                         className="block py-2.5 hover:bg-gray-50 -mx-2 px-2 rounded"
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm font-medium text-gray-900 truncate flex-1">{q.title}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate flex-1">{(q as { title_i18n?: Record<string, string> | null }).title_i18n?.[locale] ?? q.title}</p>
                           <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${s.className}`}>
                             {s.label}
                           </span>

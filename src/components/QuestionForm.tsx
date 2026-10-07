@@ -22,7 +22,7 @@ function Overlay({ phase, aiLabel, matchingLabel }: { phase: OverlayPhase; aiLab
   )
 }
 
-type SimilarQuestion = { id: string; title: string; slug: string; status: string }
+type SimilarQuestion = { id: string; title: string; title_i18n?: Record<string, string> | null; slug: string; status: string }
 
 // AI利用上限モーダル。resetAtがあれば「あとHH:MM:SS」をライブ表示（時刻計算のみ＝AIコストゼロ）。
 // resetAtが無い場合のみ曖昧文言にフォールバック（現在はAPI側の復活秒数か翌JST0時を必ず渡すのでほぼ発生しない）。
@@ -121,7 +121,7 @@ export default function QuestionForm() {
         .join(',')
       const { data } = await supabase
         .from('questions')
-        .select('id, title, slug, status')
+        .select('id, title, title_i18n, slug, status')
         .eq('tenant_id', tenantId)
         .eq('status', 'solved')
         .or(orFilter)
@@ -131,9 +131,18 @@ export default function QuestionForm() {
   }, [title, tenantId, locale])
 
   // No.26 下書き保存: 入力をlocalStorageに退避し、リロードや誤って離脱しても消えないように（テナント別）
-  const draftKey = `wa_draft_${tenantId}`
+  // 【2026-10-07】キーにユーザーIDも入れる。以前はテナント単位だけで、同じブラウザで別アカウントに切り替えると
+  // 前のアカウントの書きかけが出ていた（夫婦で1台を使い分けている運用で実際に起きた）。ユーザーが分かるまでは読み書きしない。
+  const [userId, setUserId] = useState<string | null>(null)
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => setUserId(data.user?.id ?? 'anon'))
+    // 旧形式（アカウント共通）の下書きは誰のものか分からないので消す
+    try { localStorage.removeItem(`wa_draft_${tenantId}`) } catch { /* 無視 */ }
+  }, [tenantId])
+  const draftKey = userId ? `wa_draft_${tenantId}_${userId}` : null
   // マウント時に下書きを復元
   useEffect(() => {
+    if (!draftKey) return
     try {
       const saved = localStorage.getItem(draftKey)
       if (saved) {
@@ -146,6 +155,7 @@ export default function QuestionForm() {
   }, [draftKey])
   // 入力変更を保存（両方空なら削除）
   useEffect(() => {
+    if (!draftKey) return
     try {
       if (title.trim() || body.trim()) {
         localStorage.setItem(draftKey, JSON.stringify({ title, body }))
@@ -187,7 +197,7 @@ export default function QuestionForm() {
 
       const { slug, result, aiCapped, aiResetAt } = await res.json()
       // 投稿成功したので下書きを消去
-      try { localStorage.removeItem(draftKey) } catch { /* noop */ }
+      try { if (draftKey) localStorage.removeItem(draftKey) } catch { /* noop */ }
 
       // AI上限で人間へ回された場合はモーダルで案内（閉じたら質問ページへ）
       if (aiCapped) {
@@ -254,7 +264,7 @@ export default function QuestionForm() {
                       rel="noopener noreferrer"
                       className="text-xs text-blue-600 hover:underline flex-1 truncate"
                     >
-                      {q.title}
+                      {q.title_i18n?.[locale] ?? q.title}
                     </a>
                     <span className={`text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                       q.status === 'solved' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -285,6 +295,17 @@ export default function QuestionForm() {
 
         {error && (
           <p className="text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</p>
+        )}
+
+        {/* 【2026-10-07】下書きを破棄（入力を空にすると保存済みの下書きも消える） */}
+        {(title || body) && !submitting && (
+          <button
+            type="button"
+            onClick={() => { setTitle(''); setBody(''); setSimilar([]) }}
+            className="text-xs text-gray-400 underline hover:text-gray-600"
+          >
+            {t('discardDraft')}
+          </button>
         )}
 
         <button

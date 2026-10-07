@@ -8,8 +8,10 @@ import { AcceptButton, GiveUpButton, RematchButton, EscalateHardButton } from '@
 import OwnerReviewTracker from '@/components/OwnerReviewTracker'
 import TranslatedQuestionBody from '@/components/TranslatedQuestionBody'
 import TranslatedAnswerBody from '@/components/TranslatedAnswerBody'
+import AnswerEditButton from '@/components/AnswerEditButton'
 import { Link } from '@/i18n/navigation'
 import { getTenantId } from '@/lib/tenant'
+import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
 import { createClient } from '@/lib/supabase/server'
 import LocalDate from '@/components/LocalDate'
 import type { Metadata } from 'next'
@@ -27,13 +29,17 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result
 // upvoteCount は投票機能が無いため 0 固定（Googleは項目自体の存在を推奨するため明示する）。
 function buildQAPageJsonLd(question: any, answers: any[], locale: string, poster: any, displayNameByUser: Record<string, string>, pageUrl: string): string {
   const answerAuthorName = (a: any) => displayNameByUser[a.user_id] ?? a.profiles?.username ?? 'Anonymous'
+  // 【2026-10-07】AIの回答は人ではないので Organization として出す（以前は Person "Anonymous" になっていた）
+  const answerAuthor = (a: any) => a.is_ai
+    ? { '@type': 'Organization', name: 'Wisdom Assemble AI', url: pageUrl }
+    : { '@type': 'Person', name: answerAuthorName(a), url: pageUrl }
   const toAnswer = (a: any) => ({
     '@type': 'Answer',
     text: a.body_i18n?.[locale] ?? a.body,
     dateCreated: a.created_at,
     url: `${pageUrl}#answer-${a.id}`,
     upvoteCount: 0,
-    author: { '@type': 'Person', name: answerAuthorName(a), url: pageUrl },
+    author: answerAuthor(a),
   })
   const accepted = answers.find((a) => a.is_accepted)
   const others = answers.filter((a) => !a.is_accepted)
@@ -99,13 +105,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // 元言語ページをcanonicalにして、中身が原文のままの薄い言語ページを正規化しない。
   const canonicalLocale = availableLocales.includes(locale) ? locale : (q.source_locale ?? 'ja')
 
+  // 【2026-10-07】SNSで共有したときのカードを、サイトトップではなくこの質問にする。
+  // それまでは og:title・og:url などを layout（サイトトップ）から引き継いでおり、質問を共有してもトップのカードが出ていた。
+  // ⚠️openGraph は子で指定すると丸ごと置き換わるので、画像（layout と同じテナント画像）もここで指定する。
+  const tenantIdForOg = await getTenantId()
+  const siteName = getTenantDisplayName(tenantIdForOg, 'Wisdom Assemble')
+  const ogImage = `https://${host}/og/${tenantIdForOg}.png`
+  const canonicalUrl = `https://${host}/${canonicalLocale}${path}`
   return {
     title,
     description,
     alternates: {
-      canonical: `https://${host}/${canonicalLocale}${path}`,
+      canonical: canonicalUrl,
       languages,
     },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName,
+      type: 'article',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: siteName }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [ogImage] },
   }
 }
 
@@ -118,8 +140,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   const locale = await getLocale()
   const tenantId = await getTenantId()
   const supabase = await createClient()
-  // 構造化データ(JSON-LD)のurl項目用。generateMetadataのcanonicalと同じ組み立て方。
-  const pageUrl = `https://${(await headers()).get('host') ?? 'bug.wisdomassemble.com'}/${locale}/questions/${encodeURIComponent(slug)}`
+  const pageHost = (await headers()).get('host') ?? 'bug.wisdomassemble.com'
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -132,6 +153,12 @@ export default async function QuestionPage({ params, searchParams }: Props) {
 
   if (qErr) console.error('question fetch error:', JSON.stringify(qErr))
   if (!question) notFound()
+
+  // 構造化データ(JSON-LD)のurl項目用。generateMetadata の canonical と同じ基準で言語を決める
+  // （翻訳があるインデックス対象の言語なら表示中の言語、無ければ元の言語）。2026-10-07
+  const hasLocaleVersion = (question.source_locale ?? 'ja') === locale || !!(question.title_i18n as Record<string, string> | null)?.[locale]
+  const jsonLdLocale = hasLocaleVersion && INDEXABLE_LOCALES.includes(locale) ? locale : (question.source_locale ?? 'ja')
+  const pageUrl = `https://${pageHost}/${jsonLdLocale}/questions/${encodeURIComponent(slug)}`
 
   const { data: answers } = await supabase
     .from('answers')
@@ -168,7 +195,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
   // ビュー数インクリメント（fire and forget）。
   // questions_update RLS が auth.uid()=user_id に絞られているため直接UPDATEだと
   // 所有者以外・匿名の閲覧で増えない。RLS迂回のsecurity definer RPCで加算する。
-  supabase.rpc('increment_view_count', { p_question_id: question.id })
+  // 【2026-10-07】await する。postgrest は then されるまでリクエストを送らないので、await 無しでは
+  // 7/21以降一度も加算されていなかった（「0 views」の正体）。失敗しても表示は止めない。
+  await supabase.rpc('increment_view_count', { p_question_id: question.id }).then(() => {}, () => {})
 
   const poster = question.profiles as any
   const isOwner = user?.id === question.user_id
@@ -228,13 +257,18 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         .join(',')
       const { data: similar } = await supabase
         .from('questions')
-        .select('id, title, slug')
+        .select('id, title, title_i18n, slug')
         .eq('tenant_id', tenantId)
         .eq('status', 'solved')
         .neq('id', question.id)
         .or(orFilter)
         .limit(4)
-      similarQuestions = similar ?? []
+      // 表示言語のタイトルで出す（以前は英語画面でも原文タイトルだった・2026-10-07）
+      similarQuestions = (similar ?? []).map((sq: any) => ({
+        id: sq.id,
+        slug: sq.slug,
+        title: (sq.title_i18n as Record<string, string> | null)?.[locale] ?? sq.title,
+      }))
     }
   }
 
@@ -392,6 +426,11 @@ export default async function QuestionPage({ params, searchParams }: Props) {
                       showTranslationLabel={t('showTranslation')}
                     />
 
+                    {/* 回答者本人：自分の回答を編集（2026-10-07） */}
+                    {user && !a.is_ai && a.user_id === user.id && (
+                      <AnswerEditButton answerId={a.id} initialBody={a.body} />
+                    )}
+
                     {/* 質問者：ベストアンサーボタン */}
                     {isOwner && !isSolved && !a.is_accepted && (
                       <AcceptButton questionId={question.id} answerId={a.id} />
@@ -430,7 +469,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             </p>
           </div>
         )}
-        {((isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && user && !isOwner && !isSolved && (
+        {((isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && user && !isOwner && !isSolved && !alreadyAnswered && (
           <section className="border-t pt-6">
             <AnswerForm questionId={question.id} />
           </section>
@@ -456,10 +495,17 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         )}
 
         {/* 高難度クエストの回答フォーム（全員オープン） */}
-        {isHard && user && !isOwner && (
+        {isHard && user && !isOwner && !alreadyAnswered && (
           <section className="border-t pt-6">
             <AnswerForm questionId={question.id} />
           </section>
+        )}
+
+        {/* 【2026-10-07】誰でも回答できる質問（高難度・AI回答済み・担当者なし）に回答済みの人には、欄の代わりに「回答しました」を出す
+            （以前は欄が出たままで、送ると「回答済み」エラーになっていた） */}
+        {user && !isOwner && !isSolved && alreadyAnswered &&
+          (isHard || question.status === 'ai_answered' || (isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && (
+          <p className="border-t pt-6 text-center text-sm text-green-600">{t('alreadyAnswered')}</p>
         )}
 
         {/* 質問者向けアクション（回答が届いているか期限切れで未解決の場合） */}
@@ -504,7 +550,8 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         )}
 
         {/* ログインしていない場合 */}
-        {!user && (isOpen || isMatchedC || isHard || question.status === 'ai_answered') && (
+        {/* 【2026-10-07】誰でも回答できる質問のときだけ出す（担当の専門家が対応中の質問では、ログインしても回答できない） */}
+        {!user && (isHard || question.status === 'ai_answered' || (isOpen && !question.matched_b_id) || (isMatchedC && !question.matched_c_id)) && (
           <div className="border-t pt-6 text-center text-sm text-gray-500">
             {t('loginRequired')} <a href={`/auth/login?next=/questions/${slug}`} className="underline">{t('loginLink')}</a> {t('loginRequiredSuffix')}
           </div>

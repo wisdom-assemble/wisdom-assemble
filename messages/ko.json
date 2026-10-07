@@ -72,6 +72,7 @@
   },
   "questionForm": {
     "titleLabel": "제목",
+    "discardDraft": "임시 저장 삭제",
     "titlePlaceholder": "예: Next.js에서 SSR 시 hydration 오류가 발생합니다",
     "bodyLabel": "상세 내용",
     "bodyPlaceholder": "문제의 상세 내용, 시도한 방법, 오류 메시지 등을 작성해 주세요 (Markdown 사용 가능)",
@@ -134,7 +135,11 @@
     "tooShort": "답변은 30자 이상 입력해 주세요",
     "submitFailed": "게시에 실패했습니다. 다시 시도해 주세요.",
     "submitting": "전송 중...",
-    "submit": "답변 게시하기"
+    "submit": "답변 게시하기",
+    "edit": "수정",
+    "saveEdit": "저장",
+    "cancelEdit": "취소",
+    "saving": "저장 중..."
   },
   "questionActions": {
     "matching": "다음 전문가와 매칭 중...",
@@ -482,7 +487,9 @@
     "cannotEscalate": "이 상태에서는 에스컬레이션할 수 없습니다",
     "contactInfoNotAllowed": "개인 연락처 정보(이메일, 전화번호, SNS 계정 등)는 게시할 수 없습니다.",
     "spamNotAllowed": "광고 또는 권유 목적의 게시물은 허용되지 않습니다.",
-    "invalidEmail": "올바른 이메일 주소를 입력해 주세요."
+    "invalidEmail": "올바른 이메일 주소를 입력해 주세요.",
+    "rateLimited": "오늘 질문할 수 있는 횟수를 모두 사용했습니다. 나중에 다시 시도해 주세요.",
+    "outOfScope": "이 서비스에서는 주제와 관련된 질문만 받습니다."
   },
   "aboutPage": {
     "originTitle": "시작하게 된 계기",

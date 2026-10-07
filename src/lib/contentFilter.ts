@@ -69,3 +69,15 @@ export function checkContent(text: string): FilterResult {
   }
   return { ok: true }
 }
+
+// 【2026-10-07】お問い合わせ用：連絡先（URL・メール・電話）は許可し、スパム語だけを見る。
+// お問い合わせは返信先のやりとりそのものなので、Q&A用の「連絡先の掲載禁止」を掛けると
+// 権利侵害の通報（URLが必須）や広告の相談（社名サイト・電話）が送れなくなっていた。
+export function checkSpamOnly(text: string): FilterResult {
+  for (const pattern of SPAM_PATTERNS) {
+    if (pattern.test(text)) {
+      return { ok: false, reasonCode: 'spamNotAllowed' }
+    }
+  }
+  return { ok: true }
+}
