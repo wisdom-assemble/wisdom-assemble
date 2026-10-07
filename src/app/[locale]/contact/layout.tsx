@@ -5,7 +5,7 @@ type Props = { params: Promise<{ locale: string }>; children: React.ReactNode }
 
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params
-  return buildStaticPageMetadata(locale, '/contact', 'contactPage', 'title')
+  return buildStaticPageMetadata(locale, '/contact', 'contactPage', 'title', 'subtitle')
 }
 
 export default function ContactLayout({ children }: Props) {

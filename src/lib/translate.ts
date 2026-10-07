@@ -356,3 +356,31 @@ export async function translateQuestionToLocales(
     return { title_i18n, body_i18n }
   }
 }
+
+// 【2026-10-07】質問タグの翻訳（tags_i18n 用）。タグはAIが投稿の元言語で付けるため、それまでは英語ページにも
+// 日本語タグが出ていた。返り値は { en: [...], zh: [...] }（tags と同じ順番・元言語のキーは持たない）。
+// キーはフラット（tag0_en, tag1_en, ...）＝ネストを避ける translateQuestionToLocales と同じ方針。
+// 訳が欠けたタグは元のタグで埋める（表示が空にならないように）。失敗時は呼び出し側で {} 扱いにする。
+export async function translateTagsToLocales(
+  tags: string[],
+  sourceLocale: string,
+  usageOut?: TokenUsage,
+  deadline = Date.now() + TRANSLATE_BUDGET_MS
+): Promise<Record<string, string[]>> {
+  const list = tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 5)
+  if (list.length === 0) return {}
+  const targets = SUPPORTED_LOCALES.filter((locale) => locale !== sourceLocale)
+  const localeList = targets.map((locale) => `${locale} (${LOCALE_NAMES[locale]})`).join(', ')
+  const keys = targets.flatMap((locale) => list.map((_, i) => `tag${i}_${locale}`))
+  const systemPrompt = `You are a professional translator for a Q&A website. You will receive a JSON array of short topic tags. Translate each tag into ALL of the following languages: ${localeList}. Keep product, brand and model names unchanged (for example Fender, Quad Cortex, Ableton Live). Use short, natural tag-style wording (1-4 words), and start with a capital letter in languages that use capitalization. Respond with ONLY a flat JSON object with exactly these keys: ${keys.join(', ')}. The value of tagN_xx is tag number N (0-based) translated into language xx. No explanations, no extra keys.`
+  const content = await callGroqJson(systemPrompt, JSON.stringify(list), usageOut, 1500, deadline, stringSchema('tag_translations', keys))
+  const parsed = JSON.parse(content) as Record<string, unknown>
+  const out: Record<string, string[]> = {}
+  for (const locale of targets) {
+    out[locale] = list.map((tag, i) => {
+      const v = parsed[`tag${i}_${locale}`]
+      return typeof v === 'string' && v.trim() ? v.trim() : tag
+    })
+  }
+  return out
+}

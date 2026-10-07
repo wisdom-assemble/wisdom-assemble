@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getTranslations, getLocale, getMessages } from 'next-intl/server'
-import { routing } from '@/i18n/routing'
+import { routing, INDEXABLE_LOCALES } from '@/i18n/routing'
+import { buildHomeTitle } from '@/lib/pageMeta'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import Tutorial from '@/components/Tutorial'
@@ -55,14 +56,16 @@ async function pickHittingKeywords(
 const PAGE_SIZE = 25
 
 // ホームのhreflang/canonical。UIは全8言語対応のため全ロケールを相互リンクする。
-// タイトル・説明文はレイアウトのgenerateMetadataが提供するのでここでは指定しない。
+// 説明文はレイアウトのgenerateMetadataが提供する。title は「サイト名 | キャッチコピー」（2026-10-07・en/jaで同じtitleだった）。
+// hreflang はインデックス対象（en/ja）だけを指す（質問詳細・固定ページと同じ基準。noindexの6言語は指さない）。
 export async function generateMetadata(): Promise<Metadata> {
   const host = (await headers()).get('host') ?? 'bug.wisdomassemble.com'
   const locale = await getLocale()
   const languages: Record<string, string> = {}
-  for (const loc of routing.locales) languages[loc] = `https://${host}/${loc}`
+  for (const loc of INDEXABLE_LOCALES) languages[loc] = `https://${host}/${loc}`
   languages['x-default'] = `https://${host}/${routing.defaultLocale}`
   return {
+    title: await buildHomeTitle(locale),
     alternates: {
       canonical: `https://${host}/${locale}`,
       languages,
@@ -231,6 +234,34 @@ async function QuestionResults({
     }
   }
 
+  // 【2026-10-07】タグの表示言語版（questions.tags_i18n＝{ en: [...], zh: [...] }・tags と同じ順番）。
+  // それまでは英語ページにも日本語タグが出ていた。列の追加（scripts/add-tags-i18n.sql）より先にデプロイされても
+  // 一覧が壊れないよう別クエリで読み、失敗したら元のタグを出す。元の言語のページは元のタグ（キーが無い）。
+  // ⚠️リンク先（?tag=）は元のタグのまま。絞り込みは tags 列で行うため。
+  const tagLabelsById: Record<string, string[]> = {}
+  const listedIds = (questions ?? []).map((qq: any) => qq.id as string)
+  if (listedIds.length > 0) {
+    const { data: tagRows, error: tagErr } = await supabase
+      .from('questions')
+      .select('id, tags_i18n')
+      .in('id', listedIds)
+    if (!tagErr) {
+      for (const row of tagRows ?? []) {
+        const labels = (row.tags_i18n as Record<string, string[]> | null)?.[locale]
+        if (Array.isArray(labels)) tagLabelsById[row.id] = labels
+      }
+    }
+  }
+  // タグで絞り込み中の見出しも表示言語で（一覧の中でそのタグを持つ質問の訳を使う）
+  let tagHeading = tag
+  if (tag) {
+    for (const qq of (questions ?? []) as any[]) {
+      const idx = ((qq.tags as string[] | null) ?? []).indexOf(tag)
+      const label = idx >= 0 ? tagLabelsById[qq.id]?.[idx] : undefined
+      if (label) { tagHeading = label; break }
+    }
+  }
+
   return (
     <>
       {q && (
@@ -244,7 +275,7 @@ async function QuestionResults({
 
       {tag && (
         <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-xs">#{tag}</span>
+          <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-xs">#{tagHeading}</span>
           <Link prefetch={false} href="/" className="underline text-gray-400 hover:text-gray-600 text-xs">
             {t('clear')}
           </Link>
@@ -276,14 +307,14 @@ async function QuestionResults({
                 </Link>
                 {Array.isArray((question as any).tags) && (question as any).tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-0.5 mb-1.5 px-2">
-                    {(question as any).tags.slice(0, 3).map((tg: string) => (
+                    {(question as any).tags.slice(0, 3).map((tg: string, i: number) => (
                       <Link
                         prefetch={false}
                         key={tg}
                         href={`/?tag=${encodeURIComponent(tg)}`}
                         className="text-[11px] px-1.5 py-0.5 rounded-full bg-gray-50 border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
                       >
-                        {tg}
+                        {tagLabelsById[question.id]?.[i] ?? tg}
                       </Link>
                     ))}
                   </div>

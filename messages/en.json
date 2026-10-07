@@ -102,7 +102,7 @@
     "intro2": "A second-opinion service that AI can't provide — exactly what's needed in the age of AI.",
     "loginNote": "You need to log in with a Google account to ask a question.",
     "step1Title": "Post a question",
-    "step1Description": "Post the problem you want solved. AI first checks whether it fits the site's genre and won't accept it if not. You can post up to 3 questions per day.",
+    "step1Description": "Post the problem you want solved. AI first checks whether it fits the site's topic and won't accept it if not. You can post up to 3 questions per day.",
     "step2Title": "AI tries to answer",
     "step2Description": "AI tries to answer first. If it's confident, its answer is shown as-is; otherwise, it moves to the next step.",
     "step2Note": "The AI is tuned to reduce hallucinations, but please verify anything important yourself.",

@@ -6,7 +6,7 @@ import { askWithScore, askWithScoreInScope, isGroqUnavailable, type AiScopedResu
 import { findMatch, calcDeadline } from '@/lib/matching'
 import { checkContent } from '@/lib/contentFilter'
 import { notifyMatchedUser, sendAiCostAlert } from '@/lib/email'
-import { translateQuestionToLocales, translateToLocales, translateCost, SUPPORTED_LOCALES, type TokenUsage } from '@/lib/translate'
+import { translateQuestionToLocales, translateToLocales, translateTagsToLocales, translateCost, SUPPORTED_LOCALES, type TokenUsage } from '@/lib/translate'
 import { getApiErrors } from '@/lib/apiErrors'
 
 // 翌JST0時をISO(UTC)で返す。AIが使えない時のモーダル「次に使える時刻」の
@@ -187,6 +187,12 @@ export async function POST(request: NextRequest) {
     return { title_i18n: {}, body_i18n: {} }
   })
   const titleTranslationPromise = translationPromise.then((r) => r.title_i18n)
+  // 【2026-10-07】タグも翻訳する（tags_i18n）。本文の翻訳と並行して走らせ、下で保存前に待つ。
+  // 失敗しても投稿は成功扱い（そのタグは元の言語のまま表示されるだけ）。
+  const tagsTranslationPromise = translateTagsToLocales(aiResult?.tags ?? [], sourceLocale, translationUsage).catch((e) => {
+    console.error('tag translation error:', e)
+    return {} as Record<string, string[]>
+  })
 
   // クロージャ内ではSupabaseの判別ユニオンによる非null絞り込みが失われるため、
   // 確定済み(insert成功・認証済み)の値をローカルに束ねてから使う。
@@ -299,6 +305,12 @@ export async function POST(request: NextRequest) {
   // 翻訳結果を保存（Cloudflare Workersがレスポンス返却後に処理を打ち切るため必ずawaitする）
   const { title_i18n, body_i18n } = await translationPromise
   await admin.from('questions').update({ title_i18n, body_i18n }).eq('id', question.id)
+  const tags_i18n = await tagsTranslationPromise
+  if (Object.keys(tags_i18n).length > 0) {
+    // タイトル・本文とは別の更新にする（tags_i18n 列の問題でタイトル・本文の保存まで失敗させないため）
+    const { error: tagsSaveError } = await admin.from('questions').update({ tags_i18n }).eq('id', question.id)
+    if (tagsSaveError) console.error('tags_i18n save error:', tagsSaveError)
+  }
 
   // 翻訳分のトークン/コストを加算（callsは増やさない＝AI質問数は回答生成のみを数える）
   if (translationUsage.prompt || translationUsage.completion) {

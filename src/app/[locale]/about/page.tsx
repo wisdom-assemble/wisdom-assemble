@@ -7,7 +7,7 @@ type Props = { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params
-  const meta = await buildStaticPageMetadata(locale, '/about', 'portalPage', 'aboutTitle')
+  const meta = await buildStaticPageMetadata(locale, '/about', 'portalPage', 'aboutTitle', 'aboutBody')
   // 【2026-10-07】About はルートの運営者情報。テナントにも同じページがあるが（リンクは無い）、
   // 重複にならないよう正規URLはルートのAboutに向ける（テナントのフッターもルートのAboutへリンクしている）
   if ((await getTenantId()) !== 'root') {

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
+import { formatLocalDate } from '@/lib/dateFormat'
 import { useTenantId } from '@/components/TenantProvider'
 import { getSkillOptions } from '@/lib/skillTags'
 
@@ -50,7 +51,6 @@ export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [skills, setSkills] = useState<string[]>([])
-  const [isAvailable, setIsAvailable] = useState(true)
   const [emailNotify, setEmailNotify] = useState(true)
   const [language, setLanguage] = useState(locale)
   const [stats, setStats] = useState({ answerCount: 0, hardQuestCount: 0 })
@@ -130,7 +130,6 @@ export default function ProfilePage() {
       if (tenantProfile) {
         setDisplayName(tenantProfile.display_name ?? '')
         setSkills(tenantProfile.skill_tags ?? [])
-        setIsAvailable(tenantProfile.is_available ?? true)
         setEmailNotify(tenantProfile.email_notify ?? true)
         setStats({ answerCount: tenantProfile.answer_count ?? 0, hardQuestCount: tenantProfile.hard_quest_count ?? 0 })
         setActiveTitle(tenantProfile.active_title_id ?? null)
@@ -233,11 +232,13 @@ export default function ProfilePage() {
     // UPDATE権限を絞ってある（2026-07-17のlock-down）。upsertだとPostgRESTが
     // ON CONFLICT DO UPDATE のSET句に主キー列(tenant_id/user_id)も含めてしまい、
     // それらにUPDATE権限が無いため 42501 permission denied で保存が失敗していた。
-    // → 既存行はUPDATE（許可された4列のみ）、初回のみINSERTに分ける。
+    // → 既存行はUPDATE（許可された列のみ）、初回のみINSERTに分ける。
+    // 【2026-10-07】is_available は送らない。稼働トグルのUIは2026-07に廃止済みで画面に操作要素が無いのに、
+    // 保存のたびに true を書き込んでいた（「回答候補から外した人」が表示名を変えただけで候補に戻る・バグトラック④）。
+    // 初回INSERTでは送らないのでDBの既定値になる。
     const fields = {
       display_name: displayName.trim() || null,
       skill_tags: skills,
-      is_available: isAvailable,
       email_notify: emailNotify,
     }
     const { data: updated, error: updateError } = await supabase
@@ -564,7 +565,7 @@ export default function ProfilePage() {
                       >
                         <p className="text-sm font-medium text-gray-900">{q.title}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {new Date(a.created_at).toLocaleDateString(locale)} · {t('bestAnswer')}
+                          {formatLocalDate(a.created_at, locale)} · {t('bestAnswer')}
                         </p>
                       </Link>
                     </li>
@@ -602,7 +603,7 @@ export default function ProfilePage() {
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {new Date(q.created_at).toLocaleDateString(locale)}
+                          {formatLocalDate(q.created_at, locale)}
                         </p>
                       </Link>
                     </li>

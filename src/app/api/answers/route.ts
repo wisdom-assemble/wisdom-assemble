@@ -55,6 +55,10 @@ export async function POST(request: NextRequest) {
   if (!question) {
     return NextResponse.json({ error: apiErrors.questionNotFound }, { status: 404 })
   }
+  // 【2026-10-07】解決済みの質問には回答できない（画面では回答欄を出していないが、APIを直接叩けば通っていた）
+  if (question.status === 'solved') {
+    return NextResponse.json({ error: apiErrors.alreadySolved }, { status: 400 })
+  }
 
   // 同一ユーザーの重複回答チェック
   const { data: existing } = await supabase

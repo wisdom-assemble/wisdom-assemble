@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { formatLocalDate } from '@/lib/dateFormat'
 
 // 閲覧数はこの数に届くまで表示しない（「0 views」が並ぶと誰も見ていないサイトに見える・2026-10-07）
 const MIN_VISIBLE_VIEWS = 10
@@ -84,7 +85,7 @@ export default function HardQuestionList({
                   </div>
                   <p className="text-xs text-gray-400">
                     {q.profiles?.display_name ?? q.profiles?.username} ·{' '}
-                    {createdAt.toLocaleDateString(locale)}
+                    {formatLocalDate(createdAt, locale)}
                     {q.view_count >= MIN_VISIBLE_VIEWS && <> · {q.view_count} views</>}
                     {hours !== null && (
                       <span className="ml-2 text-green-600">

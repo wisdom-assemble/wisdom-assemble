@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   // 200 を送った後になるのでステータスは404にできない（質問詳細で起きたソフト404と同じ・2026-08-08参照）。
   // どこからもリンクしていないページなので、noindex を付けて検索に出ないようにしておく。
   if ((await getTenantId()) === 'root') return { robots: { index: false, follow: true } }
-  return buildStaticPageMetadata(locale, '/hard', 'hardPage', 'title')
+  return buildStaticPageMetadata(locale, '/hard', 'hardPage', 'title', 'subtitle')
 }
 
 export default async function HardQuestPage({
