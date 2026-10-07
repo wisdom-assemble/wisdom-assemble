@@ -11,6 +11,7 @@ export async function generateMetadata({ params }: Props) {
   // 【2026-10-07】About はルートの運営者情報。テナントにも同じページがあるが（リンクは無い）、
   // 重複にならないよう正規URLはルートのAboutに向ける（テナントのフッターもルートのAboutへリンクしている）
   if ((await getTenantId()) !== 'root') {
+    meta.openGraph = { ...meta.openGraph, url: `https://wisdomassemble.com/${locale}/about` }
     meta.alternates = {
       canonical: `https://wisdomassemble.com/${locale}/about`,
       languages: { en: 'https://wisdomassemble.com/en/about', ja: 'https://wisdomassemble.com/ja/about', 'x-default': 'https://wisdomassemble.com/en/about' },

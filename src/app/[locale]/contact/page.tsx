@@ -153,8 +153,8 @@ export default function ContactPage() {
             {/* 迷惑メール対策の見えない入力欄。人は入力しない（画面外・読み上げ対象外・Tabでも止まらない） */}
             <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden">
               <label>
-                Website
-                <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={e => setWebsite(e.target.value)} />
+                Leave this field empty
+                <input type="text" name="wa_hp_field" tabIndex={-1} autoComplete="off" data-1p-ignore data-lpignore="true" value={website} onChange={e => setWebsite(e.target.value)} />
               </label>
             </div>
 

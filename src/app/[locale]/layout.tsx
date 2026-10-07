@@ -10,6 +10,7 @@ import { getTenantId } from '@/lib/tenant'
 import { createClient } from '@/lib/supabase/server'
 import { TenantProvider } from '@/components/TenantProvider'
 import Footer from '@/components/Footer'
+import { OG_LOCALE_MAP } from '@/lib/ogLocale'
 import CookieConsentBanner from '@/components/CookieConsentBanner'
 import { getTenantDisplayName, getPublicSubdomain, isDormantTenant } from '@/lib/tenantNames'
 
@@ -26,10 +27,6 @@ const CLIENT_MESSAGE_NAMESPACES = [
   'loginPage', 'portalPage', 'profilePage', 'questionActions', 'questionForm', 'skillTags', 'titles', 'tutorial',
 ] as const
 
-const OG_LOCALE_MAP: Record<string, string> = {
-  en: 'en_US', ja: 'ja_JP', zh: 'zh_CN', id: 'id_ID',
-  vi: 'vi_VN', ko: 'ko_KR', es: 'es_ES', pt: 'pt_PT',
-}
 
 const FALLBACK_DESCRIPTION_MAP: Record<string, string> = {
   en: "A Q&A service connecting questions AI can't confidently answer with real human experts.",

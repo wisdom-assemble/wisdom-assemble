@@ -116,12 +116,16 @@ export default async function HomePage({
     messages.searchKeywords?.[kw] ?? messages.skillTags?.[kw] ?? kw
 
   const admin = getAdminClient()
-  const keywordChips = q ? [] : await pickHittingKeywords(admin, tenantId, locale, keywordLabel)
-  const { data: tenant } = await admin
-    .from('tenants')
-    .select('name, description, description_i18n')
-    .eq('id', tenantId)
-    .single()
+  // 検索キーワードは一覧の1ページ目（検索・タグ絞り込みなし）でだけ出す。テナント情報の取得と並行（2026-10-08）
+  const showChips = !q && !tag && page === 1
+  const [keywordChips, { data: tenant }] = await Promise.all([
+    showChips ? pickHittingKeywords(admin, tenantId, locale, keywordLabel) : Promise.resolve([] as string[]),
+    admin
+      .from('tenants')
+      .select('name, description, description_i18n')
+      .eq('id', tenantId)
+      .single(),
+  ])
 
   const tagline = tenant?.description_i18n?.[locale] ?? tenant?.description
 
@@ -158,7 +162,7 @@ export default async function HomePage({
           <SearchForm key={q} defaultValue={q} />
         </div>
 
-        {!q && keywordChips.length > 0 && (
+        {keywordChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 mb-6 text-xs">
             <span className="text-gray-400 shrink-0">{t('suggestedKeywords')}</span>
             {keywordChips.map((keyword) => (

@@ -48,6 +48,7 @@ export default function AnswerEditButton({ answerId, initialBody }: { answerId: 
   return (
     <div className="mt-3 space-y-2">
       <textarea
+        aria-label={t('edit')}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[120px] resize-y"

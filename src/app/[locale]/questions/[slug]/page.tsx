@@ -11,7 +11,8 @@ import TranslatedAnswerBody from '@/components/TranslatedAnswerBody'
 import AnswerEditButton from '@/components/AnswerEditButton'
 import { Link } from '@/i18n/navigation'
 import { getTenantId } from '@/lib/tenant'
-import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
+import { getTenantDisplayName } from '@/lib/tenantNames'
+import { OG_LOCALE_MAP } from '@/lib/ogLocale'
 import { createClient } from '@/lib/supabase/server'
 import LocalDate from '@/components/LocalDate'
 import type { Metadata } from 'next'
@@ -124,6 +125,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonicalUrl,
       siteName,
+      locale: OG_LOCALE_MAP[locale] ?? 'en_US',
       type: 'article',
       images: [{ url: ogImage, width: 1200, height: 630, alt: siteName }],
     },

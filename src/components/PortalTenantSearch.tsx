@@ -75,7 +75,7 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
                 key={tenant.tenantId}
                 data-theme={isDark ? 'dark' : undefined}
                 style={cardBg ? { backgroundColor: cardBg } : undefined}
-                className="grid grid-rows-subgrid row-span-3 gap-y-0 border border-gray-200 rounded-lg overflow-hidden"
+                className="grid grid-rows-subgrid row-span-3 gap-y-0 grid-cols-[minmax(0,1fr)] min-w-0 border border-gray-200 rounded-lg overflow-hidden"
               >
                 <a
                   href={tenant.href}
@@ -106,8 +106,8 @@ export default function PortalTenantSearch({ tenants, searchPlaceholder, noResul
                             </>
                           )}
                         </div>
-                        <p className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">{example.title}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed line-clamp-3 mt-1">{example.excerpt}</p>
+                        <p className="text-sm font-medium text-gray-900 leading-snug line-clamp-2 [overflow-wrap:anywhere]">{example.title}</p>
+                        <p className="text-xs text-gray-500 leading-relaxed line-clamp-3 mt-1 [overflow-wrap:anywhere]">{example.excerpt}</p>
                       </a>
                     </li>
                   ))}

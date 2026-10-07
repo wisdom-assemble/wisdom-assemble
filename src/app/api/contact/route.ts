@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
   // ＝機械的な送信とみなし、送ったふりをして実際には送らない（相手に対策を気付かせない）。
   // ⚠️Brevoの送信上限（300通/日）を守るためでもある。大量に来るようになったら Cloudflare のレート制限を足す。
   if ((typeof website === 'string' && website.trim() !== '') || !(Number(elapsedMs) >= 3000)) {
+    // 弾いた件数を後で確認できるようログに残す（本物の人が誤って弾かれていないかの確認用）
+    console.warn('[contact] dropped as bot:', { honeypot: typeof website === 'string' && website.trim() !== '', elapsedMs })
     return NextResponse.json({ ok: true })
   }
 

@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { getTenantId } from '@/lib/tenant'
 import { getTenantDisplayName, getPublicSubdomain } from '@/lib/tenantNames'
 import { INDEXABLE_LOCALES } from '@/i18n/routing'
+import { OG_LOCALE_MAP } from '@/lib/ogLocale'
 
 /* 【2026-10-07】規約・About・お問い合わせ等の固定ページ用の metadata。
    それまで固定ページの <title> がすべてサイト名だけ（ルートの10ページが全部「WISDOM ASSEMBLE」）で重複し、
@@ -47,6 +48,7 @@ export async function buildStaticPageMetadata(
       ...(description ? { description } : {}),
       url,
       siteName,
+      locale: OG_LOCALE_MAP[locale] ?? 'en_US',
       type: 'website',
       images: [{ url: ogImage, width: 1200, height: 630, alt: siteName }],
     },
