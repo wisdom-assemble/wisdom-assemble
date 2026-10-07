@@ -484,6 +484,11 @@
     "spamNotAllowed": "No se permiten publicaciones publicitarias o de solicitación.",
     "invalidEmail": "Introduce una dirección de correo electrónico válida."
   },
+  "aboutPage": {
+    "originTitle": "Por qué empecé",
+    "originBody": "La IA está cambiándolo todo, el mundo entero. Y también se puede confiar en ella.\n…Pero en las personas se puede confiar todavía más.\n\nLo que me llevó a crear este servicio fue una pequeña mentira de la IA: una alucinación. Yo conocía el tema, así que no me la creí. Pero si no lo hubiera conocido, quizá la habría aceptado sin más. Si cada vez más personas hicieran lo mismo, una tras otra, y la información falsa se fuera filtrando en el mundo, la forma del mundo cambiaría poco a poco, pero con certeza, y al final, de manera profunda.\n\n…Por eso creé este servicio: como un conjunto del conocimiento del mundo que conecta a las personas con la IA.\n\nEs un servicio para todas las personas que conviven con la IA, valoran la experiencia humana real y desean que el mundo sea, aunque sea un poco, mejor.",
+    "originSignature": "Fundador de Wisdom Assemble"
+  },
   "brand": {
     "catchcopy": "Pregunta a la IA.\nSi la IA no sabe, responde una persona."
   }

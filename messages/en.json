@@ -484,6 +484,11 @@
     "spamNotAllowed": "Advertising or solicitation posts are not allowed.",
     "invalidEmail": "Please enter a valid email address."
   },
+  "aboutPage": {
+    "originTitle": "Why I started this",
+    "originBody": "AI is changing everything — the world itself. And it can be trusted.\n…But humans can be trusted even more.\n\nWhat led me to start this service was a small lie told by AI — a hallucination. I happened to know the subject, so I didn't believe it. But if I hadn't, I might have taken it at face value. If more and more people did the same, one after another, and false information seeped into the world, the shape of the world would change little by little, yet surely — and in the end, profoundly.\n\n…That is why I started this service: as a collective of the world's knowledge that connects people and AI.\n\nIt is a service for everyone who lives alongside AI, values real human experience, and hopes the world can become even a little better.",
+    "originSignature": "Founder, Wisdom Assemble"
+  },
   "brand": {
     "catchcopy": "Ask AI.\nIf AI doesn't know, a human answers."
   }

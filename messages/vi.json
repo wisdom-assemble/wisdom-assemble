@@ -484,6 +484,11 @@
     "spamNotAllowed": "Không được đăng nội dung quảng cáo hoặc mời chào.",
     "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ."
   },
+  "aboutPage": {
+    "originTitle": "Vì sao tôi bắt đầu",
+    "originBody": "AI đang thay đổi mọi thứ, thay đổi cả thế giới. Và AI cũng đáng tin cậy.\n…Nhưng con người còn đáng tin cậy hơn.\n\nĐiều khiến tôi bắt đầu dịch vụ này là một lời nói dối nhỏ của AI — hiện tượng \"ảo giác\". Tôi có kiến thức về lĩnh vực đó nên đã không tin. Nhưng nếu không có kiến thức, có lẽ tôi đã tin ngay. Nếu những người như vậy cứ tăng lên từng người một, và thông tin sai lệch thấm dần vào thế giới, thì hình hài của thế giới sẽ thay đổi từng chút một, nhưng chắc chắn, và cuối cùng là thay đổi rất lớn.\n\n…Vì vậy, tôi đã bắt đầu dịch vụ này: như một nơi tập hợp tri thức của thế giới, kết nối con người với AI.\n\nĐây là dịch vụ dành cho tất cả những ai sống cùng AI nhưng vẫn trân trọng trải nghiệm thật của con người, và mong thế giới trở nên tốt đẹp hơn dù chỉ một chút.",
+    "originSignature": "Người sáng lập Wisdom Assemble"
+  },
   "brand": {
     "catchcopy": "Hỏi AI.\nNếu AI không biết, con người trả lời."
   }

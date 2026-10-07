@@ -24,6 +24,7 @@ export default async function AboutPage({ params }: Props) {
   setRequestLocale(locale)
   const t = await getTranslations('portalPage')
   const tBrand = await getTranslations('brand')
+  const tAbout = await getTranslations('aboutPage')
 
   return (
     <>
@@ -40,6 +41,21 @@ export default async function AboutPage({ params }: Props) {
         <div className="prose prose-sm max-w-none text-sm text-gray-600 leading-relaxed">
           <p>{t('aboutBody')}</p>
         </div>
+
+        {/* 【2026-10-07】立ち上げたきっかけ（mtさん本人の文・日本語は原文のまま。具体を書かないのは意図的＝読む人が自分を重ねられるように）。
+            文言は aboutPage 名前空間＝サーバー専用。ブラウザへ送る翻訳（layout の CLIENT_MESSAGE_NAMESPACES）には入れない。
+            段落は空行で区切り、段落内の改行（冒頭の2行）はそのまま出す。 */}
+        <section className="mt-10 pt-8 border-t border-gray-100">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">{tAbout('originTitle')}</h2>
+          <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
+            {tAbout('originBody').split('\n\n').map((paragraph, i) => (
+              <p key={i} className={i === 0 ? 'whitespace-pre-line text-base text-gray-800 font-medium leading-relaxed' : 'whitespace-pre-line'}>
+                {paragraph}
+              </p>
+            ))}
+          </div>
+          <p className="mt-6 text-right text-sm text-gray-500">{tAbout('originSignature')}</p>
+        </section>
       </main>
     </>
   )

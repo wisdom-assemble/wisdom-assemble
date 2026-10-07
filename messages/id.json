@@ -484,6 +484,11 @@
     "spamNotAllowed": "Postingan iklan atau ajakan tidak diperbolehkan.",
     "invalidEmail": "Masukkan alamat email yang valid."
   },
+  "aboutPage": {
+    "originTitle": "Mengapa saya memulai ini",
+    "originBody": "AI sedang mengubah segalanya, mengubah dunia. Dan AI juga bisa dipercaya.\n…Namun, manusia bisa lebih dipercaya.\n\nYang mendorong saya memulai layanan ini adalah sebuah kebohongan kecil dari AI — halusinasi. Kebetulan saya memahami bidang itu, jadi saya tidak mempercayainya. Tetapi jika saya tidak paham, mungkin saya akan menelannya mentah-mentah. Jika orang seperti itu bertambah satu demi satu, dan informasi yang keliru meresap ke seluruh dunia, bentuk dunia akan berubah sedikit demi sedikit, namun pasti, dan pada akhirnya berubah besar.\n\n…Karena itulah saya memulai layanan ini: sebagai kumpulan pengetahuan dunia yang menghubungkan manusia dan AI.\n\nLayanan ini untuk semua orang yang hidup berdampingan dengan AI, menghargai pengalaman nyata manusia, dan berharap dunia menjadi sedikit lebih baik.",
+    "originSignature": "Pendiri Wisdom Assemble"
+  },
   "brand": {
     "catchcopy": "Tanya AI.\nJika AI tidak tahu, manusia menjawab."
   }
