@@ -28,6 +28,103 @@ function getAdminClient() {
   )
 }
 
+/* 【2026-10-07】カードに載せる「回答例」。AdSense 1回目の不承認（10/5・有用性の低いコンテンツ）を受けて追加。
+   審査対象はルートドメインだけなのに、ルートには質問が1つも見えていなかった（本文約300字）。
+   各ジャンルの実際のQ&Aを「AIが答えた例」「人間が答えた例」の1つずつ見せ、
+   コピー「AIに聞く。AIがわからなければ、人間が答える。」をカードの中身で示す。 */
+export type PortalExample = {
+  kind: 'ai' | 'human'
+  href: string
+  title: string
+  excerpt: string
+  answererName: string | null
+}
+
+// 抜粋の長さ。表示は line-clamp-3 で切るので、どの言語でも3行が埋まる程度に。
+// 日中韓は1文字の情報量が多いので短く、英語などは同じ3行に倍近い文字数が入る。
+const EXAMPLE_EXCERPT_CHARS_CJK = 120
+const EXAMPLE_EXCERPT_CHARS_OTHER = 220
+// 人間の回答例はこの文字数以上のものを優先する（一言回答をショーケースにしない）
+const HUMAN_EXAMPLE_MIN_CHARS = 120
+
+// 回答本文（Markdownを含みうる）をカード用の地の文にする
+function toExcerpt(text: string, locale: string): string {
+  const limit = ['ja', 'zh', 'ko'].includes(locale) ? EXAMPLE_EXCERPT_CHARS_CJK : EXAMPLE_EXCERPT_CHARS_OTHER
+  const plain = text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/[#>*_`~|]/g, '')
+    .replace(/^\s*[-+]\s+/gm, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return plain.length > limit ? `${plain.slice(0, limit)}…` : plain
+}
+
+type Admin = ReturnType<typeof getAdminClient>
+
+async function fetchExamples(admin: Admin, tenantId: string, locale: string): Promise<PortalExample[]> {
+  const base = `https://${getPublicSubdomain(tenantId)}.wisdomassemble.com/${locale}/questions/`
+  const examples: PortalExample[] = []
+
+  // AIが答えた例：AI回答済みの最新の質問と、そのAI回答
+  const { data: aiQuestion } = await admin
+    .from('questions')
+    .select('id, slug, title, title_i18n')
+    .eq('tenant_id', tenantId)
+    .eq('status', 'ai_answered')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (aiQuestion) {
+    const { data: aiAnswer } = await admin
+      .from('answers')
+      .select('body, body_i18n')
+      .eq('question_id', aiQuestion.id)
+      .eq('is_ai', true)
+      .limit(1)
+      .maybeSingle()
+    if (aiAnswer) {
+      examples.push({
+        kind: 'ai',
+        href: base + aiQuestion.slug,
+        title: (aiQuestion.title_i18n as Record<string, string> | null)?.[locale] ?? aiQuestion.title,
+        excerpt: toExcerpt((aiAnswer.body_i18n as Record<string, string> | null)?.[locale] ?? aiAnswer.body, locale),
+        answererName: null,
+      })
+    }
+  }
+
+  // 人間が答えた例：ベストアンサーに選ばれた人間の回答（新しい順・短すぎるものは後回し）
+  const { data: acceptedRows } = await admin
+    .from('answers')
+    .select('question_id, user_id, body, body_i18n')
+    .eq('tenant_id', tenantId)
+    .eq('is_ai', false)
+    .eq('is_accepted', true)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  const accepted = acceptedRows ?? []
+  const picked = accepted.find((a) => (a.body ?? '').length >= HUMAN_EXAMPLE_MIN_CHARS) ?? accepted[0]
+  if (picked) {
+    const [{ data: humanQuestion }, { data: tenantProfile }, { data: profile }] = await Promise.all([
+      admin.from('questions').select('slug, title, title_i18n').eq('id', picked.question_id).maybeSingle(),
+      admin.from('tenant_profiles').select('display_name').eq('tenant_id', tenantId).eq('user_id', picked.user_id).maybeSingle(),
+      admin.from('profiles').select('username').eq('id', picked.user_id).maybeSingle(),
+    ])
+    if (humanQuestion) {
+      examples.push({
+        kind: 'human',
+        href: base + humanQuestion.slug,
+        title: (humanQuestion.title_i18n as Record<string, string> | null)?.[locale] ?? humanQuestion.title,
+        excerpt: toExcerpt((picked.body_i18n as Record<string, string> | null)?.[locale] ?? picked.body, locale),
+        answererName: tenantProfile?.display_name ?? profile?.username ?? null,
+      })
+    }
+  }
+
+  return examples
+}
+
 // wisdomassemble.com（ルートドメイン）専用のポータルページ。
 // 各ジャンル別サブドメインへの入口。まだCloudflareのCustom Domain設定が
 // 済んでいないテナントは「準備中」バッジを表示し、リンクを無効化する。
@@ -40,15 +137,29 @@ export default async function PortalHome() {
   const t = await getTranslations('portalPage')
   const tBrand = await getTranslations('brand')
   const tProfile = await getTranslations('profilePage')
+  // 回答例・しくみの文言は既存の8言語訳を流用する（新しいコピーを書かない＝ブランド表記の統一ルール）
+  const tQuestion = await getTranslations('questionPage')
+  const tHow = await getTranslations('howItWorksPage')
 
   const admin = getAdminClient()
   // page.tsxのタグライン取得と同じ .eq(...).single() の形に揃える
   // （.in()での一括取得だと本番で稀に color_theme が取得できないことがあったため）
-  const results = await Promise.all(
-    REVIEW_TENANT_IDS.map((tenantId) =>
-      admin.from('tenants').select('*').eq('id', tenantId).single()
-    )
-  )
+  const [results, examplesByTenant] = await Promise.all([
+    Promise.all(
+      REVIEW_TENANT_IDS.map((tenantId) =>
+        admin.from('tenants').select('*').eq('id', tenantId).single()
+      )
+    ),
+    // 回答例の取得に失敗してもポータル自体は出す（カードが回答例なしになるだけ）
+    Promise.all(
+      REVIEW_TENANT_IDS.map((tenantId) =>
+        fetchExamples(admin, tenantId, locale).catch((e) => {
+          console.error(`[PortalHome] examples fetch failed for ${tenantId}:`, e)
+          return [] as PortalExample[]
+        })
+      )
+    ),
+  ])
 
   /* 【2026-08-23】検索の材料に「実際に投稿された質問のタグ」を足す。
      Fender / ファズ / Klon Centaur / Genelec / MOTU のように、利用者が実際に打ちそうな
@@ -116,8 +227,11 @@ export default async function PortalHome() {
       // これが検索対象を兼ねているので、書けばその言語で検索に出る。
       tagline,
       tags,
+      examples: examplesByTenant[i],
     }
   })
+
+  const howSteps = [tHow('step1Title'), tHow('step2Title'), tHow('step3Title'), tHow('step6Title')]
 
   return (
     <main className="max-w-3xl mx-auto px-4 pt-4 pb-12 sm:pt-10 sm:pb-14 w-full">
@@ -137,6 +251,20 @@ export default async function PortalHome() {
         <p className="text-xs sm:text-[13px] text-gray-500 max-w-lg mx-auto leading-relaxed">{t('subtitle')}</p>
       </div>
 
+      {/* 【2026-10-07】しくみ（使い方ページの手順名をそのまま流用）。コピーの中身を4語で見せる */}
+      <section aria-label={tHow('title')} className="mb-8 sm:mb-10">
+        <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {howSteps.map((step, i) => (
+            <li key={i} className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-medium flex items-center justify-center">
+                {i + 1}
+              </span>
+              <span className="text-xs text-gray-700 leading-snug">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* 【2026-08-22】文言を「ジャンルを選んで始めましょう」から問いかけに変更（mtさん指定）。
           ユーザーはジャンルを選びに来るのではなく「〇〇について知りたくて」来る、という考え方。
           英語は "Choose a community to get started" だったが、コミュニティに参加せず気軽に聞ける
@@ -150,6 +278,11 @@ export default async function PortalHome() {
         tenants={cards}
         searchPlaceholder={t('searchPlaceholder')}
         noResultsLabel={t('noResults')}
+        labels={{
+          aiAnswered: tQuestion('statusAiAnswered'),
+          bestAnswer: tQuestion('bestAnswer'),
+          seeAll: tHow('listButton'),
+        }}
       />
 
       <div className="mt-16 pt-10 border-t border-gray-100">

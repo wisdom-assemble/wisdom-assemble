@@ -14,6 +14,9 @@ import { createClient } from '@/lib/supabase/server'
 import LocalDate from '@/components/LocalDate'
 import type { Metadata } from 'next'
 
+// 閲覧数はこの数に届くまで表示しない（「0 views」が並ぶと誰も見ていないサイトに見える・2026-10-07）
+const MIN_VISIBLE_VIEWS = 10
+
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ result?: string }> }
 
 // Google推奨のQAPage構造化データ(schema.org)を生成する。
@@ -319,8 +322,9 @@ export default async function QuestionPage({ params, searchParams }: Props) {
             meta={
               <p className="text-xs text-gray-400 mb-4">
                 {displayNameByUser[question.user_id] ?? poster?.username} ·{' '}
-                <LocalDate iso={question.created_at} locale={locale} /> ·{' '}
-                {question.view_count} {t('views')}
+                <LocalDate iso={question.created_at} locale={locale} />
+                {/* 【2026-10-07】閲覧数は少ないうちは出さない（「0 views」が並ぶと誰も見ていないサイトに見える） */}
+                {question.view_count >= MIN_VISIBLE_VIEWS && <> · {question.view_count} {t('views')}</>}
               </p>
             }
             notice={t('translationNotice')}
@@ -443,6 +447,14 @@ export default async function QuestionPage({ params, searchParams }: Props) {
           </section>
         )}
 
+        {/* 【2026-10-07】AI回答済みの質問にも人間が回答を足せる（AIの回答へのセカンドオピニオン）。
+            それまでは回答欄が出ず、AIの回答しか無いページに人間の知見を足す手段が無かった。 */}
+        {question.status === 'ai_answered' && user && !isOwner && !alreadyAnswered && (
+          <section className="border-t pt-6">
+            <AnswerForm questionId={question.id} />
+          </section>
+        )}
+
         {/* 高難度クエストの回答フォーム（全員オープン） */}
         {isHard && user && !isOwner && (
           <section className="border-t pt-6">
@@ -492,7 +504,7 @@ export default async function QuestionPage({ params, searchParams }: Props) {
         )}
 
         {/* ログインしていない場合 */}
-        {!user && (isOpen || isMatchedC || isHard) && (
+        {!user && (isOpen || isMatchedC || isHard || question.status === 'ai_answered') && (
           <div className="border-t pt-6 text-center text-sm text-gray-500">
             {t('loginRequired')} <a href={`/auth/login?next=/questions/${slug}`} className="underline">{t('loginLink')}</a> {t('loginRequiredSuffix')}
           </div>
