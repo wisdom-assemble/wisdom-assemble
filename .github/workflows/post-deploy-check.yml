@@ -1,0 +1,102 @@
+# push後の自動チェック＋異常なら自動で再ビルド（1102対策 案A・2026-10-07 mtさん承認・実装）
+#
+# なぜ：本番が Error 1102 で落ちることがあり、どれも「同じソースで再デプロイ（空コミットのpush）」で直っている。
+#   ①ビルドのクジ：デプロイ直後から壊れている（7/28・8/31・10/7 12:49）
+#   ②負荷で悪化：アクセスが続くと失敗率が上がり、アクセスを止めても再デプロイまで戻らない（10/7 13:27〜13:59）
+# 原因はCloudflare側で見えず消せないので、「壊れた状態を本番に居座らせない」方向で解く（2026-08-31 mtさん決定）。
+#
+# 流れ：mainへのpush → デプロイを待つ → 単発48回アクセス → 失敗が3回以上なら空コミットをpushして再ビルド
+#      → 待って再測定（最大2回まで再ビルド）→ それでも直らなければジョブを失敗させる（GitHubから通知メールが届く＝人が Rollback）
+# 手動実行：GitHub → Actions → post-deploy-check → Run workflow（デプロイ済みの状態を測るだけなら待ち時間は短くてよい）
+#
+# ⚠️GITHUB_TOKEN でのpushはこのワークフローを再起動しない（GitHubの仕様）ので無限ループにはならない。
+#    再ビルド後の再測定は同じジョブの中で行う。
+# ⚠️Cloudflare側のビルドは GitHub App がpushを受けて走る。botのpushでも走る想定だが、走らなかった場合は
+#    再測定でも失敗が続き、最終的にジョブ失敗＝通知で気付ける。
+# ⛔測定は48回まで。本番に数百リクエストを流すと、それ自体が②の引き金になる（10/7に実際に起きた）。
+
+name: post-deploy-check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      wait_seconds:
+        description: '測定前に待つ秒数（デプロイ済みなら 0 でよい）'
+        default: '0'
+
+concurrency:
+  group: post-deploy-check
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: デプロイを待って測定、異常なら再ビルド
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_WAIT: ${{ inputs.wait_seconds }}
+          # 再ビルド後の待ち時間
+          REBUILD_WAIT: 300
+          # 48回中この回数以上失敗したら異常（正常時は0回）
+          FAIL_THRESHOLD: 3
+          MAX_REBUILDS: 2
+        run: |
+          set -u
+          URLS="
+          https://wisdomassemble.com/ja
+          https://wisdomassemble.com/en
+          https://wisdomassemble.com/en/about
+          https://wisdomassemble.com/ja/privacy
+          https://music-prod.wisdomassemble.com/ja
+          https://music-prod.wisdomassemble.com/en
+          https://guitar.wisdomassemble.com/ja
+          https://guitar.wisdomassemble.com/en/hard
+          "
+
+          measure() {
+            fails=0; total=0
+            for round in 1 2 3 4 5 6; do
+              for u in $URLS; do
+                code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$u" || echo 000)
+                total=$((total+1))
+                if [ "$code" != "200" ]; then fails=$((fails+1)); echo "  $code $u"; fi
+                sleep 0.5
+              done
+            done
+            echo "結果: ${fails}/${total} 失敗"
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          rebuilds=0
+          # push時：Cloudflareのビルドとデプロイは通常2〜3分。余裕を見て5分待つ。手動実行時は入力値（既定0）
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then wait="${DISPATCH_WAIT:-0}"; else wait=300; fi
+          while true; do
+            echo "待ち ${wait}秒"
+            sleep "$wait"
+            measure
+            if [ "$fails" -lt "$FAIL_THRESHOLD" ]; then
+              echo "✅ 正常（${fails}/${total}）"
+              exit 0
+            fi
+            if [ "$rebuilds" -ge "$MAX_REBUILDS" ]; then
+              echo "::error::再ビルド${rebuilds}回でも直らない（${fails}/${total}）。Cloudflare → Workers & Pages → wisdom-assemble → Deployments から Rollback してください"
+              exit 1
+            fi
+            rebuilds=$((rebuilds+1))
+            echo "⚠️ 異常（${fails}/${total}）→ 同じソースで再ビルド（${rebuilds}回目）"
+            git pull --rebase --quiet origin main
+            git commit --allow-empty -m "chore: 自動再ビルド ${rebuilds}回目（1102 ${fails}/${total}）"
+            git push origin HEAD:main
+            wait="$REBUILD_WAIT"
+          done

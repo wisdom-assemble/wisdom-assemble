@@ -281,6 +281,9 @@
     "subjectPlaceholder": "예: 로그인이 안 됩니다 / 기능 추가 제안",
     "subjectTooShort": "제목은 10자 이상 입력해 주세요 (현재 {count}자)",
     "senderLabel": "발신자",
+    "emailLabel": "회신받을 이메일 주소",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "올바른 이메일 주소를 입력해 주세요.",
     "bodyLabel": "내용",
     "bodyPlaceholder": "문의 내용을 입력해 주세요",
     "bodyTooShort": "내용은 20자 이상 입력해 주세요 (현재 {count}자)",
@@ -478,7 +481,8 @@
     "notPermitted": "권한이 없습니다",
     "cannotEscalate": "이 상태에서는 에스컬레이션할 수 없습니다",
     "contactInfoNotAllowed": "개인 연락처 정보(이메일, 전화번호, SNS 계정 등)는 게시할 수 없습니다.",
-    "spamNotAllowed": "광고 또는 권유 목적의 게시물은 허용되지 않습니다."
+    "spamNotAllowed": "광고 또는 권유 목적의 게시물은 허용되지 않습니다.",
+    "invalidEmail": "올바른 이메일 주소를 입력해 주세요."
   },
   "brand": {
     "catchcopy": "AI에게 묻는다.\nAI가 모르면 사람이 답한다."

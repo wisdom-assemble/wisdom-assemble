@@ -8,12 +8,23 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const apiErrors = await getApiErrors()
 
+  // 【2026-10-07】ログインなしでも送れるようにした（AdSense再申請前の点検で「連絡手段がログイン必須のフォームだけ」と指摘）。
+  // ログイン中はアカウントのメールを返信先に使い、未ログインなら入力された返信先メールを使う。
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !user.email) {
-    return NextResponse.json({ error: apiErrors.loginRequired }, { status: 401 })
+
+  const { subject, body, email, website, elapsedMs } = await request.json()
+
+  // 迷惑メール対策（DBを使わない軽いもの）：人には見えない入力欄(website)に値がある／開いて3秒未満で送信
+  // ＝機械的な送信とみなし、送ったふりをして実際には送らない（相手に対策を気付かせない）。
+  // ⚠️Brevoの送信上限（300通/日）を守るためでもある。大量に来るようになったら Cloudflare のレート制限を足す。
+  if ((typeof website === 'string' && website.trim() !== '') || !(Number(elapsedMs) >= 3000)) {
+    return NextResponse.json({ ok: true })
   }
 
-  const { subject, body } = await request.json()
+  const replyTo = user?.email ?? (typeof email === 'string' ? email.trim() : '')
+  if (!replyTo || replyTo.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyTo)) {
+    return NextResponse.json({ error: apiErrors.invalidEmail }, { status: 400 })
+  }
 
   if (!subject?.trim() || !body?.trim()) {
     return NextResponse.json({ error: apiErrors.subjectAndBodyRequired }, { status: 400 })
@@ -24,6 +35,9 @@ export async function POST(request: NextRequest) {
   if (body.trim().length < 20) {
     return NextResponse.json({ error: apiErrors.contactBodyTooShort }, { status: 400 })
   }
+  if (subject.trim().length > 200 || body.trim().length > 5000) {
+    return NextResponse.json({ error: apiErrors.notPermitted }, { status: 400 })
+  }
 
   const filterResult = checkContent(`${subject} ${body}`)
   if (!filterResult.ok) {
@@ -32,7 +46,8 @@ export async function POST(request: NextRequest) {
 
   try {
     await sendContactInquiry({
-      fromEmail: user.email,
+      fromEmail: replyTo,
+      loggedIn: !!user?.email,
       subject: subject.trim(),
       body: body.trim(),
     })

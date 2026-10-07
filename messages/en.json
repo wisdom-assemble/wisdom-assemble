@@ -281,6 +281,9 @@
     "subjectPlaceholder": "e.g. Can't log in / Feature request",
     "subjectTooShort": "Subject must be at least 10 characters ({count} so far)",
     "senderLabel": "From",
+    "emailLabel": "Your email (for our reply)",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "Please enter a valid email address.",
     "bodyLabel": "Message",
     "bodyPlaceholder": "Please enter your message",
     "bodyTooShort": "Message must be at least 20 characters ({count} so far)",
@@ -478,7 +481,8 @@
     "notPermitted": "You don't have permission to do this",
     "cannotEscalate": "This status can't be escalated",
     "contactInfoNotAllowed": "Personal contact information (email, phone number, social media accounts, etc.) cannot be posted.",
-    "spamNotAllowed": "Advertising or solicitation posts are not allowed."
+    "spamNotAllowed": "Advertising or solicitation posts are not allowed.",
+    "invalidEmail": "Please enter a valid email address."
   },
   "brand": {
     "catchcopy": "Ask AI.\nIf AI doesn't know, a human answers."

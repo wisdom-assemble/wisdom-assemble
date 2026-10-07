@@ -281,6 +281,9 @@
     "subjectPlaceholder": "p. ej. No puedo iniciar sesión / Sugerencia de función",
     "subjectTooShort": "El asunto debe tener al menos 10 caracteres ({count} hasta ahora)",
     "senderLabel": "De",
+    "emailLabel": "Tu correo electrónico (para responderte)",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "Introduce una dirección de correo electrónico válida.",
     "bodyLabel": "Mensaje",
     "bodyPlaceholder": "Escribe tu mensaje",
     "bodyTooShort": "El mensaje debe tener al menos 20 caracteres ({count} hasta ahora)",
@@ -478,7 +481,8 @@
     "notPermitted": "No tienes permiso para hacer esto",
     "cannotEscalate": "Este estado no se puede escalar",
     "contactInfoNotAllowed": "No se puede publicar información de contacto personal (correo electrónico, número de teléfono, cuentas de redes sociales, etc.).",
-    "spamNotAllowed": "No se permiten publicaciones publicitarias o de solicitación."
+    "spamNotAllowed": "No se permiten publicaciones publicitarias o de solicitación.",
+    "invalidEmail": "Introduce una dirección de correo electrónico válida."
   },
   "brand": {
     "catchcopy": "Pregunta a la IA.\nSi la IA no sabe, responde una persona."

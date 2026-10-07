@@ -281,6 +281,9 @@
     "subjectPlaceholder": "cth. Tidak bisa masuk / Permintaan fitur",
     "subjectTooShort": "Subjek minimal 10 karakter ({count} saat ini)",
     "senderLabel": "Dari",
+    "emailLabel": "Email Anda (untuk balasan)",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "Masukkan alamat email yang valid.",
     "bodyLabel": "Pesan",
     "bodyPlaceholder": "Silakan masukkan pesanmu",
     "bodyTooShort": "Pesan minimal 20 karakter ({count} saat ini)",
@@ -478,7 +481,8 @@
     "notPermitted": "Anda tidak memiliki izin",
     "cannotEscalate": "Status ini tidak dapat dieskalasi",
     "contactInfoNotAllowed": "Informasi kontak pribadi (email, nomor telepon, akun media sosial, dll.) tidak boleh diposting.",
-    "spamNotAllowed": "Postingan iklan atau ajakan tidak diperbolehkan."
+    "spamNotAllowed": "Postingan iklan atau ajakan tidak diperbolehkan.",
+    "invalidEmail": "Masukkan alamat email yang valid."
   },
   "brand": {
     "catchcopy": "Tanya AI.\nJika AI tidak tahu, manusia menjawab."

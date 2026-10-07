@@ -281,6 +281,9 @@
     "subjectPlaceholder": "例：ログインできない / 機能追加の提案",
     "subjectTooShort": "件名は10文字以上入力してください（現在{count}文字）",
     "senderLabel": "送信者",
+    "emailLabel": "返信先メールアドレス",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "メールアドレスの形式が正しくありません",
     "bodyLabel": "内容",
     "bodyPlaceholder": "お問い合わせ内容を入力してください",
     "bodyTooShort": "内容は20文字以上入力してください（現在{count}文字）",
@@ -435,7 +438,8 @@
     "notPermitted": "権限がありません",
     "cannotEscalate": "このステータスではエスカレーションできません",
     "contactInfoNotAllowed": "個人の連絡先情報（メールアドレス・電話番号・SNSアカウント等）は投稿できません。",
-    "spamNotAllowed": "広告・勧誘目的の投稿はできません。"
+    "spamNotAllowed": "広告・勧誘目的の投稿はできません。",
+    "invalidEmail": "メールアドレスの形式が正しくありません"
   },
   "brand": {
     "catchcopy": "AIに聞く。\nAIがわからなければ、人間が答える。"

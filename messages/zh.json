@@ -281,6 +281,9 @@
     "subjectPlaceholder": "例：无法登录 / 功能建议",
     "subjectTooShort": "主题至少需要10个字符（目前{count}个字符）",
     "senderLabel": "发件人",
+    "emailLabel": "回复用电子邮箱",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "请输入有效的电子邮箱地址。",
     "bodyLabel": "内容",
     "bodyPlaceholder": "请输入咨询内容",
     "bodyTooShort": "内容至少需要20个字符（目前{count}个字符）",
@@ -478,7 +481,8 @@
     "notPermitted": "没有权限",
     "cannotEscalate": "该状态无法升级",
     "contactInfoNotAllowed": "不能发布个人联系方式（邮箱、电话号码、社交账号等）。",
-    "spamNotAllowed": "不允许发布广告或招揽性质的内容。"
+    "spamNotAllowed": "不允许发布广告或招揽性质的内容。",
+    "invalidEmail": "请输入有效的电子邮箱地址。"
   },
   "brand": {
     "catchcopy": "先问AI。\nAI不知道时，由人来回答。"

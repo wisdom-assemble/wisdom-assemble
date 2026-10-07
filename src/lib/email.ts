@@ -159,6 +159,8 @@ export async function sendAiCostAlert(params: { level: 'warn90' | 'limit'; cap: 
 // 問い合わせフォームの内容を運営者のGmailに転送する（ユーザーには宛先を見せない）
 export async function sendContactInquiry(params: {
   fromEmail: string
+  // 未ログインの送信は返信先メールが本人のものか確認できていない（2026-10-07 ログインなし送信を追加）
+  loggedIn: boolean
   subject: string
   body: string
 }): Promise<void> {
@@ -166,7 +168,7 @@ export async function sendContactInquiry(params: {
     to: CONTACT_INBOX,
     subject: `【お問い合わせ】${params.subject}`,
     htmlContent: `
-      <p>送信者: ${escapeHtml(params.fromEmail)}</p>
+      <p>送信者: ${escapeHtml(params.fromEmail)}${params.loggedIn ? '（ログイン中）' : '（未ログイン・本人確認なし）'}</p>
       <p style="white-space:pre-wrap;">${escapeHtml(params.body)}</p>
     `,
     replyTo: params.fromEmail,

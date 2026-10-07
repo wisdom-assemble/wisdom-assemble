@@ -281,6 +281,9 @@
     "subjectPlaceholder": "vd: Không đăng nhập được / Đề xuất tính năng",
     "subjectTooShort": "Chủ đề phải có ít nhất 10 ký tự (hiện tại {count})",
     "senderLabel": "Từ",
+    "emailLabel": "Email của bạn (để phản hồi)",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ.",
     "bodyLabel": "Nội dung",
     "bodyPlaceholder": "Vui lòng nhập nội dung của bạn",
     "bodyTooShort": "Nội dung phải có ít nhất 20 ký tự (hiện tại {count})",
@@ -478,7 +481,8 @@
     "notPermitted": "Bạn không có quyền thực hiện việc này",
     "cannotEscalate": "Không thể chuyển cấp ở trạng thái này",
     "contactInfoNotAllowed": "Không được đăng thông tin liên hệ cá nhân (email, số điện thoại, tài khoản mạng xã hội, v.v.).",
-    "spamNotAllowed": "Không được đăng nội dung quảng cáo hoặc mời chào."
+    "spamNotAllowed": "Không được đăng nội dung quảng cáo hoặc mời chào.",
+    "invalidEmail": "Vui lòng nhập địa chỉ email hợp lệ."
   },
   "brand": {
     "catchcopy": "Hỏi AI.\nNếu AI không biết, con người trả lời."

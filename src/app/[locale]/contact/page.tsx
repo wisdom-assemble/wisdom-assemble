@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import Header from '@/components/Header'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ContactPage() {
   const t = useTranslations('contactPage')
-  const tCommon = useTranslations('common')
   const tHeader = useTranslations('header')
   const [user, setUser] = useState<any>(null)
   const [subject, setSubject] = useState('')
@@ -16,24 +15,33 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  // 【2026-10-07】ログインなしでも送れる。未ログイン時は返信先メールを入力してもらう
+  const [email, setEmail] = useState('')
+  // 迷惑メール対策：人には見えない入力欄（機械が埋める）と、ページを開いてから送信までの時間
+  const [website, setWebsite] = useState('')
+  const openedAt = useRef(0)
 
   useEffect(() => {
+    openedAt.current = Date.now()
     createClient().auth.getUser().then(({ data }) => {
       setUser(data.user)
       setLoading(false)
     })
   }, [])
 
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const senderOk = !!user?.email || emailOk
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (subject.trim().length < 10 || body.trim().length < 20) return
+    if (subject.trim().length < 10 || body.trim().length < 20 || !senderOk) return
     setSubmitting(true)
     setError('')
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, body }),
+        body: JSON.stringify({ subject, body, email, website, elapsedMs: Date.now() - openedAt.current }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -71,22 +79,9 @@ export default function ContactPage() {
           <p>{t('disclaimer')}</p>
         </div>
 
-        {/* 【2026-10-07】ログイン確認中もタイトル・説明・注意書きは出す（以前はページ全体が「読み込み中...」で、
-            サーバーが返すHTMLに本文が無かった＝JSを実行しないクローラーには空のページに見えていた） */}
-        {loading ? (
-          <div className="py-8 text-center text-gray-400 text-sm">{tCommon('loading')}</div>
-        ) : !user ? (
-          <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-center">
-            <p className="text-sm text-amber-800 font-medium mb-3">{t('loginRequired')}</p>
-            <a
-              href="/auth/login?next=/contact"
-              className="inline-block px-4 py-2 rounded text-sm font-medium text-white"
-              style={{ backgroundColor: 'var(--color-primary)' }}
-            >
-              {t('googleLogin')}
-            </a>
-          </div>
-        ) : sent ? (
+        {/* 【2026-10-07】フォームは最初から出す（以前はログイン確認中は「読み込み中...」、未ログインならログインを求めていた。
+            サーバーが返すHTMLにフォームが無く、ログインしない人には連絡手段が無かった）。 */}
+        {sent ? (
           <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
             <p className="text-green-700 font-medium mb-2">{t('sentTitle')}</p>
             <p className="text-sm text-green-600 mb-4">
@@ -110,6 +105,7 @@ export default function ContactPage() {
                 type="text"
                 required
                 value={subject}
+                maxLength={200}
                 onChange={e => setSubject(e.target.value)}
                 placeholder={t('subjectPlaceholder')}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
@@ -119,19 +115,47 @@ export default function ContactPage() {
               )}
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium text-gray-700">{t('senderLabel')}</label>
-                <button type="button" onClick={handleLogout} className="text-[10px] sm:text-xs text-gray-400 hover:text-gray-600 underline">
-                  {tHeader('logout')}
-                </button>
+            {!loading && user?.email ? (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-700">{t('senderLabel')}</label>
+                  <button type="button" onClick={handleLogout} className="text-[10px] sm:text-xs text-gray-400 hover:text-gray-600 underline">
+                    {tHeader('logout')}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={user.email}
+                  disabled
+                  className="w-full border border-gray-200 rounded px-3 py-2 text-sm text-gray-400 bg-gray-50"
+                />
               </div>
-              <input
-                type="text"
-                value={user.email}
-                disabled
-                className="w-full border border-gray-200 rounded px-3 py-2 text-sm text-gray-400 bg-gray-50"
-              />
+            ) : (
+              <div>
+                <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">{t('emailLabel')} <span className="text-red-500">*</span></label>
+                <input
+                  id="contact-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  maxLength={254}
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder={t('emailPlaceholder')}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+                />
+                {email.trim().length > 0 && !emailOk && (
+                  <p className="text-xs text-red-500 mt-1">{t('invalidEmail')}</p>
+                )}
+              </div>
+            )}
+
+            {/* 迷惑メール対策の見えない入力欄。人は入力しない（画面外・読み上げ対象外・Tabでも止まらない） */}
+            <div aria-hidden="true" className="absolute -left-[9999px] w-px h-px overflow-hidden">
+              <label>
+                Website
+                <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={e => setWebsite(e.target.value)} />
+              </label>
             </div>
 
             <div>
@@ -140,6 +164,7 @@ export default function ContactPage() {
                 required
                 rows={6}
                 value={body}
+                maxLength={5000}
                 onChange={e => setBody(e.target.value)}
                 placeholder={t('bodyPlaceholder')}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 resize-none"
@@ -151,7 +176,7 @@ export default function ContactPage() {
             )}
             <button
               type="submit"
-              disabled={submitting || subject.trim().length < 10 || body.trim().length < 20}
+              disabled={submitting || subject.trim().length < 10 || body.trim().length < 20 || !senderOk}
               className="w-full py-2.5 rounded font-medium text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: 'var(--color-primary)' }}
             >

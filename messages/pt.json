@@ -281,6 +281,9 @@
     "subjectPlaceholder": "ex.: Não consigo entrar / Sugestão de recurso",
     "subjectTooShort": "O assunto deve ter pelo menos 10 caracteres ({count} até agora)",
     "senderLabel": "De",
+    "emailLabel": "Seu e-mail (para resposta)",
+    "emailPlaceholder": "you@example.com",
+    "invalidEmail": "Insira um endereço de e-mail válido.",
     "bodyLabel": "Mensagem",
     "bodyPlaceholder": "Digite sua mensagem",
     "bodyTooShort": "A mensagem deve ter pelo menos 20 caracteres ({count} até agora)",
@@ -478,7 +481,8 @@
     "notPermitted": "Você não tem permissão para fazer isso",
     "cannotEscalate": "Este status não pode ser escalado",
     "contactInfoNotAllowed": "Informações de contato pessoais (e-mail, número de telefone, contas de redes sociais, etc.) não podem ser publicadas.",
-    "spamNotAllowed": "Não são permitidas publicações de publicidade ou solicitação."
+    "spamNotAllowed": "Não são permitidas publicações de publicidade ou solicitação.",
+    "invalidEmail": "Insira um endereço de e-mail válido."
   },
   "brand": {
     "catchcopy": "Pergunte à IA.\nSe não souber, um humano responde."
